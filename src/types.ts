@@ -2,7 +2,7 @@ import { ComponentProps, ReactNode } from 'react';
 import { ScrollView, StyleProp, ViewStyle } from 'react-native';
 
 export type LegendListProps<T> = Omit<ComponentProps<typeof ScrollView>, 'contentOffset'> & {
-    data: ArrayLike<any> & T[];
+    data: T[];
     initialScrollOffset?: number;
     initialScrollIndex?: number;
     drawDistance?: number;

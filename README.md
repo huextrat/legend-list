@@ -24,7 +24,7 @@ We suggest using all of the required props and additionally `keyExtractor` to im
 
 ```ts
 interface PropsRequired {
-    data: ArrayLike<any> & T[];
+    data: T[];
     renderItem: (props: LegendListRenderItemInfo<T>) => ReactNode;
     estimatedItemLength: (index: number) => number;
 }

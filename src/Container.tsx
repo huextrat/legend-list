@@ -14,7 +14,7 @@ export interface ContainerInfo {
     position: number;
 }
 
-export const Container = ({
+export const Container = <T,>({
     $container,
     recycleItems,
     listProps,
@@ -23,7 +23,7 @@ export const Container = ({
 }: {
     $container: Observable<ContainerInfo>;
     recycleItems?: boolean;
-    listProps: LegendListProps<any>;
+    listProps: LegendListProps<T>;
     getRenderedItem: (index: number) => ReactNode;
     onLayout: (index: number, length: number) => void;
 }) => {

@@ -76,7 +76,7 @@ export const LegendList: <T>(
 
     const refPositions = useRef<{
         positions: Map<string, number>;
-        lengths: Map<String, number>;
+        lengths: Map<string, number>;
         pendingAdjust: number;
         animFrame: number | null;
         isStartReached: boolean;
@@ -105,7 +105,7 @@ export const LegendList: <T>(
             isEndReached: false,
             isAtBottom: false,
             data: data,
-            idsInFirstRender: undefined as any,
+            idsInFirstRender: new Set<string>(),
             hasScrolled: false,
         };
         refPositions.current.idsInFirstRender = new Set(data.map((_: any, i: number) => getId(i)));
@@ -142,7 +142,7 @@ export const LegendList: <T>(
             const renderedItem = renderItem?.({
                 item: data[index],
                 index,
-            } as any);
+            });
 
             return renderedItem;
         },
@@ -150,7 +150,7 @@ export const LegendList: <T>(
     );
 
     const calculateItemsInView = useCallback(() => {
-        const data = refPositions.current!.data;
+        const data = refPositions.current?.data;
         if (!data) {
             return;
         }

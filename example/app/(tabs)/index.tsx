@@ -19,7 +19,7 @@ export default function HomeScreen() {
         () =>
             Array.from({ length: 500 }, (_, i) => ({
                 id: i.toString(),
-            })) as any[],
+            })),
     );
 
     //   useEffect(() => {
