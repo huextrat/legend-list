@@ -16,7 +16,11 @@
     },
     "scripts": {
         "build": "tsup && bun run posttsup.ts",
-        "publish:manual": "npm run build && cd dist && npm publish"
+        "publish:manual": "npm run build && cd dist && npm publish",
+        "lint": "npx biome check ./src && npx biome format ./src && yarn lint:example",
+    "lint:example": "npx biome check ./example/src && npx biome format ./example/src",
+    "lint:fix": "npx biome lint --write ./src && npx biome format --write ./src && npx biome check --write ./src && yarn lint:fix:example",
+    "lint:fix:example": "npx biome lint --write ./example/src && npx biome format --write ./example/src && npx biome check --write ./example/src"
     },
     "peerDependencies": {
         "react": "*",
@@ -32,6 +36,7 @@
         "typescript": "^5.5.2"
     },
     "dependencies": {
+        "@biomejs/biome": "^1.9.4",
         "@legendapp/state": "^3.0.0-beta.19"
     },
     "author": "Legend <contact@legendapp.com> (https://github.com/LegendApp)",

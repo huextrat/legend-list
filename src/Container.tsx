@@ -1,10 +1,10 @@
-import { Observable } from '@legendapp/state';
+import type { Observable } from '@legendapp/state';
 import { enableReactNativeComponents } from '@legendapp/state/config/enableReactNativeComponents';
 import * as React from 'react';
 import { Reactive, use$ } from '@legendapp/state/react';
-import { LayoutChangeEvent, View, ViewStyle } from 'react-native';
+import { type LayoutChangeEvent, View, type ViewStyle } from 'react-native';
 import type { LegendListProps } from './types';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 enableReactNativeComponents();
 

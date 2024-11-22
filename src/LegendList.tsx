@@ -1,9 +1,9 @@
-import * as React from 'react';
+import type * as React from 'react';
 import { beginBatch, endBatch } from '@legendapp/state';
 import { enableReactNativeComponents } from '@legendapp/state/config/enableReactNativeComponents';
 import { Reactive, use$, useObservable } from '@legendapp/state/react';
-import { ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Dimensions, ScrollView } from 'react-native';
+import { type ForwardedRef, forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Dimensions, type ScrollView } from 'react-native';
 import { Container } from './Container';
 import type { LegendListProps } from './types';
 
@@ -74,7 +74,7 @@ export const LegendList = forwardRef(<T,>(
 
     const refPositions = useRef<{
         positions: Map<string, number>;
-        lengths: Map<String, number>;
+        lengths: Map<string, number>;
         pendingAdjust: number;
         animFrame: number | null;
         isStartReached: boolean;
@@ -148,7 +148,7 @@ export const LegendList = forwardRef(<T,>(
     );
 
     const calculateItemsInView = useCallback(() => {
-        const data = refPositions.current!.data;
+        const data = refPositions.current?.data;
         if (!data) {
             return;
         }
