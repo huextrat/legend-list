@@ -53,6 +53,11 @@ export default function HomeScreen() {
                 ListHeaderComponent={<View />}
                 ListHeaderComponentStyle={styles.listHeader}
 
+                onScroll={({ nativeEvent }) => {
+                    // using onScroll make the list blank after few items
+                    console.log('onScroll', nativeEvent);
+                }}
+
                 // initialScrollOffset={20000}
                 // initialScrollIndex={500}
                 // inverted
