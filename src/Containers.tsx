@@ -26,9 +26,14 @@ export const Containers = typedMemo(function Containers<ItemT>({
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
     const [numContainers, numColumns] = useArr$(["numContainersPooled", "numColumns"]);
-    const animSize = useValue$("totalSizeWithScrollAdjust", undefined, /*useMicrotask*/ true);
-    const animOpacity = waitForInitialLayout ? useValue$("containersDidLayout", (value) => (value ? 1 : 0)) : undefined;
-    const otherAxisSize = useValue$("otherAxisSize", undefined, /*useMicrotask*/ true);
+    const animSize = useValue$("totalSizeWithScrollAdjust", {
+        // Use a microtask if increasing the size significantly, otherwise use a timeout
+        delay: (value, prevValue) => (!prevValue || value - prevValue > 20 ? 0 : 200),
+    });
+    const animOpacity = waitForInitialLayout
+        ? useValue$("containersDidLayout", { getValue: (value) => (value ? 1 : 0) })
+        : undefined;
+    const otherAxisSize = useValue$("otherAxisSize", { delay: 0 });
 
     const containers: React.ReactNode[] = [];
     for (let i = 0; i < numContainers; i++) {

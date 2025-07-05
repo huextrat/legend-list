@@ -20,8 +20,10 @@ export function ListHeaderComponentContainer({
     waitForInitialLayout,
 }: ListHeaderComponentContainerProps) {
     const hasData = peek$(ctx, "lastItemKeys")?.length > 0;
-    const scrollAdjust = useValue$("scrollAdjust", (v) => v ?? 0, true);
-    const animOpacity = waitForInitialLayout ? useValue$("containersDidLayout", (value) => (value ? 1 : 0)) : undefined;
+    const scrollAdjust = useValue$("scrollAdjust", { getValue: (v) => v ?? 0, delay: 0 });
+    const animOpacity = waitForInitialLayout
+        ? useValue$("containersDidLayout", { getValue: (value) => (value ? 1 : 0) })
+        : undefined;
     const additionalSize: ViewStyle = {
         transform: [{ translateY: Animated.multiply(scrollAdjust, -1) }],
         // Header should show if there's no data yet, but containersDidLayout will be false until it has some data

@@ -51,16 +51,16 @@ const getComponent = (Component: React.ComponentType<any> | React.ReactElement) 
 };
 
 const PaddingAndAdjust = () => {
-    const animPaddingTop = useValue$("paddingTop", (v) => v, true);
-    const animScrollAdjust = useValue$("scrollAdjust", (v) => v, true);
+    const animPaddingTop = useValue$("paddingTop", { delay: 0 });
+    const animScrollAdjust = useValue$("scrollAdjust", { delay: 0 });
 
     const additionalSize = { marginTop: animScrollAdjust, paddingTop: animPaddingTop };
     return <Animated.View style={additionalSize} />;
 };
 
 const PaddingAndAdjustDevMode = () => {
-    const animPaddingTop = useValue$("paddingTop", (v) => v, true);
-    const animScrollAdjust = useValue$("scrollAdjust", (v) => v, true);
+    const animPaddingTop = useValue$("paddingTop", { delay: 0 });
+    const animScrollAdjust = useValue$("scrollAdjust", { delay: 0 });
 
     return (
         <>
