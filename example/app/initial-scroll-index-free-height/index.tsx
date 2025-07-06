@@ -12,7 +12,7 @@ export default function IntialScrollIndexFreeHeight() {
 
     const [data, setData] = useState<Item[]>(
         () =>
-            Array.from({ length: 30 }, (_, i) => ({
+            Array.from({ length: 100 }, (_, i) => ({
                 id: i.toString(),
             })) as any[],
     );
@@ -23,7 +23,7 @@ export default function IntialScrollIndexFreeHeight() {
         <View style={[StyleSheet.absoluteFill, styles.outerContainer]} key="legendlist">
             <LegendList
                 ref={listRef}
-                initialScrollIndex={10}
+                initialScrollIndex={50}
                 style={[StyleSheet.absoluteFill, styles.scrollContainer]}
                 contentContainerStyle={styles.listContainer}
                 data={data}

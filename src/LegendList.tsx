@@ -224,14 +224,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 offset = index * estimatedItemSize;
             }
 
-            const adjust = peek$(ctx, "containersDidLayout")
-                ? refState.current?.scrollAdjustHandler.getAppliedAdjust() || 0
-                : 0;
-
             const stylePaddingTop = isFromInit ? stylePaddingTopState : peek$(ctx, "stylePaddingTop");
             const topPad = (stylePaddingTop ?? 0) + peek$(ctx, "headerSize");
 
-            return offset / numColumnsProp - adjust + topPad;
+            return offset / numColumnsProp + topPad;
         }
         return 0;
     };
@@ -289,7 +285,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             sizesKnown: new Map(),
             timeoutSizeMessage: 0,
             scrollTimer: undefined,
-            belowAnchorElementPositions: undefined,
             rowHeights: new Map(),
             startReachedBlockedByTimer: false,
             endReachedBlockedByTimer: false,
@@ -302,28 +297,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             onScroll: onScrollProp,
         };
 
-        const dataLength = dataProp.length;
-
-        if (maintainVisibleContentPosition && dataLength > 0) {
-            if (initialScrollIndex && initialScrollIndex < dataLength) {
-                refState.current!.anchorElement = {
-                    coordinate: initialContentOffset,
-                    id: getId(initialScrollIndex),
-                };
-            } else if (dataLength > 0) {
-                refState.current!.anchorElement = {
-                    coordinate: initialContentOffset,
-                    id: getId(0),
-                };
-            } else {
-                __DEV__ &&
-                    warnDevOnce(
-                        "maintainVisibleContentPosition",
-                        "[legend-list] maintainVisibleContentPosition was not able to find an anchor element",
-                    );
-            }
-        }
-        set$(ctx, "scrollAdjust", 0);
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
         set$(ctx, "extraData", extraData);
     }
@@ -331,15 +304,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const didDataChange = refState.current.data !== dataProp;
     refState.current.data = dataProp;
     refState.current.onScroll = onScrollProp;
-
-    const getAnchorElementIndex = () => {
-        const state = refState.current!;
-        if (state.anchorElement) {
-            const el = state.indexByKey.get(state.anchorElement.id);
-            return el;
-        }
-        return undefined;
-    };
 
     const scrollToIndex = ({
         index,
@@ -359,7 +323,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (isLast && viewPosition !== undefined) {
             viewPosition = 1;
         }
-        let firstIndexScrollPostion = firstIndexOffset - viewOffset;
+        const firstIndexScrollPostion = firstIndexOffset - viewOffset;
         const diff = Math.abs(state.scroll - firstIndexScrollPostion);
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
 
@@ -367,20 +331,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const needsReanchoring = maintainVisibleContentPosition && diff > 100;
         state.scrollForNextCalculateItemsInView = undefined;
 
-        if (needsReanchoring) {
-            // in the maintainVisibleContentPosition we can choose element we are scrolling to as anchor element
-            // now let's cleanup old positions and set new anchor element
-            const id = getId(index);
-            state.anchorElement = { id, coordinate: firstIndexOffset - topPad };
-            state.belowAnchorElementPositions?.clear();
-            state.positions.clear();
-            calcTotalSizesAndPositions({ forgetPositions: true }); // since we are choosing new anchor, we need to recalulate positions
-            state.startBufferedId = id;
-            state.minIndexSizeChanged = index;
+        // if (needsReanchoring) {
+        //     // in the maintainVisibleContentPosition we can choose element we are scrolling to as anchor element
+        //     // now let's cleanup old positions and set new anchor element
+        //     const id = getId(index);
+        //     state.positions.clear();
+        //     calcTotalSizesAndPositions({ forgetPositions: true }); // since we are choosing new anchor, we need to recalulate positions
+        //     state.startBufferedId = id;
+        //     state.minIndexSizeChanged = index;
 
-            // when doing scrollTo, it's important to use latest adjust value
-            firstIndexScrollPostion = firstIndexOffset - viewOffset + state.scrollAdjustHandler.getAppliedAdjust();
-        }
+        //     // when doing scrollTo, it's important to use latest adjust value
+        //     firstIndexScrollPostion = firstIndexOffset - viewOffset;
+        // }
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
         // Do the scroll
@@ -416,13 +378,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const addTotalSize = useCallback((key: string | null, add: number, totalSizeBelowAnchor: number) => {
         const state = refState.current!;
-        const { indexByKey, anchorElement } = state;
+        const { indexByKey } = state;
         const index = key === null ? 0 : indexByKey.get(key)!;
         let isAboveAnchor = false;
         if (maintainVisibleContentPosition) {
-            if (anchorElement && index < getAnchorElementIndex()!) {
-                isAboveAnchor = true;
-            }
+            isAboveAnchor = index < state.startNoBuffer;
         }
         if (key === null) {
             state.totalSize = add;
@@ -437,19 +397,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         let applyAdjustValue = 0;
         let resultSize = state.totalSize;
 
-        if (maintainVisibleContentPosition && anchorElement !== undefined) {
-            const newAdjust = anchorElement.coordinate - state.totalSizeBelowAnchor;
-            applyAdjustValue = -newAdjust;
-            state.belowAnchorElementPositions = buildElementPositionsBelowAnchor();
+        if (maintainVisibleContentPosition && isAboveAnchor) {
+            applyAdjustValue = 0;
             state.rowHeights.clear();
 
             if (applyAdjustValue !== undefined) {
                 resultSize -= applyAdjustValue;
-                state.scrollAdjustHandler.requestAdjust(applyAdjustValue, (diff: number) => {
-                    // event state.scroll will contain invalid value, until next handleScroll
-                    // apply adjustment
-                    state.scroll -= diff;
-                });
+                state.scrollAdjustHandler.requestAdjust(add);
+                state.scroll += add;
             }
         }
 
@@ -482,39 +437,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return rowHeight;
     };
 
-    // this function rebuilds its data on each addTotalSize
-    // this can be further optimized either by rebuilding part that's changed or by moving achorElement up, keeping number of function iterations minimal
-    const buildElementPositionsBelowAnchor = (): Map<string, number> => {
-        const state = refState.current!;
-
-        if (!state.anchorElement) {
-            return new Map();
-        }
-        const anchorIndex = state.indexByKey.get(state.anchorElement.id)!;
-        if (anchorIndex === 0) {
-            return new Map();
-        }
-        const map = state.belowAnchorElementPositions || new Map();
-        const numColumns = peek$(ctx, "numColumns");
-        let top = state.anchorElement!.coordinate;
-        for (let i = anchorIndex - 1; i >= 0; i--) {
-            const id = getId(i);
-            const rowNumber = Math.floor(i / numColumns);
-            if (i % numColumns === 0) {
-                top -= getRowHeight(rowNumber);
-            }
-            map.set(id, top);
-        }
-        return map;
-    };
-
     const disableScrollJumps = (timeout: number) => {
         const state = refState.current!;
 
         // Don't disable scroll jumps if we're not scrolling to an offset
         // Resetting containers can cause a jump, so we don't want to disable scroll jumps in that case
         if (state.scrollingTo === undefined) {
-            state.disableScrollJumpsFrom = state.scroll - state.scrollAdjustHandler.getAppliedAdjust();
+            state.disableScrollJumpsFrom = state.scroll;
             state.scrollHistory.length = 0;
 
             setTimeout(() => {
@@ -524,20 +453,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             }, timeout);
         }
-    };
-
-    const getElementPositionBelowAchor = (id: string) => {
-        const state = refState.current!;
-        if (!refState.current!.belowAnchorElementPositions) {
-            state.belowAnchorElementPositions = buildElementPositionsBelowAnchor();
-        }
-        const res = state.belowAnchorElementPositions!.get(id);
-
-        if (res === undefined) {
-            console.warn(`Undefined position below anchor ${id} ${state.anchorElement?.id}`);
-            return 0;
-        }
-        return res;
     };
 
     const fixGaps = useCallback(() => {
@@ -642,7 +557,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const totalSize = peek$(ctx, "totalSizeWithScrollAdjust");
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
-        const previousScrollAdjust = scrollAdjustHandler.getAppliedAdjust();
+        const previousScrollAdjust = 0;
         let scrollState = state.scroll;
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
@@ -717,28 +632,19 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             state.minIndexSizeChanged = undefined;
         }
 
-        const anchorElementIndex = getAnchorElementIndex()!;
-
         // Go backwards from the last start position to find the first item that is in view
         // This is an optimization to avoid looping through all items, which could slow down
         // when scrolling at the end of a long list.
 
         // TODO: Fix this logic for numColumns
+        let runningTop: number | undefined;
         for (let i = loopStart; i >= 0; i--) {
             const id = getId(i)!;
-            let newPosition: number | undefined;
-
-            if (maintainVisibleContentPosition && anchorElementIndex && i < anchorElementIndex) {
-                newPosition = getElementPositionBelowAchor(id);
-                if (newPosition !== undefined) {
-                    positions.set(id, newPosition);
-                }
-            }
-
-            const top = newPosition || positions.get(id)!;
+            const top = positions.get(id)! ?? runningTop;
 
             if (top !== undefined) {
                 const size = getItemSize(id, i, data[i], useAverageSize);
+                runningTop = top - size;
                 const bottom = top + size;
                 if (bottom > scroll - scrollBuffer) {
                     loopStart = i;
@@ -763,9 +669,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             let topOffset = 0;
             if (positions.get(id)) {
                 topOffset = positions.get(id)!;
-            }
-            if (id === state.anchorElement?.id) {
-                topOffset = state.anchorElement.coordinate;
             }
             return topOffset;
         };
@@ -794,7 +697,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             maxSizeInRow = Math.max(maxSizeInRow, size);
 
-            if (top === undefined || id === state.anchorElement?.id) {
+            if (top === undefined) {
                 top = getInitialTop(i);
             }
 
@@ -948,16 +851,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             top: positions.get(id)!,
                         };
                         const column = columns.get(id) || 1;
-
-                        // anchor elements to the bottom if element is below anchor
-                        if (maintainVisibleContentPosition && itemIndex < anchorElementIndex) {
-                            const currentRow = Math.floor(itemIndex / numColumns);
-                            const rowHeight = getRowHeight(currentRow);
-                            const elementHeight = getItemSize(id, itemIndex, data[i]);
-                            const diff = rowHeight - elementHeight; // difference between row height and element height
-                            pos.relativeCoordinate = pos.top + getRowHeight(currentRow) - diff;
-                            pos.type = "bottom";
-                        }
 
                         const prevPos = peek$(ctx, `containerPosition${i}`);
                         const prevColumn = peek$(ctx, `containerColumn${i}`);
@@ -1247,7 +1140,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const calcTotalSizesAndPositions = ({ forgetPositions = false }) => {
         const state = refState.current;
         let totalSize = 0;
-        let totalSizeBelowIndex = 0;
+        const totalSizeBelowIndex = 0;
         const indexByKey = new Map();
         const newPositions = new Map();
         let column = 1;
@@ -1274,7 +1167,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 newPositions.set(key, state.positions.get(key)!);
             }
         }
-        // getAnchorElementIndex needs indexByKey, build it first
         state.indexByKey = indexByKey;
         state.positions = newPositions;
 
@@ -1282,18 +1174,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // check if anchorElement is still in the list
             let didChange = false;
             if (maintainVisibleContentPosition) {
-                if (state.anchorElement == null || indexByKey.get(state.anchorElement.id) == null) {
-                    if (dataProp.length) {
-                        const newAnchorElement = {
-                            coordinate: 0,
-                            id: getId(0),
-                        };
-                        state.anchorElement = newAnchorElement;
-                        state.belowAnchorElementPositions?.clear();
+                // anchorElement functionality removed
+                if (dataProp.length) {
+                    // Keep startBufferedId if it's still in the list
+                    if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
+                        state.startBufferedId = getId(0);
                         didChange = true;
-                    } else {
-                        state.startBufferedId = undefined;
                     }
+                } else {
+                    state.startBufferedId = undefined;
                 }
             } else if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
                 // if maintainVisibleContentPosition not used, reset startBufferedId if it's not in the list
@@ -1313,7 +1202,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        const anchorElementIndex = getAnchorElementIndex();
         for (let i = 0; i < dataProp.length; i++) {
             const key = getId(i);
 
@@ -1322,10 +1210,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             column++;
             if (column > numColumns) {
-                if (maintainVisibleContentPosition && anchorElementIndex !== undefined && i < anchorElementIndex) {
-                    totalSizeBelowIndex += maxSizeInRow;
-                }
-
                 totalSize += maxSizeInRow;
                 column = 1;
                 maxSizeInRow = 0;
@@ -1675,6 +1559,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 state.scrollForNextCalculateItemsInView = undefined;
 
                 addTotalSize(itemKey, diff, 0);
+                if (maintainVisibleContentPosition) {
+                    if (itemKey && peek$(ctx, "containersDidLayout")) {
+                        state.ignoreScrollFromMVCP = true;
+                        if (state.ignoreScrollFromMVCPTimeout) {
+                            clearTimeout(state.ignoreScrollFromMVCPTimeout);
+                        }
+                        state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
+                            state.ignoreScrollFromMVCP = false;
+                        }, 100);
+                    }
+                    calculateItemsInView();
+                }
 
                 // Maintain scroll at end if this item has already rendered and is changing by more than 5px
                 // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
@@ -1842,6 +1738,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 return;
             }
             const state = refState.current!;
+            if (state.ignoreScrollFromMVCP) {
+                return;
+            }
             const newScroll = event.nativeEvent.contentOffset[horizontal ? "x" : "y"];
             state.scrollPending = newScroll;
             if (state.ignoreScrollFromCalcTotal && newScroll !== 0) {
@@ -1867,7 +1766,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (state.disableScrollJumpsFrom !== undefined) {
             // If the scroll is too far from the disableScrollJumpsFrom position, don't update the scroll position
             // This is to prevent jumpiness when adding items to the top of the list
-            const scrollMinusAdjust = newScroll - state.scrollAdjustHandler.getAppliedAdjust();
+            const scrollMinusAdjust = newScroll;
             if (Math.abs(scrollMinusAdjust - state.disableScrollJumpsFrom) > 200) {
                 return;
             }

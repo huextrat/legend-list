@@ -283,7 +283,6 @@ export interface InternalState {
         id: string;
         coordinate: number;
     };
-    belowAnchorElementPositions?: Map<string, number>;
     rowHeights: Map<number, number>;
     positions: Map<string, number>;
     columns: Map<string, number>;
@@ -332,6 +331,8 @@ export interface InternalState {
     queuedCalculateItemsInView: number | undefined;
     lastBatchingAction: number;
     ignoreScrollFromCalcTotal?: boolean;
+    ignoreScrollFromMVCP?: boolean;
+    ignoreScrollFromMVCPTimeout?: any;
     disableScrollJumpsFrom?: number;
     scrollingTo?:
         | { offset: number; index?: number; viewOffset?: number; viewPosition?: number; animated?: boolean }

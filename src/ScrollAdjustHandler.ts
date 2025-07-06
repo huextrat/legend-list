@@ -16,21 +16,17 @@ export class ScrollAdjustHandler {
         set$(this.context, "scrollAdjust", this.appliedAdjust);
         this.busy = false;
     }
-    requestAdjust(adjust: number, onAdjusted: (diff: number) => void) {
+    requestAdjust(add: number) {
         if (this.isDisabled) {
             return;
         }
-        const oldAdjustTop = peek$(this.context, "scrollAdjust");
-        if (oldAdjustTop === adjust) {
-            return;
-        }
+        const oldAdjustTop = peek$(this.context, "scrollAdjust") || 0;
 
-        this.appliedAdjust = adjust;
+        this.appliedAdjust = add + oldAdjustTop;
 
         if (!this.busy && !this.isPaused) {
             this.busy = true;
             this.doAjdust();
-            onAdjusted(oldAdjustTop - adjust);
         }
     }
     getAppliedAdjust() {
