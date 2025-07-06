@@ -10,6 +10,7 @@
         "android-o": "OLD_ARCH=TRUE expo run:android",
         "android-o:release": "RELEASE=TRUE OLD_ARCH=TRUE expo run:android --variant release",
         "ios": "expo run:ios",
+        "ios-o": "OLD_ARCH=TRUE expo run:ios",
         "web": "expo start --web",
         "test": "jest --watchAll",
         "lint": "expo lint",
