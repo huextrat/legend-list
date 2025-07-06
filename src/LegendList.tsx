@@ -394,19 +394,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        let applyAdjustValue = 0;
-        let resultSize = state.totalSize;
-
-        if (maintainVisibleContentPosition && isAboveAnchor) {
-            applyAdjustValue = 0;
-            state.rowHeights.clear();
-
-            if (applyAdjustValue !== undefined) {
-                resultSize -= applyAdjustValue;
-                state.scrollAdjustHandler.requestAdjust(add);
-                state.scroll += add;
-            }
-        }
+        const resultSize = state.totalSize;
 
         set$(ctx, "totalSize", state.totalSize);
         set$(ctx, "totalSizeWithScrollAdjust", resultSize);
@@ -559,6 +547,47 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
         let scrollState = state.scroll;
+
+        // Handle maintainVisibleContentPosition adjustment early
+        if (
+            maintainVisibleContentPosition &&
+            state.startNoBuffer !== undefined &&
+            state.startNoBuffer !== -1 &&
+            peek$(ctx, "containersDidLayout")
+        ) {
+            const prevStartNoBufferKey = getId(state.startNoBuffer);
+            const prevStartNoBufferPosition = positions.get(prevStartNoBufferKey);
+
+            // TODO: Feels like there's some duplication here, and we're calculating up from 0.
+            // Should be able to optimize this using similar logic as farther down in this function
+            // or even mixed in. But for now it works.
+            if (prevStartNoBufferPosition !== undefined) {
+                // Calculate what the new position would be based on current sizes
+                let newStartNoBufferPosition = 0;
+                let column = 1;
+                let maxSizeInRow = 0;
+
+                for (let i = 0; i < state.startNoBuffer; i++) {
+                    const id = getId(i);
+                    const size = getItemSize(id, i, data[i]);
+                    maxSizeInRow = Math.max(maxSizeInRow, size);
+
+                    column++;
+                    if (column > numColumns) {
+                        newStartNoBufferPosition += maxSizeInRow;
+                        column = 1;
+                        maxSizeInRow = 0;
+                    }
+                }
+
+                const positionDiff = newStartNoBufferPosition - prevStartNoBufferPosition;
+                if (Math.abs(positionDiff) > 0.1) {
+                    state.scrollAdjustHandler.requestAdjust(positionDiff);
+                    state.scroll += positionDiff;
+                    scrollState = state.scroll;
+                }
+            }
+        }
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
