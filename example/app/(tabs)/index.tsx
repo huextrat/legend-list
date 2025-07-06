@@ -27,6 +27,10 @@ const data: ListElement[] = [
         url: "/chat-example",
     },
     {
+        title: "AI Chat",
+        url: "/ai-chat",
+    },
+    {
         title: "Infinite chat",
         url: "/chat-infinite",
     },
