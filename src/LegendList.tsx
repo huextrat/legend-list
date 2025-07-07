@@ -438,7 +438,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             setTimeout(() => {
                 state.disableScrollJumpsFrom = undefined;
                 if (state.scrollPending !== undefined && state.scrollPending !== state.scroll) {
-                    updateScroll(state.scrollPending);
+                    // TODO: Remove all this?
+                    // updateScroll(state.scrollPending);
                 }
             }, timeout);
         }
@@ -553,7 +554,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (maintainVisibleContentPosition && state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
             const indexByKey = state.indexByKey;
             const firstIdInView = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
-            // const firstIdInView = state.idsInView[firstIdInViewIndex];
 
             if (firstIdInView !== undefined) {
                 const firstIdInViewIndex = indexByKey.get(firstIdInView!);
@@ -585,16 +585,26 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                         if (isNewData) {
                             // Need to clear all positions?
-                            debugger;
                             positions.clear();
                         }
 
                         const positionDiff = newPosition - prevPosition;
                         if (Math.abs(positionDiff) > 0.1) {
+                            console.log("requesting adjust", positionDiff);
                             state.scrollAdjustHandler.requestAdjust(positionDiff);
                             state.scroll += positionDiff;
                             scrollState = state.scroll;
                             state.scrollForNextCalculateItemsInView = undefined;
+
+                            if (peek$(ctx, "containersDidLayout")) {
+                                state.ignoreScrollFromMVCP = true;
+                                if (state.ignoreScrollFromMVCPTimeout) {
+                                    clearTimeout(state.ignoreScrollFromMVCPTimeout);
+                                }
+                                state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
+                                    state.ignoreScrollFromMVCP = false;
+                                }, 100);
+                            }
                         }
                     }
                 }
@@ -1651,15 +1661,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 addTotalSize(itemKey, diff, 0);
                 if (maintainVisibleContentPosition) {
-                    if (itemKey && peek$(ctx, "containersDidLayout")) {
-                        state.ignoreScrollFromMVCP = true;
-                        if (state.ignoreScrollFromMVCPTimeout) {
-                            clearTimeout(state.ignoreScrollFromMVCPTimeout);
-                        }
-                        state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
-                            state.ignoreScrollFromMVCP = false;
-                        }, 100);
-                    }
                     calculateItemsInView();
                 }
 
@@ -1765,17 +1766,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         doInitialAllocateContainers();
 
-        doMaintainScrollAtEnd(false);
-        updateAlignItemsPaddingTop();
-        checkAtBottom();
-        checkAtTop();
-
         if (didChange) {
             calculateItemsInView();
         }
         if (didChange || otherAxisSize !== prevOtherAxisSize) {
             set$(ctx, "scrollSize", { width: size.width, height: size.height });
         }
+
+        doMaintainScrollAtEnd(false);
+        updateAlignItemsPaddingTop();
+        checkAtBottom();
+        checkAtTop();
 
         if (refState.current) {
             // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis

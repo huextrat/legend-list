@@ -301,6 +301,7 @@ export interface InternalState {
     startNoBuffer: number;
     endBuffered: number;
     endNoBuffer: number;
+    idsInView: string[];
     scrollPending: number;
     scroll: number;
     scrollTime: number;
