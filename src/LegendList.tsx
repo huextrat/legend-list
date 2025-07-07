@@ -336,8 +336,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         const firstIndexOffset = state.positions.get(getId(index))!; // || calculateOffsetForIndex(index);
 
-        console.log("scrolling to", firstIndexOffset);
-
         const isLast = index === state.data.length - 1;
         if (isLast && viewPosition === undefined) {
             viewPosition = 1;
@@ -1039,11 +1037,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const state = refState.current!;
         const { animated } = params;
 
-        debugger;
-
         const offset = calculateOffsetWithOffsetPosition(params.offset, params);
-
-        console.log("scrollTo", offset);
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
         state.scrollAdjustHandler.setDisableAdjust(true);
@@ -1678,30 +1672,28 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     });
                 }
 
-                if (
+                const scrollTarget = state.scrollingTo?.index;
+                // Determine if this item needs adjustment based on its position relative to the scroll target
+                const shouldAdjustItem =
                     itemKey !== undefined &&
-                    (state.scrollingTo?.index !== undefined
-                        ? (state.scrollingTo.viewPosition || 0) > 0
-                            ? index <= state.scrollingTo?.index
-                            : index < state.scrollingTo?.index
-                        : index <= state.firstFullyOnScreenIndex)
-                ) {
-                    if (state.scrollingTo?.viewPosition && index === state.scrollingTo?.index) {
+                    (scrollTarget !== undefined
+                        ? // When scrolling to a specific index, adjust items that are at or before the target
+                          // - If viewPosition > 0 (scrolling to show bottom part), include the target index
+                          // - If viewPosition <= 0 (scrolling to show top part), exclude the target index
+                          index <= scrollTarget - ((state.scrollingTo?.viewPosition || 0) > 0 ? 0 : 1)
+                        : // When not scrolling to a specific target, adjust items up to the first fully visible item
+                          index <= state.firstFullyOnScreenIndex);
+
+                if (shouldAdjustItem) {
+                    // Apply viewPosition scaling if this is the exact target index
+                    if (state.scrollingTo?.viewPosition && index === scrollTarget) {
                         diff *= state.scrollingTo.viewPosition;
                     }
-                    // if (diff) {
-                    //     debugger;
-                    // }
-                    // TODO: Problem is that it's not updating the positions I think
-                    console.log("from size", itemKey);
+                    // Adjust scroll position to maintain visible content position
                     requestAdjust(diff);
                     updateAllPositions();
-                    // state.positions.clear();
-                    // debugger;
                     calculateItemsInView({ didMvcp: true });
                     didMvcp = true;
-                } else {
-                    console.log("not from size", index, state.firstFullyOnScreenIndex);
                 }
             }
 
@@ -1863,14 +1855,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (ignoreScrollFromMVCP && !state.scrollingTo) {
                 const { lt, gt } = ignoreScrollFromMVCP;
                 if ((lt && newScroll < lt) || (gt && newScroll > gt)) {
-                    console.log("ignore mcp scroll", newScroll);
+                    // console.log("ignore mcp scroll", newScroll);
                     return;
                 }
             }
 
             state.scrollPending = newScroll;
 
-            // console.log("handleScroll", newScroll);
             updateScroll(newScroll);
 
             state.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
