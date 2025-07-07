@@ -1284,10 +1284,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // add it to total size
             totalSize += maxSizeInRow;
         }
-        state.ignoreScrollFromCalcTotal = true;
-        requestAnimationFrame(() => {
-            state.ignoreScrollFromCalcTotal = false;
-        });
+
         addTotalSize(null, totalSize);
     };
 
@@ -1842,10 +1839,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
 
             state.scrollPending = newScroll;
-            if (state.ignoreScrollFromCalcTotal && newScroll !== 0) {
-                // Ignore scroll from calcTotal unless it's scrolling to 0
-                return;
-            }
 
             updateScroll(newScroll);
 

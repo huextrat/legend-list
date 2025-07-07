@@ -330,7 +330,6 @@ export interface InternalState {
     queuedInitialLayout?: boolean | undefined;
     queuedCalculateItemsInView: number | undefined;
     lastBatchingAction: number;
-    ignoreScrollFromCalcTotal?: boolean;
     ignoreScrollFromMVCP?: { lt?: number; gt?: number };
     ignoreScrollFromMVCPTimeout?: any;
     disableScrollJumpsFrom?: number;
