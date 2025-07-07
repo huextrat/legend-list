@@ -175,8 +175,9 @@ export const Container = <ItemT,>({
         </React.Fragment>
     );
 
+    // TODO: Is this needed?
     // If maintainVisibleContentPosition is enabled, we need a way items to grow upwards
-    if (maintainVisibleContentPosition) {
+    if (!IsNewArchitecture && maintainVisibleContentPosition) {
         const anchorStyle: StyleProp<ViewStyle> = horizontal
             ? position.type === "top"
                 ? { position: "absolute", left: 0, top: 0, bottom: 0, flexDirection: "row", alignItems: "stretch" }
