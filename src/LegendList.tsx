@@ -267,6 +267,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             startNoBuffer: -1,
             endBuffered: -1,
             endNoBuffer: -1,
+            firstFullyOnScreenIndex: -1,
             scroll: initialContentOffset || 0,
             totalSize: 0,
             timeouts: new Set(),
@@ -305,6 +306,19 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     refState.current.data = dataProp;
     refState.current.onScroll = onScrollProp;
 
+    const updateAllPositions = () => {
+        const { data, positions } = refState.current!;
+        const start = performance.now();
+        let top2 = 0;
+        for (let i = 0; i < data!.length; i++) {
+            const id = getId(i)!;
+            const size = getItemSize(id, i, data[i], false);
+            positions.set(id, top2);
+            top2 += size;
+        }
+        // console.log("updating all positions took", performance.now() - start);
+    };
+
     const scrollToIndex = ({
         index,
         viewOffset = 0,
@@ -318,7 +332,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             index = 0;
         }
 
-        const firstIndexOffset = calculateOffsetForIndex(index);
+        updateAllPositions();
+
+        const firstIndexOffset = state.positions.get(getId(index))!; // || calculateOffsetForIndex(index);
+
+        console.log("scrolling to", firstIndexOffset);
+
         const isLast = index === state.data.length - 1;
         if (isLast && viewPosition !== undefined) {
             viewPosition = 1;
@@ -502,7 +521,40 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return false;
     }, []);
 
-    const calculateItemsInView = useCallback((isNewData?: boolean) => {
+    const requestAdjust = (positionDiff: number) => {
+        if (Math.abs(positionDiff) > 0.1) {
+            const state = refState.current!;
+            console.log("requesting adjust", positionDiff);
+            state.scrollAdjustHandler.requestAdjust(positionDiff);
+            state.scroll += positionDiff;
+            state.scrollForNextCalculateItemsInView = undefined;
+
+            if (peek$(ctx, "containersDidLayout")) {
+                // Calculate a threshold to ignore scroll jumps for a short period of time
+                // This is to avoid the case where a scroll event comes in that was relevant from before
+                // the requestAdjust. So we ignore scroll events that are closer to the previous
+                // scroll position than the target position.
+                const threshold = state.scroll - positionDiff / 2;
+                if (!state.ignoreScrollFromMVCP) {
+                    state.ignoreScrollFromMVCP = {};
+                }
+                if (positionDiff > 0) {
+                    state.ignoreScrollFromMVCP.lt = threshold;
+                } else {
+                    state.ignoreScrollFromMVCP.gt = threshold;
+                }
+
+                if (state.ignoreScrollFromMVCPTimeout) {
+                    clearTimeout(state.ignoreScrollFromMVCPTimeout);
+                }
+                state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
+                    state.ignoreScrollFromMVCP = undefined;
+                }, 100);
+            }
+        }
+    };
+
+    const calculateItemsInView = useCallback((params: { isNewData?: boolean; didMvcp?: boolean } = {}) => {
         const state = refState.current!;
         const {
             data,
@@ -520,11 +572,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
-        let scrollState = state.scroll;
+        const { isNewData, didMvcp } = params;
 
         // TODO: This should only run if a size changed or items changed
         // Handle maintainVisibleContentPosition adjustment early
-        if (maintainVisibleContentPosition && state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
+        if (
+            !didMvcp &&
+            maintainVisibleContentPosition &&
+            state.idsInView.length > 0 &&
+            peek$(ctx, "containersDidLayout")
+        ) {
             const indexByKey = state.indexByKey;
             const firstIdInView = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
 
@@ -558,34 +615,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                         const positionDiff = newPosition - prevPosition;
                         if (Math.abs(positionDiff) > 0.1) {
-                            console.log("requesting adjust", positionDiff);
-                            state.scrollAdjustHandler.requestAdjust(positionDiff);
-                            state.scroll += positionDiff;
-                            scrollState = state.scroll;
-                            state.scrollForNextCalculateItemsInView = undefined;
-
-                            if (peek$(ctx, "containersDidLayout")) {
-                                // Calculate a threshold to ignore scroll jumps for a short period of time
-                                // This is to avoid the case where a scroll event comes in that was relevant from before
-                                // the requestAdjust. So we ignore scroll events that are closer to the previous
-                                // scroll position than the target position.
-                                const threshold = scrollState - positionDiff / 2;
-                                if (!state.ignoreScrollFromMVCP) {
-                                    state.ignoreScrollFromMVCP = {};
-                                }
-                                if (positionDiff > 0) {
-                                    state.ignoreScrollFromMVCP.lt = threshold;
-                                } else {
-                                    state.ignoreScrollFromMVCP.gt = threshold;
-                                }
-
-                                if (state.ignoreScrollFromMVCPTimeout) {
-                                    clearTimeout(state.ignoreScrollFromMVCPTimeout);
-                                }
-                                state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
-                                    state.ignoreScrollFromMVCP = undefined;
-                                }, 100);
-                            }
+                            console.log("from calc", positionDiff);
+                            requestAdjust(positionDiff);
                         }
                     }
                 }
@@ -597,6 +628,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             positions.clear();
         }
 
+        let scrollState = state.scroll;
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
@@ -796,6 +828,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             endBuffered,
             endNoBuffer,
             idsInView,
+            firstFullyOnScreenIndex,
         });
 
         // Precompute the scroll that will be needed for the range to change
@@ -1006,7 +1039,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const state = refState.current!;
         const { animated } = params;
 
+        debugger;
+
         const offset = calculateOffsetWithOffsetPosition(params.offset, params);
+
+        console.log("scrollTo", offset);
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
         state.scrollAdjustHandler.setDisableAdjust(true);
@@ -1149,7 +1186,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                 }
 
-                calculateItemsInView(/*isNewData*/ true);
+                calculateItemsInView({ isNewData: true });
 
                 const didMaintainScrollAtEnd = doMaintainScrollAtEnd(false);
 
@@ -1401,7 +1438,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // }
 
             // 2. Update the positions with the new data
-            calculateItemsInView(/*isNewData*/ true);
+            calculateItemsInView({ isNewData: true });
 
             // // 3. Find the first of the ids that was previously on screen that's still in the array
             // const indexByKey = state.indexByKey;
@@ -1556,6 +1593,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 return;
             }
 
+            let didMvcp = false;
             const index = indexByKey.get(itemKey)!;
             const numColumns = peek$(ctx, "numColumns");
 
@@ -1623,14 +1661,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 state.scrollForNextCalculateItemsInView = undefined;
 
                 addTotalSize(itemKey, diff);
-                if (maintainVisibleContentPosition) {
-                    calculateItemsInView();
-                    needsCalculate = false;
-                }
 
-                // Maintain scroll at end if this item has already rendered and is changing by more than 5px
-                // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
                 if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
+                    // Maintain scroll at end if this item has already rendered and is changing by more than 5px
+                    // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
                     doMaintainScrollAtEnd(false); // *animated*/ index === data.length - 1);
                 }
 
@@ -1642,6 +1676,22 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         itemKey,
                         itemData: data[index],
                     });
+                }
+
+                if (itemKey !== undefined && index <= (state.scrollingTo?.index ?? state.firstFullyOnScreenIndex)) {
+                    // if (diff) {
+                    //     debugger;
+                    // }
+                    // TODO: Problem is that it's not updating the positions I think
+                    console.log("from size", itemKey);
+                    requestAdjust(diff);
+                    updateAllPositions();
+                    // state.positions.clear();
+                    // debugger;
+                    calculateItemsInView({ didMvcp: true });
+                    didMvcp = true;
+                } else {
+                    console.log("not from size", index, state.firstFullyOnScreenIndex);
                 }
             }
 
@@ -1666,8 +1716,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
 
             if (
-                needsUpdateContainersDidLayout ||
-                (!fromFixGaps && needsCalculate && (isInView || !queuedInitialLayout))
+                !didMvcp &&
+                (needsUpdateContainersDidLayout ||
+                    (!fromFixGaps && needsCalculate && (isInView || !queuedInitialLayout)))
             ) {
                 const scrollVelocity = state.scrollVelocity;
                 let didCalculate = false;
@@ -1689,12 +1740,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         if (!state.queuedCalculateItemsInView) {
                             state.queuedCalculateItemsInView = requestAnimationFrame(() => {
                                 state.queuedCalculateItemsInView = undefined;
-                                calculateItemsInView();
+                                calculateItemsInView({ didMvcp });
                             });
                         }
                     } else {
                         // Otherwise this action is likely from a single item changing so it should run immediately
-                        calculateItemsInView();
+                        calculateItemsInView({ didMvcp });
                         didCalculate = true;
                     }
                 }
@@ -1799,15 +1850,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // Ignore scroll events that are too close to the previous scroll position
             // after adjusting for MVCP
             const ignoreScrollFromMVCP = state.ignoreScrollFromMVCP;
-            if (ignoreScrollFromMVCP) {
+            if (ignoreScrollFromMVCP && !state.scrollingTo) {
                 const { lt, gt } = ignoreScrollFromMVCP;
                 if ((lt && newScroll < lt) || (gt && newScroll > gt)) {
+                    console.log("ignore mcp scroll", newScroll);
                     return;
                 }
             }
 
             state.scrollPending = newScroll;
 
+            // console.log("handleScroll", newScroll);
             updateScroll(newScroll);
 
             state.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
@@ -1819,9 +1872,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const state = refState.current!;
         const scrollingTo = state.scrollingTo;
 
-        if (scrollingTo !== undefined && Math.abs(newScroll - scrollingTo.offset) < 10) {
-            finishScrollTo();
-        }
+        // if (scrollingTo !== undefined && Math.abs(newScroll - scrollingTo.offset) < 10) {
+        //     finishScrollTo();
+        // }
 
         state.hasScrolled = true;
         state.lastBatchingAction = Date.now();
@@ -1977,21 +2030,21 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 handleScroll={handleScroll}
                 onMomentumScrollEnd={(event) => {
                     const scrollingTo = refState.current?.scrollingTo;
-                    if (scrollingTo !== undefined) {
-                        // If we are scrolling to an offset, its position may have changed during the scroll
-                        // if the actual sizes are different from the estimated sizes
-                        // So do another scroll to the same offset to make sure it's in the correct position
+                    // if (scrollingTo !== undefined) {
+                    //     // If we are scrolling to an offset, its position may have changed during the scroll
+                    //     // if the actual sizes are different from the estimated sizes
+                    //     // So do another scroll to the same offset to make sure it's in the correct position
 
-                        // Android doesn't scroll correctly if called in onMomentumScrollEnd
-                        // so do the scroll in a requestAnimationFrame
-                        requestAnimationFrame(() => {
-                            scrollTo({ ...scrollingTo, animated: false });
-                            refState.current!.scrollingTo = undefined;
-                            requestAnimationFrame(() => {
-                                refState.current!.scrollAdjustHandler.setDisableAdjust(false);
-                            });
-                        });
-                    }
+                    //     // Android doesn't scroll correctly if called in onMomentumScrollEnd
+                    //     // so do the scroll in a requestAnimationFrame
+                    //     requestAnimationFrame(() => {
+                    //         scrollTo({ ...scrollingTo, animated: false });
+                    //         refState.current!.scrollingTo = undefined;
+                    //         requestAnimationFrame(() => {
+                    //             refState.current!.scrollAdjustHandler.setDisableAdjust(false);
+                    //         });
+                    //     });
+                    // }
 
                     const wasPaused = refState.current!.scrollAdjustHandler.unPauseAdjust();
                     if (wasPaused) {
