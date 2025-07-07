@@ -339,7 +339,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         console.log("scrolling to", firstIndexOffset);
 
         const isLast = index === state.data.length - 1;
-        if (isLast && viewPosition !== undefined) {
+        if (isLast && viewPosition === undefined) {
             viewPosition = 1;
         }
         const firstIndexScrollPostion = firstIndexOffset - viewOffset;
@@ -1681,9 +1681,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 if (
                     itemKey !== undefined &&
                     (state.scrollingTo?.index !== undefined
-                        ? index < state.scrollingTo?.index
+                        ? (state.scrollingTo.viewPosition || 0) > 0
+                            ? index <= state.scrollingTo?.index
+                            : index < state.scrollingTo?.index
                         : index <= state.firstFullyOnScreenIndex)
                 ) {
+                    if (state.scrollingTo?.viewPosition && index === state.scrollingTo?.index) {
+                        diff *= state.scrollingTo.viewPosition;
+                    }
                     // if (diff) {
                     //     debugger;
                     // }
@@ -2002,7 +2007,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     if (index !== -1) {
                         const paddingBottom = stylePaddingBottom || 0;
                         const footerSize = peek$(ctx, "footerSize") || 0;
-                        scrollToIndex({ index, viewPosition: 1, viewOffset: -paddingBottom - footerSize, ...options });
+                        scrollToIndex({
+                            index,
+                            viewPosition: 1,
+                            viewOffset: -paddingBottom - footerSize,
+                            ...options,
+                        });
                     }
                 },
             };
