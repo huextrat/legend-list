@@ -589,7 +589,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                                 // the requestAdjust. So we ignore scroll events that are closer to the previous
                                 // scroll position than the target position.
                                 const threshold = scrollState - positionDiff / 2;
-                                state.ignoreScrollFromMVCP = positionDiff > 0 ? { lt: threshold } : { gt: threshold };
+                                if (!state.ignoreScrollFromMVCP) {
+                                    state.ignoreScrollFromMVCP = {};
+                                }
+                                if (positionDiff > 0) {
+                                    state.ignoreScrollFromMVCP.lt = threshold;
+                                } else {
+                                    state.ignoreScrollFromMVCP.gt = threshold;
+                                }
 
                                 if (state.ignoreScrollFromMVCPTimeout) {
                                     clearTimeout(state.ignoreScrollFromMVCPTimeout);
