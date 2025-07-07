@@ -311,7 +311,6 @@ export interface InternalState {
     scrollAdjustHandler: ScrollAdjustHandler;
     maintainingScrollAtEnd?: boolean;
     totalSize: number;
-    totalSizeBelowAnchor: number;
     otherAxisSize?: number;
     timeouts: Set<number>;
     timeoutSizeMessage: any;

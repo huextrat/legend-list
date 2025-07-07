@@ -269,7 +269,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             endNoBuffer: -1,
             scroll: initialContentOffset || 0,
             totalSize: 0,
-            totalSizeBelowAnchor: 0,
             timeouts: new Set(),
             viewabilityConfigCallbackPairs: undefined as never,
             renderItem: undefined as never,
@@ -377,7 +376,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const addTotalSize = useCallback((key: string | null, add: number, totalSizeBelowAnchor: number) => {
+    const addTotalSize = useCallback((key: string | null, add: number) => {
         const state = refState.current!;
         const { indexByKey } = state;
         const index = key === null ? 0 : indexByKey.get(key)!;
@@ -387,12 +386,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
         if (key === null) {
             state.totalSize = add;
-            state.totalSizeBelowAnchor = totalSizeBelowAnchor;
         } else {
             state.totalSize += add;
-            if (isAboveAnchor) {
-                state.totalSizeBelowAnchor! += add;
-            }
         }
 
         set$(ctx, "totalSize", state.totalSize);
@@ -1207,7 +1202,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const calcTotalSizesAndPositions = ({ forgetPositions = false }) => {
         const state = refState.current;
         let totalSize = 0;
-        const totalSizeBelowIndex = 0;
         const indexByKey = new Map();
         const newPositions = new Map();
         let column = 1;
@@ -1294,7 +1288,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         requestAnimationFrame(() => {
             state.ignoreScrollFromCalcTotal = false;
         });
-        addTotalSize(null, totalSize, totalSizeBelowIndex);
+        addTotalSize(null, totalSize);
     };
 
     const findAvailableContainers = (numNeeded: number, startBuffered: number, endBuffered: number): number[] => {
@@ -1663,7 +1657,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 // precomputed scroll range invalid
                 state.scrollForNextCalculateItemsInView = undefined;
 
-                addTotalSize(itemKey, diff, 0);
+                addTotalSize(itemKey, diff);
                 if (maintainVisibleContentPosition) {
                     calculateItemsInView();
                     needsCalculate = false;
