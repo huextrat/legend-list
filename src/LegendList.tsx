@@ -418,25 +418,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return rowHeight;
     };
 
-    const disableScrollJumps = (timeout: number) => {
-        const state = refState.current!;
-
-        // Don't disable scroll jumps if we're not scrolling to an offset
-        // Resetting containers can cause a jump, so we don't want to disable scroll jumps in that case
-        if (state.scrollingTo === undefined) {
-            state.disableScrollJumpsFrom = state.scroll;
-            state.scrollHistory.length = 0;
-
-            setTimeout(() => {
-                state.disableScrollJumpsFrom = undefined;
-                if (state.scrollPending !== undefined && state.scrollPending !== state.scroll) {
-                    // TODO: Remove all this?
-                    // updateScroll(state.scrollPending);
-                }
-            }, timeout);
-        }
-    };
-
     const fixGaps = useCallback(() => {
         const state = refState.current!;
         const { data, scrollLength, positions, startBuffered, endBuffered } = state!;
@@ -624,7 +605,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Don't use averages when disabling scroll jumps because adding items to the top of the list
         // causes jumpiness if using averages
         // TODO Figure out why using average caused jumpiness, maybe we can fix it a better way
-        const useAverageSize = !state.disableScrollJumpsFrom && speed >= 0 && peek$(ctx, "containersDidLayout");
+        const useAverageSize = false; // speed >= 0 && peek$(ctx, "containersDidLayout");
 
         // If this is before the initial layout, and we have an initialScrollIndex,
         // then ignore the actual scroll which might be shifting due to scrollAdjustHandler
@@ -819,12 +800,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // Precompute the scroll that will be needed for the range to change
         // so it can be skipped if not needed
-        if (
-            state.enableScrollForNextCalculateItemsInView &&
-            nextTop !== undefined &&
-            nextBottom !== undefined &&
-            state.disableScrollJumpsFrom === undefined
-        ) {
+        if (state.enableScrollForNextCalculateItemsInView && nextTop !== undefined && nextBottom !== undefined) {
             state.scrollForNextCalculateItemsInView =
                 nextTop !== undefined && nextBottom !== undefined
                     ? {
@@ -1060,8 +1036,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 state.scroll = 0;
             }
 
-            state.disableScrollJumpsFrom = undefined;
-
             requestAnimationFrame(() => {
                 state.maintainingScrollAtEnd = true;
                 refScroller.current?.scrollToEnd({
@@ -1163,16 +1137,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             state.data = dataProp;
 
             if (!isFirst) {
-                // Disable scroll jumps if the scroll has jumped by the same amount as the total size
-                const totalSizeBefore = state.previousTotalSize;
-                const totalSizeAfter = state.totalSize;
-                const scrollDiff = state.scroll - state.scrollPrev;
-                const sizeDiff = totalSizeAfter - totalSizeBefore!;
-
-                if (Math.abs(scrollDiff - sizeDiff) < 10) {
-                    disableScrollJumps(1000);
-                }
-
                 // Reset containers that aren't used anymore because the data has changed
                 const numContainers = peek$(ctx, "numContainers");
                 for (let i = 0; i < numContainers; i++) {
@@ -1857,18 +1821,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         if (scrollingTo !== undefined && Math.abs(newScroll - scrollingTo.offset) < 10) {
             finishScrollTo();
-        }
-
-        if (state.disableScrollJumpsFrom !== undefined) {
-            // If the scroll is too far from the disableScrollJumpsFrom position, don't update the scroll position
-            // This is to prevent jumpiness when adding items to the top of the list
-            const scrollMinusAdjust = newScroll;
-            if (Math.abs(scrollMinusAdjust - state.disableScrollJumpsFrom) > 200) {
-                return;
-            }
-
-            // If it's close enough, we're past the jumpiness period so reset the disableScrollJumpsFrom position
-            state.disableScrollJumpsFrom = undefined;
         }
 
         state.hasScrolled = true;

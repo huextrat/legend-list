@@ -332,7 +332,6 @@ export interface InternalState {
     lastBatchingAction: number;
     ignoreScrollFromMVCP?: { lt?: number; gt?: number };
     ignoreScrollFromMVCPTimeout?: any;
-    disableScrollJumpsFrom?: number;
     scrollingTo?:
         | { offset: number; index?: number; viewOffset?: number; viewPosition?: number; animated?: boolean }
         | undefined;
