@@ -597,12 +597,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             state.scrollForNextCalculateItemsInView = undefined;
 
                             if (peek$(ctx, "containersDidLayout")) {
-                                state.ignoreScrollFromMVCP = true;
+                                // Calculate a threshold to ignore scroll jumps for a short period of time
+                                // This is to avoid the case where a scroll event comes in that was relevant from before
+                                // the requestAdjust. So we ignore scroll events that are closer to the previous
+                                // scroll position than the target position.
+                                const threshold = scrollState - positionDiff / 2;
+                                state.ignoreScrollFromMVCP = positionDiff > 0 ? { lt: threshold } : { gt: threshold };
+
                                 if (state.ignoreScrollFromMVCPTimeout) {
                                     clearTimeout(state.ignoreScrollFromMVCPTimeout);
                                 }
                                 state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
-                                    state.ignoreScrollFromMVCP = false;
+                                    state.ignoreScrollFromMVCP = undefined;
                                 }, 100);
                             }
                         }
@@ -1663,6 +1669,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 addTotalSize(itemKey, diff, 0);
                 if (maintainVisibleContentPosition) {
                     calculateItemsInView();
+                    needsCalculate = false;
                 }
 
                 // Maintain scroll at end if this item has already rendered and is changing by more than 5px
@@ -1831,10 +1838,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 return;
             }
             const state = refState.current!;
-            if (state.ignoreScrollFromMVCP) {
-                return;
-            }
             const newScroll = event.nativeEvent.contentOffset[horizontal ? "x" : "y"];
+
+            // Ignore scroll events that are too close to the previous scroll position
+            // after adjusting for MVCP
+            const ignoreScrollFromMVCP = state.ignoreScrollFromMVCP;
+            if (ignoreScrollFromMVCP) {
+                const { lt, gt } = ignoreScrollFromMVCP;
+                if ((lt && newScroll < lt) || (gt && newScroll > gt)) {
+                    return;
+                }
+            }
+
             state.scrollPending = newScroll;
             if (state.ignoreScrollFromCalcTotal && newScroll !== 0) {
                 // Ignore scroll from calcTotal unless it's scrolling to 0
