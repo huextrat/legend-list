@@ -1678,7 +1678,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     });
                 }
 
-                if (itemKey !== undefined && index <= (state.scrollingTo?.index ?? state.firstFullyOnScreenIndex)) {
+                if (
+                    itemKey !== undefined &&
+                    (state.scrollingTo?.index !== undefined
+                        ? index < state.scrollingTo?.index
+                        : index <= state.firstFullyOnScreenIndex)
+                ) {
                     // if (diff) {
                     //     debugger;
                     // }
