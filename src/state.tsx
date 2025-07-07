@@ -30,7 +30,6 @@ export type ListenerType =
     | "numColumns"
     | "lastItemKeys"
     | "totalSize"
-    | "totalSizeWithScrollAdjust"
     | "paddingTop"
     | "alignItemsPaddingTop"
     | "stylePaddingTop"
@@ -51,7 +50,6 @@ export type ListenerTypeValueMap = {
     numColumns: number;
     lastItemKeys: string[];
     totalSize: number;
-    totalSizeWithScrollAdjust: number;
     paddingTop: number;
     alignItemsPaddingTop: number;
     stylePaddingTop: number;

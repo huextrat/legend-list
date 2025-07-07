@@ -395,10 +395,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        const resultSize = state.totalSize;
-
         set$(ctx, "totalSize", state.totalSize);
-        set$(ctx, "totalSizeWithScrollAdjust", resultSize);
 
         if (alignItemsAtEnd) {
             updateAlignItemsPaddingTop();
@@ -543,7 +540,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             return;
         }
 
-        const totalSize = peek$(ctx, "totalSizeWithScrollAdjust");
+        const totalSize = peek$(ctx, "totalSize");
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
@@ -973,11 +970,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 // scroll itself because the height reduced.
                 // First add the padding to the total size so that the total height in the ScrollView
                 // doesn't change
-                const prevTotalSize = peek$(ctx, "totalSizeWithScrollAdjust") || 0;
-                set$(ctx, "totalSizeWithScrollAdjust", prevTotalSize + prevStylePaddingTop);
+                const prevTotalSize = peek$(ctx, "totalSize") || 0;
+                set$(ctx, "totalSize", prevTotalSize + prevStylePaddingTop);
                 setTimeout(() => {
                     // Then reset it back to how it was
-                    set$(ctx, "totalSizeWithScrollAdjust", prevTotalSize);
+                    set$(ctx, "totalSize", prevTotalSize);
                 }, 16);
             }
 

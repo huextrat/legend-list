@@ -13,23 +13,15 @@ const DebugRow = ({ children }: React.PropsWithChildren) => {
 export const DebugView = React.memo(function DebugView({ state }: { state: InternalState }) {
     const ctx = useStateContext();
 
-    const [
-        totalSize = 0,
-        totalSizeWithScrollAdjust = 0,
-        scrollAdjust = 0,
-        rawScroll = 0,
-        scroll = 0,
-        numContainers = 0,
-        numContainersPooled = 0,
-    ] = useArr$([
-        "totalSize",
-        "totalSizeWithScrollAdjust",
-        "scrollAdjust",
-        "debugRawScroll",
-        "debugComputedScroll",
-        "numContainers",
-        "numContainersPooled",
-    ]);
+    const [totalSize = 0, scrollAdjust = 0, rawScroll = 0, scroll = 0, numContainers = 0, numContainersPooled = 0] =
+        useArr$([
+            "totalSize",
+            "scrollAdjust",
+            "debugRawScroll",
+            "debugComputedScroll",
+            "numContainers",
+            "numContainersPooled",
+        ]);
 
     const contentSize = getContentSize(ctx);
     const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -69,10 +61,6 @@ export const DebugView = React.memo(function DebugView({ state }: { state: Inter
             <DebugRow>
                 <Text>ScrollAdjust:</Text>
                 <Text>{scrollAdjust.toFixed(2)}</Text>
-            </DebugRow>
-            <DebugRow>
-                <Text>TotalSizeReal: </Text>
-                <Text>{totalSizeWithScrollAdjust.toFixed(2)}</Text>
             </DebugRow>
             <Text />
             <DebugRow>

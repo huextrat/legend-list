@@ -26,7 +26,7 @@ export const Containers = typedMemo(function Containers<ItemT>({
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
     const [numContainers, numColumns] = useArr$(["numContainersPooled", "numColumns"]);
-    const animSize = useValue$("totalSizeWithScrollAdjust", {
+    const animSize = useValue$("totalSize", {
         // Use a microtask if increasing the size significantly, otherwise use a timeout
         delay: (value, prevValue) => (!prevValue || value - prevValue > 20 ? 0 : 200),
     });
