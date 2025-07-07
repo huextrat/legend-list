@@ -295,6 +295,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             lastBatchingAction: Date.now(),
             averageSizes: {},
             onScroll: onScrollProp,
+            idsInView: [],
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
@@ -527,7 +528,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return false;
     }, []);
 
-    const calculateItemsInView = useCallback((isReset?: boolean) => {
+    const calculateItemsInView = useCallback((isNewData?: boolean) => {
         const state = refState.current!;
         const {
             data,
@@ -535,7 +536,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             startBufferedId: startBufferedIdOrig,
             positions,
             columns,
-            scrollAdjustHandler,
             scrollVelocity: speed,
         } = state!;
         if (!data || scrollLength === 0) {
@@ -548,43 +548,55 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const previousScrollAdjust = 0;
         let scrollState = state.scroll;
 
+        // TODO: This should only run if a size changed or items changed
         // Handle maintainVisibleContentPosition adjustment early
-        if (
-            maintainVisibleContentPosition &&
-            state.startNoBuffer !== undefined &&
-            state.startNoBuffer !== -1 &&
-            peek$(ctx, "containersDidLayout")
-        ) {
-            const prevStartNoBufferKey = getId(state.startNoBuffer);
-            const prevStartNoBufferPosition = positions.get(prevStartNoBufferKey);
+        if (maintainVisibleContentPosition && state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
+            const indexByKey = state.indexByKey;
+            const firstIdInView = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
+            // const firstIdInView = state.idsInView[firstIdInViewIndex];
 
-            // TODO: Feels like there's some duplication here, and we're calculating up from 0.
-            // Should be able to optimize this using similar logic as farther down in this function
-            // or even mixed in. But for now it works.
-            if (prevStartNoBufferPosition !== undefined) {
-                // Calculate what the new position would be based on current sizes
-                let newStartNoBufferPosition = 0;
-                let column = 1;
-                let maxSizeInRow = 0;
+            if (firstIdInView !== undefined) {
+                const firstIdInViewIndex = indexByKey.get(firstIdInView!);
+                if (firstIdInViewIndex !== undefined) {
+                    // const prevStartNoBufferKey = getId(state.startNoBuffer);
+                    const prevPosition = positions.get(firstIdInView);
 
-                for (let i = 0; i < state.startNoBuffer; i++) {
-                    const id = getId(i);
-                    const size = getItemSize(id, i, data[i]);
-                    maxSizeInRow = Math.max(maxSizeInRow, size);
+                    if (prevPosition !== undefined) {
+                        // TODO: Feels like there's some duplication here, and we're calculating up from 0.
+                        // Should be able to optimize this using similar logic as farther down in this function
+                        // or even mixed in. But for now it works.
+                        // Calculate what the new position would be based on current sizes
+                        let newPosition = 0;
+                        let column = 1;
+                        let maxSizeInRow = 0;
 
-                    column++;
-                    if (column > numColumns) {
-                        newStartNoBufferPosition += maxSizeInRow;
-                        column = 1;
-                        maxSizeInRow = 0;
+                        for (let i = 0; i < firstIdInViewIndex; i++) {
+                            const id = getId(i);
+                            const size = getItemSize(id, i, data[i]);
+                            maxSizeInRow = Math.max(maxSizeInRow, size);
+
+                            column++;
+                            if (column > numColumns) {
+                                newPosition += maxSizeInRow;
+                                column = 1;
+                                maxSizeInRow = 0;
+                            }
+                        }
+
+                        if (isNewData) {
+                            // Need to clear all positions?
+                            debugger;
+                            positions.clear();
+                        }
+
+                        const positionDiff = newPosition - prevPosition;
+                        if (Math.abs(positionDiff) > 0.1) {
+                            state.scrollAdjustHandler.requestAdjust(positionDiff);
+                            state.scroll += positionDiff;
+                            scrollState = state.scroll;
+                            state.scrollForNextCalculateItemsInView = undefined;
+                        }
                     }
-                }
-
-                const positionDiff = newStartNoBufferPosition - prevStartNoBufferPosition;
-                if (Math.abs(positionDiff) > 0.1) {
-                    state.scrollAdjustHandler.requestAdjust(positionDiff);
-                    state.scroll += positionDiff;
-                    scrollState = state.scroll;
                 }
             }
         }
@@ -670,6 +682,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = loopStart; i >= 0; i--) {
             const id = getId(i)!;
             const top = positions.get(id)! ?? runningTop;
+            loopStart = i;
 
             if (top !== undefined) {
                 const size = getItemSize(id, i, data[i], useAverageSize);
@@ -768,12 +781,23 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
+        const idsInView: string[] = [];
+        for (let i = startNoBuffer!; i <= endNoBuffer!; i++) {
+            const id = getId(i)!;
+            idsInView.push(id);
+        }
+
+        if (startNoBuffer == null || endNoBuffer == null) {
+            debugger;
+        }
+
         Object.assign(state, {
             startBuffered,
             startBufferedId,
             startNoBuffer,
             endBuffered,
             endNoBuffer,
+            idsInView,
         });
 
         // Precompute the scroll that will be needed for the range to change
@@ -1148,7 +1172,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     state.positions.clear();
                 }
 
-                calculateItemsInView(/*isReset*/ true);
+                calculateItemsInView();
 
                 const didMaintainScrollAtEnd = doMaintainScrollAtEnd(false);
 
@@ -1197,40 +1221,42 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
         state.indexByKey = indexByKey;
-        state.positions = newPositions;
+        // state.positions = newPositions;
 
-        if (!forgetPositions && !isFirst) {
-            // check if anchorElement is still in the list
-            let didChange = false;
-            if (maintainVisibleContentPosition) {
-                // anchorElement functionality removed
-                if (dataProp.length) {
-                    // Keep startBufferedId if it's still in the list
-                    if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
-                        state.startBufferedId = getId(0);
-                        didChange = true;
-                    }
-                } else {
-                    state.startBufferedId = undefined;
-                }
-            } else if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
-                // if maintainVisibleContentPosition not used, reset startBufferedId if it's not in the list
-                if (dataProp.length) {
-                    state.startBufferedId = getId(0);
-                } else {
-                    state.startBufferedId = undefined;
-                }
-                didChange = true;
-            }
+        // if (!forgetPositions && !isFirst) {
+        //     let didChange = false;
+        //     // TODO Can all of this be removed?
+        //     if (maintainVisibleContentPosition) {
+        //         // anchorElement functionality removed
+        //         if (dataProp.length) {
+        //             // Keep startBufferedId if it's still in the list
+        //             if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
+        //                 state.startBufferedId = getId(0);
+        //                 didChange = true;
+        //             }
+        //         } else {
+        //             state.startBufferedId = undefined;
+        //         }
+        //     } else if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
+        //         // if maintainVisibleContentPosition not used, reset startBufferedId if it's not in the list
+        //         if (dataProp.length) {
+        //             state.startBufferedId = getId(0);
+        //         } else {
+        //             state.startBufferedId = undefined;
+        //         }
+        //         didChange = true;
+        //     }
 
-            if (didChange) {
-                // schedule rerender
-                setTimeout(() => {
-                    calculateItemsInView(/*reset*/ true);
-                }, 0);
-            }
-        }
+        //     if (didChange) {
+        //         // schedule rerender
+        //         setTimeout(() => {
+        //             calculateItemsInView(/*reset*/ true);
+        //         }, 0);
+        //     }
+        // }
 
+        // TODO: If getEstimatedItemSize is not provided we can just multiply
+        // length by the estimatedItemSize
         for (let i = 0; i < dataProp.length; i++) {
             const key = getId(i);
 
@@ -1387,6 +1413,42 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         calcTotalSizesAndPositions({ forgetPositions: false });
     }
 
+    useLayoutEffect(() => {
+        if (maintainVisibleContentPosition && !isFirst) {
+            // const state = refState.current!;
+            // const idsInView = state.idsInView;
+            // const positions = state.positions;
+
+            // // 1. Get the old positions
+            // const oldPositions = new Map<string, number>();
+            // for (const id of idsInView) {
+            //     const index = state.indexByKey.get(id)!;
+            //     const size = getItemSize(id, index, dataProp[index]);
+            //     oldPositions.set(id, size);
+            // }
+
+            // 2. Update the positions with the new data
+            calculateItemsInView(/*isNewData*/ true);
+
+            // // 3. Find the first of the ids that was previously on screen that's still in the array
+            // const indexByKey = state.indexByKey;
+            // const firstIdInView = idsInView.find((id) => indexByKey.get(id) !== undefined);
+
+            // // 4. Calculate the diff of its new position - old position
+            // if (firstIdInView) {
+            //     const oldPosition = oldPositions.get(firstIdInView)!;
+            //     const newPosition = positions.get(firstIdInView)!;
+            //     const diff = newPosition - oldPosition;
+
+            //     // 5. Adjust the scroll by that amount
+            //     state.scrollAdjustHandler.requestAdjust(diff);
+            // }
+
+            // // 5. Calculate items in view
+            // calculateItemsInView();
+        }
+    }, [dataProp]);
+
     useEffect(() => {
         if (initialScroll && ListHeaderComponent) {
             // Once we get a headerSize we need to fix the initial scroll offset
@@ -1478,10 +1540,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (initialScroll) {
                 requestAnimationFrame(() => {
                     // immediate render causes issues with initial index position
-                    calculateItemsInView(/*isReset*/ true);
+                    calculateItemsInView();
                 });
             } else {
-                calculateItemsInView(/*isReset*/ true);
+                calculateItemsInView();
             }
 
             return true;
