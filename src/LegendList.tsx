@@ -741,6 +741,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
+        let firstFullyOnScreenIndex: number | undefined;
+
         // scan data forwards
         // Continue until we've found the end and we've updated positions of all items that were previously in view
         for (let i = Math.max(0, loopStart); i < data!.length && (!foundEnd || i <= maxIndexRendered); i++) {
@@ -764,6 +766,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (!foundEnd) {
                 if (startNoBuffer === null && top + size > scroll) {
                     startNoBuffer = i;
+                }
+                if (firstFullyOnScreenIndex === undefined && top >= scroll) {
+                    firstFullyOnScreenIndex = i;
                 }
                 if (startBuffered === null && top + size > scrollTopBuffered) {
                     startBuffered = i;
@@ -792,13 +797,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         const idsInView: string[] = [];
-        for (let i = startNoBuffer!; i <= endNoBuffer!; i++) {
+        for (let i = firstFullyOnScreenIndex!; i <= endNoBuffer!; i++) {
             const id = getId(i)!;
             idsInView.push(id);
-        }
-
-        if (startNoBuffer == null || endNoBuffer == null) {
-            debugger;
         }
 
         Object.assign(state, {
