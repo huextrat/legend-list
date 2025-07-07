@@ -575,11 +575,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             }
                         }
 
-                        if (isNewData) {
-                            // Need to clear all positions?
-                            positions.clear();
-                        }
-
                         const positionDiff = newPosition - prevPosition;
                         if (Math.abs(positionDiff) > 0.1) {
                             console.log("requesting adjust", positionDiff);
@@ -608,6 +603,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             }
         }
+
+        if (isNewData) {
+            // Need to clear all positions?
+            positions.clear();
+        }
+
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
@@ -1177,11 +1178,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                 }
 
-                if (!keyExtractorProp) {
-                    state.positions.clear();
-                }
-
-                calculateItemsInView();
+                calculateItemsInView(/*isNewData*/ true);
 
                 const didMaintainScrollAtEnd = doMaintainScrollAtEnd(false);
 
