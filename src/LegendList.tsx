@@ -1372,8 +1372,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             refState.current.positions.clear();
         }
 
-        refState.current.previousTotalSize = peek$(ctx, "totalSize");
-
         updateTotalSize({ forgetPositions: false });
     }
 

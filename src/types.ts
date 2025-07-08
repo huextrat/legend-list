@@ -336,7 +336,6 @@ export interface InternalState {
     scrollingTo?:
         | { offset: number; index?: number; viewOffset?: number; viewPosition?: number; animated?: boolean }
         | undefined;
-    previousTotalSize?: number;
     needsOtherAxisSize?: boolean;
     averageSizes: Record<
         string,
