@@ -348,11 +348,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
         const firstIndexScrollPostion = firstIndexOffset - viewOffset;
 
-        // TODO: include checking if destination element position is already known, to avoid unneeded anchor element switches
         state.scrollForNextCalculateItemsInView = undefined;
 
-        // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
-        // Do the scroll
         scrollTo({ offset: firstIndexScrollPostion, animated, index, viewPosition: viewPosition ?? 0, viewOffset });
     };
 
@@ -366,21 +363,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 props.onLoad({ elapsedTimeInMs: Date.now() - refLoadStartTime.current });
             }
         };
-        if (initialScroll) {
-            queueMicrotask(() => {
-                scrollToIndex({ ...initialScroll, animated: false });
-                requestAnimationFrame(() => {
-                    // Old architecture sometimes doesn't scroll to the initial index correctly
-                    if (!IsNewArchitecture) {
-                        scrollToIndex({ ...initialScroll, animated: false });
-                    }
 
-                    setIt();
-                });
-            });
-        } else {
-            queueMicrotask(setIt);
-        }
+        queueMicrotask(setIt);
     };
 
     const addTotalSize = useCallback((key: string | null, add: number) => {
@@ -985,7 +969,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         });
 
         if (!animated) {
-            requestAnimationFrame(finishScrollTo);
+            refState.current!.scroll = offset;
+            // TODO: Should this not be a timeout, and instead wait for all item layouts to settle?
+            // It's used for mvcp for when items change size above scroll.
+            setTimeout(finishScrollTo, 100);
         }
     };
 
@@ -1264,7 +1251,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(initialScrollIndex);
         refState.current!.isStartReached =
             initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
-        refState.current!.scroll = initialContentOffset;
+
+        if (initialContentOffset > 0) {
+            scrollTo({ offset: initialContentOffset, animated: false, index: initialScrollIndex });
+        }
 
         return initialContentOffset;
     }, []);
