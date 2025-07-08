@@ -279,11 +279,6 @@ export type LegendListProps<ItemT> = LegendListPropsBase<
 >;
 
 export interface InternalState {
-    anchorElement?: {
-        id: string;
-        coordinate: number;
-    };
-    rowHeights: Map<number, number>;
     positions: Map<string, number>;
     columns: Map<string, number>;
     sizes: Map<string, number>;

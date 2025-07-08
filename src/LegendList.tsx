@@ -261,7 +261,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             sizesKnown: new Map(),
             timeoutSizeMessage: 0,
             scrollTimer: undefined,
-            rowHeights: new Map(),
             startReachedBlockedByTimer: false,
             endReachedBlockedByTimer: false,
             scrollForNextCalculateItemsInView: undefined,
@@ -381,27 +380,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             updateAlignItemsPaddingTop();
         }
     }, []);
-
-    const getRowHeight = (n: number): number => {
-        const { rowHeights, data } = refState.current!;
-        const numColumns = peek$(ctx, "numColumns");
-        if (numColumns === 1) {
-            const id = getId(n);
-            return getItemSize(id, n, data[n]);
-        }
-        if (rowHeights.has(n)) {
-            return rowHeights.get(n) || 0;
-        }
-        let rowHeight = 0;
-        const startEl = n * numColumns;
-        for (let i = startEl; i < startEl + numColumns && i < data.length; i++) {
-            const id = getId(i);
-            const size = getItemSize(id, i, data[i]);
-            rowHeight = Math.max(rowHeight, size);
-        }
-        rowHeights.set(n, rowHeight);
-        return rowHeight;
-    };
 
     const checkAllSizesKnown = useCallback(() => {
         const { startBuffered, endBuffered, sizesKnown } = refState.current!;
@@ -1322,23 +1300,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const updateItemSize = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
         const state = refState.current!;
-        const {
-            sizes,
-            indexByKey,
-            sizesKnown,
-            data,
-            rowHeights,
-            startBuffered,
-            endBuffered,
-            averageSizes,
-            queuedInitialLayout,
-        } = state;
+        const { sizes, indexByKey, sizesKnown, data, startBuffered, endBuffered, averageSizes } = state;
         if (!data) {
             return;
         }
 
         const index = indexByKey.get(itemKey)!;
-        const numColumns = peek$(ctx, "numColumns");
 
         state.scrollForNextCalculateItemsInView = undefined;
         state.minIndexSizeChanged =
@@ -1364,20 +1331,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         averages.num++;
 
         if (!prevSize || Math.abs(prevSize - size) > 0.1) {
-            let diff: number;
-
-            if (numColumns > 1) {
-                const rowNumber = Math.floor(index / numColumnsProp);
-                const prevSizeInRow = getRowHeight(rowNumber);
-                sizes.set(itemKey, size);
-                rowHeights.delete(rowNumber);
-
-                const sizeInRow = getRowHeight(rowNumber);
-                diff = sizeInRow - prevSizeInRow;
-            } else {
-                sizes.set(itemKey, size);
-                diff = size - prevSize;
-            }
+            sizes.set(itemKey, size);
+            const diff = size - prevSize;
 
             if (__DEV__ && suggestEstimatedItemSize) {
                 if (state.timeoutSizeMessage) {
@@ -1413,12 +1368,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                       index <= state.firstFullyOnScreenIndex);
 
             if (shouldAdjustItem) {
+                let adjustment = diff;
                 // Apply viewPosition scaling if this is the exact target index
                 if (state.scrollingTo?.viewPosition && index === scrollTarget) {
-                    diff *= state.scrollingTo.viewPosition;
+                    adjustment *= state.scrollingTo.viewPosition;
                 }
                 // Adjust scroll position to maintain visible content position
-                requestAdjust(diff);
+                requestAdjust(adjustment);
             }
 
             // We can skip calculating items in view if they have already gone out of view. This can happen on slow
