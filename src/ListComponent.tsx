@@ -39,6 +39,7 @@ interface ListComponentProps<ItemT>
     maintainVisibleContentPosition: boolean;
     renderScrollComponent?: (props: ScrollViewProps) => React.ReactElement<ScrollViewProps>;
     style: ViewStyle;
+    canRender: boolean;
 }
 
 const getComponent = (Component: React.ComponentType<any> | React.ReactElement) => {
@@ -78,6 +79,7 @@ const PaddingDevMode = () => {
 };
 
 export const ListComponent = typedMemo(function ListComponent<ItemT>({
+    canRender,
     style,
     contentContainerStyle,
     horizontal,
@@ -151,14 +153,16 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
             )}
             {ListEmptyComponent && getComponent(ListEmptyComponent)}
 
-            <Containers
-                horizontal={horizontal!}
-                recycleItems={recycleItems!}
-                waitForInitialLayout={waitForInitialLayout}
-                getRenderedItem={getRenderedItem}
-                ItemSeparatorComponent={ItemSeparatorComponent}
-                updateItemSize={updateItemSize}
-            />
+            {canRender && (
+                <Containers
+                    horizontal={horizontal!}
+                    recycleItems={recycleItems!}
+                    waitForInitialLayout={waitForInitialLayout}
+                    getRenderedItem={getRenderedItem}
+                    ItemSeparatorComponent={ItemSeparatorComponent}
+                    updateItemSize={updateItemSize}
+                />
+            )}
             {ListFooterComponent && (
                 <View
                     style={ListFooterComponentStyle}

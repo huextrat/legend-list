@@ -119,6 +119,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const initialScrollIndex = initialScroll?.index;
 
     const refLoadStartTime = useRef<number>(Date.now());
+    const [canRender, setCanRender] = React.useState(!IsNewArchitecture);
 
     const callbacks = useRef({
         onStartReached: rest.onStartReached,
@@ -355,15 +356,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const setDidLayout = () => {
         refState.current!.queuedInitialLayout = true;
         checkAtBottom();
-        const setIt = () => {
-            set$(ctx, "containersDidLayout", true);
 
-            if (props.onLoad) {
-                props.onLoad({ elapsedTimeInMs: Date.now() - refLoadStartTime.current });
-            }
-        };
+        set$(ctx, "containersDidLayout", true);
 
-        queueMicrotask(setIt);
+        if (props.onLoad) {
+            props.onLoad({ elapsedTimeInMs: Date.now() - refLoadStartTime.current });
+        }
     };
 
     const addTotalSize = useCallback((key: string | null, add: number) => {
@@ -399,32 +397,40 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const requestAdjust = (positionDiff: number) => {
         if (Math.abs(positionDiff) > 0.1) {
             const state = refState.current!;
-            state.scrollAdjustHandler.requestAdjust(positionDiff);
+            const doit = () => {
+                state.scrollAdjustHandler.requestAdjust(positionDiff);
+            };
             state.scroll += positionDiff;
             state.scrollForNextCalculateItemsInView = undefined;
 
             if (peek$(ctx, "containersDidLayout")) {
-                // Calculate a threshold to ignore scroll jumps for a short period of time
-                // This is to avoid the case where a scroll event comes in that was relevant from before
-                // the requestAdjust. So we ignore scroll events that are closer to the previous
-                // scroll position than the target position.
-                const threshold = state.scroll - positionDiff / 2;
-                if (!state.ignoreScrollFromMVCP) {
-                    state.ignoreScrollFromMVCP = {};
-                }
-                if (positionDiff > 0) {
-                    state.ignoreScrollFromMVCP.lt = threshold;
-                } else {
-                    state.ignoreScrollFromMVCP.gt = threshold;
-                }
-
-                if (state.ignoreScrollFromMVCPTimeout) {
-                    clearTimeout(state.ignoreScrollFromMVCPTimeout);
-                }
-                state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
-                    state.ignoreScrollFromMVCP = undefined;
-                }, 100);
+                doit();
+            } else {
+                requestAnimationFrame(doit);
             }
+
+            // if (peek$(ctx, "containersDidLayout")) {
+            // Calculate a threshold to ignore scroll jumps for a short period of time
+            // This is to avoid the case where a scroll event comes in that was relevant from before
+            // the requestAdjust. So we ignore scroll events that are closer to the previous
+            // scroll position than the target position.
+            const threshold = state.scroll - positionDiff / 2;
+            if (!state.ignoreScrollFromMVCP) {
+                state.ignoreScrollFromMVCP = {};
+            }
+            if (positionDiff > 0) {
+                state.ignoreScrollFromMVCP.lt = threshold;
+            } else {
+                state.ignoreScrollFromMVCP.gt = threshold;
+            }
+
+            if (state.ignoreScrollFromMVCPTimeout) {
+                clearTimeout(state.ignoreScrollFromMVCPTimeout);
+            }
+            state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
+                state.ignoreScrollFromMVCP = undefined;
+            }, 100);
+            // }
         }
     };
 
@@ -1187,6 +1193,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     }
 
     useLayoutEffect(() => {
+        if (IsNewArchitecture) {
+            const measured: { width: number; height: number } = (
+                refScroller.current as any
+            )?.unstable_getBoundingClientRect?.();
+            if (measured) {
+                const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
+
+                if (size) {
+                    handleLayout(measured);
+                }
+            }
+        }
         if (!isFirst) {
             calculateItemsInView({ doMVCP: true });
         }
@@ -1427,11 +1445,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 set$(ctx, "otherAxisSize", maxOtherAxisSize);
             }
 
-            if (needsRecalculate) {
-                calculateItemsInView({ doMVCP: true });
-            }
-            if (shouldMaintainScrollAtEnd) {
-                doMaintainScrollAtEnd(false);
+            const containersDidLayout = peek$(ctx, "containersDidLayout");
+
+            if (containersDidLayout || checkAllSizesKnown()) {
+                if (needsRecalculate) {
+                    calculateItemsInView({ doMVCP: true });
+                }
+                if (shouldMaintainScrollAtEnd) {
+                    doMaintainScrollAtEnd(false);
+                }
             }
         },
         [],
@@ -1442,6 +1464,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const { sizesKnown } = refState.current!;
             const numContainers = ctx.values.get("numContainers") as number;
             const changes: { itemKey: string; sizeObj: { width: number; height: number } }[] = [];
+            // const start = performance.now();
 
             // Run through all containers and if we don't already have a known size then measure the item
             // This is useful because when multiple items render in one frame, the first container fires a
@@ -1456,10 +1479,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     // if (itemKey !== undefined) {
                     const containerRef = ctx.viewRefs.get(i);
                     if (containerRef) {
-                        let measured: { width: number; height: number } | undefined;
-                        containerRef.current?.measure((x, y, width, height) => {
-                            measured = { width, height };
-                        });
+                        const measured: { width: number; height: number } = (
+                            containerRef.current as any
+                        )?.unstable_getBoundingClientRect?.();
 
                         if (measured) {
                             changes.push({ itemKey: containerItemKey, sizeObj: measured });
@@ -1468,7 +1490,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             }
 
-            updateItemSizes(changes);
+            // const mid = performance.now() - start;
+            // console.log("did all measures", mid);
+
+            if (changes.length > 0) {
+                updateItemSizes(changes);
+            }
+
+            // const end = performance.now() - mid;
+            // console.log("updated sizes", mid);
         } else {
             updateItemSizes([{ itemKey, sizeObj }]);
         }
@@ -1513,35 +1543,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 } is 0. You may need to set a style or \`flex: \` for the list, because children are absolutely positioned.`,
             );
         }
+
+        calculateItemsInView();
+
+        setCanRender(true);
     }, []);
 
     const onLayout = useCallback((event: LayoutChangeEvent) => {
         const layout = event.nativeEvent.layout;
         handleLayout(layout);
 
-        const scrollLength = layout[horizontal ? "width" : "height"];
-        const otherAxisSize = layout[horizontal ? "height" : "width"];
-
         if (onLayoutProp) {
             onLayoutProp(event);
         }
     }, []);
-
-    if (IsNewArchitecture) {
-        useLayoutEffect(() => {
-            // unstable_getBoundingClientRect is unstable and only on Fabric
-            const measured: { width: number; height: number } = (
-                refScroller.current as any
-            )?.unstable_getBoundingClientRect?.();
-            if (measured) {
-                const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
-
-                if (size) {
-                    handleLayout(measured);
-                }
-            }
-        }, []);
-    }
 
     const handleScroll = useCallback(
         (event: {
@@ -1723,6 +1738,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         <>
             <ListComponent
                 {...rest}
+                canRender={canRender}
                 horizontal={horizontal!}
                 refScrollView={combinedRef}
                 initialContentOffset={initialContentOffset}
