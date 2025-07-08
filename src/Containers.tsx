@@ -2,6 +2,7 @@
 import * as React from "react";
 import { Animated, type StyleProp, type ViewStyle } from "react-native";
 import { Container } from "./Container";
+import { IsNewArchitecture } from "./constants";
 import { useArr$, useStateContext } from "./state";
 import { typedMemo } from "./types";
 import { useValue$ } from "./useValue$";
@@ -30,9 +31,10 @@ export const Containers = typedMemo(function Containers<ItemT>({
         // Use a microtask if increasing the size significantly, otherwise use a timeout
         delay: (value, prevValue) => (!prevValue || value - prevValue > 20 ? 0 : 200),
     });
-    const animOpacity = waitForInitialLayout
-        ? useValue$("containersDidLayout", { getValue: (value) => (value ? 1 : 0) })
-        : undefined;
+    const animOpacity =
+        waitForInitialLayout && !IsNewArchitecture
+            ? useValue$("containersDidLayout", { getValue: (value) => (value ? 1 : 0) })
+            : undefined;
     const otherAxisSize = useValue$("otherAxisSize", { delay: 0 });
 
     const containers: React.ReactNode[] = [];
