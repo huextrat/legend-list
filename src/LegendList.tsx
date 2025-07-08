@@ -309,12 +309,26 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const updateAllPositions = () => {
         const { data, positions } = refState.current!;
         const start = performance.now();
-        let top2 = 0;
+        let currentRowTop = 0;
+        let column = 1;
+        let maxSizeInRow = 0;
+        const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
+
         for (let i = 0; i < data!.length; i++) {
             const id = getId(i)!;
             const size = getItemSize(id, i, data[i], false);
-            positions.set(id, top2);
-            top2 += size;
+            maxSizeInRow = Math.max(maxSizeInRow, size);
+
+            // Set position for this item
+            positions.set(id, currentRowTop);
+
+            column++;
+            if (column > numColumns) {
+                // Move to next row
+                currentRowTop += maxSizeInRow;
+                column = 1;
+                maxSizeInRow = 0;
+            }
         }
         // console.log("updating all positions took", performance.now() - start);
     };
