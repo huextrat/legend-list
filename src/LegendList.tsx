@@ -1518,7 +1518,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         doInitialAllocateContainers();
 
         if (didChange) {
-            calculateItemsInView();
+            calculateItemsInView({ doMVCP: true });
         }
         if (didChange || otherAxisSize !== prevOtherAxisSize) {
             set$(ctx, "scrollSize", { width: size.width, height: size.height });
@@ -1544,7 +1544,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             );
         }
 
-        calculateItemsInView();
+        calculateItemsInView({ doMVCP: true });
 
         setCanRender(true);
     }, []);
