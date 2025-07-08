@@ -409,75 +409,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return rowHeight;
     };
 
-    const fixGaps = useCallback(() => {
-        const state = refState.current!;
-        const { data, scrollLength, positions, startBuffered, endBuffered } = state!;
-
-        // TODO: Fix behavior with multiple columns and stop returning
-        const numColumns = peek$(ctx, "numColumns");
-        if (!data || scrollLength === 0 || numColumns > 1) {
-            return;
-        }
-        const numContainers = ctx.values.get("numContainers") as number;
-        let numMeasurements = 0;
-
-        // Run through all containers and if we don't already have a known size then measure the item
-        // This is useful because when multiple items render in one frame, the first container fires a
-        // useLayoutEffect and we can measure all containers before their useLayoutEffects fire after a delay.
-        // This lets use fix any gaps/overlaps that might be visible before the useLayoutEffects fire for each container.
-        for (let i = 0; i < numContainers; i++) {
-            const itemKey = peek$(ctx, `containerItemKey${i}`);
-            const isSizeKnown = state.sizesKnown.get(itemKey);
-            if (itemKey && !isSizeKnown) {
-                const containerRef = ctx.viewRefs.get(i);
-                if (containerRef) {
-                    let measured: { width: number; height: number } | undefined;
-                    containerRef.current?.measure((x, y, width, height) => {
-                        measured = { width, height };
-                    });
-                    numMeasurements++;
-                    if (measured) {
-                        updateItemSize(itemKey, measured, /*fromFixGaps*/ true);
-                    }
-                }
-            }
-        }
-        if (numMeasurements > 0) {
-            let top: number | undefined;
-            const diffs = new Map<string, number>();
-            // Calculate the changed position for each item in view
-            for (let i = startBuffered; i <= endBuffered; i++) {
-                const id = getId(i)!;
-                if (top === undefined) {
-                    top = positions.get(id);
-                }
-                if (positions.get(id) !== top) {
-                    diffs.set(id, top! - positions.get(id)!);
-                    positions.set(id, top!);
-                }
-                const size = getItemSize(id, i, data[i]);
-                const bottom = top! + size;
-                top = bottom;
-            }
-
-            // Apply the changed positions to the containers
-            for (let i = 0; i < numContainers; i++) {
-                const itemKey = peek$(ctx, `containerItemKey${i}`);
-                const diff = diffs.get(itemKey);
-                if (diff) {
-                    const prevPos = peek$(ctx, `containerPosition${i}`);
-                    const newPos = prevPos.top + diff;
-                    if (prevPos.top !== newPos) {
-                        const pos = { ...prevPos };
-                        pos.relativeCoordinate += diff;
-                        pos.top += diff;
-                        set$(ctx, `containerPosition${i}`, pos);
-                    }
-                }
-            }
-        }
-    }, []);
-
     const checkAllSizesKnown = useCallback(() => {
         const { startBuffered, endBuffered, sizesKnown } = refState.current!;
         if (endBuffered !== null) {
@@ -1395,206 +1326,161 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         doInitialAllocateContainers();
     });
 
-    const updateItemSize = useCallback(
-        (itemKey: string, sizeObj: { width: number; height: number }, fromFixGaps?: boolean) => {
-            const state = refState.current!;
-            const {
-                sizes,
-                indexByKey,
-                sizesKnown,
-                data,
-                rowHeights,
-                startBuffered,
-                endBuffered,
-                averageSizes,
-                queuedInitialLayout,
-            } = state;
-            if (!data) {
-                return;
+    const updateItemSize = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
+        const state = refState.current!;
+        const {
+            sizes,
+            indexByKey,
+            sizesKnown,
+            data,
+            rowHeights,
+            startBuffered,
+            endBuffered,
+            averageSizes,
+            queuedInitialLayout,
+        } = state;
+        if (!data) {
+            return;
+        }
+
+        const index = indexByKey.get(itemKey)!;
+        const numColumns = peek$(ctx, "numColumns");
+
+        state.scrollForNextCalculateItemsInView = undefined;
+        state.minIndexSizeChanged =
+            state.minIndexSizeChanged !== undefined ? Math.min(state.minIndexSizeChanged, index) : index;
+
+        const prevSize = getItemSize(itemKey, index, data as any);
+        const prevSizeKnown = sizesKnown.get(itemKey);
+
+        let needsCalculate = false;
+        let needsUpdateContainersDidLayout = false;
+
+        const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
+
+        sizesKnown!.set(itemKey, size);
+
+        // TODO: Hook this up to actual item type later once we have item types
+        const itemType = "";
+        let averages = averageSizes[itemType];
+        if (!averages) {
+            averages = averageSizes[itemType] = {
+                num: 0,
+                avg: 0,
+            };
+        }
+        averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
+        averages.num++;
+
+        if (!prevSize || Math.abs(prevSize - size) > 0.1) {
+            let diff: number;
+            needsCalculate = true;
+
+            if (numColumns > 1) {
+                const rowNumber = Math.floor(index / numColumnsProp);
+                const prevSizeInRow = getRowHeight(rowNumber);
+                sizes.set(itemKey, size);
+                rowHeights.delete(rowNumber);
+
+                const sizeInRow = getRowHeight(rowNumber);
+                diff = sizeInRow - prevSizeInRow;
+            } else {
+                sizes.set(itemKey, size);
+                diff = size - prevSize;
             }
 
-            let didMvcp = false;
-            const index = indexByKey.get(itemKey)!;
-            const numColumns = peek$(ctx, "numColumns");
+            if (__DEV__ && suggestEstimatedItemSize) {
+                if (state.timeoutSizeMessage) {
+                    clearTimeout(state.timeoutSizeMessage);
+                }
 
+                state.timeoutSizeMessage = setTimeout(() => {
+                    state.timeoutSizeMessage = undefined;
+                    const num = sizesKnown.size;
+                    const avg = state.averageSizes[""].avg;
+
+                    console.warn(
+                        `[legend-list] Based on the ${num} items rendered so far, the optimal estimated size is ${avg}.`,
+                    );
+                }, 1000);
+            }
+
+            // Reset scrollForNextCalculateItemsInView because a position may have changed making the previous
+            // precomputed scroll range invalid
             state.scrollForNextCalculateItemsInView = undefined;
-            state.minIndexSizeChanged =
-                state.minIndexSizeChanged !== undefined ? Math.min(state.minIndexSizeChanged, index) : index;
 
-            const prevSize = getItemSize(itemKey, index, data as any);
-            const prevSizeKnown = sizesKnown.get(itemKey);
+            addTotalSize(itemKey, diff);
 
-            let needsCalculate = false;
-            let needsUpdateContainersDidLayout = false;
-
-            const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
-
-            sizesKnown!.set(itemKey, size);
-
-            // TODO: Hook this up to actual item type later once we have item types
-            const itemType = "";
-            let averages = averageSizes[itemType];
-            if (!averages) {
-                averages = averageSizes[itemType] = {
-                    num: 0,
-                    avg: 0,
-                };
-            }
-            averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
-            averages.num++;
-
-            if (!prevSize || Math.abs(prevSize - size) > 0.1) {
-                let diff: number;
-                needsCalculate = true;
-
-                if (numColumns > 1) {
-                    const rowNumber = Math.floor(index / numColumnsProp);
-                    const prevSizeInRow = getRowHeight(rowNumber);
-                    sizes.set(itemKey, size);
-                    rowHeights.delete(rowNumber);
-
-                    const sizeInRow = getRowHeight(rowNumber);
-                    diff = sizeInRow - prevSizeInRow;
-                } else {
-                    sizes.set(itemKey, size);
-                    diff = size - prevSize;
-                }
-
-                if (__DEV__ && suggestEstimatedItemSize) {
-                    if (state.timeoutSizeMessage) {
-                        clearTimeout(state.timeoutSizeMessage);
-                    }
-
-                    state.timeoutSizeMessage = setTimeout(() => {
-                        state.timeoutSizeMessage = undefined;
-                        const num = sizesKnown.size;
-                        const avg = state.averageSizes[""].avg;
-
-                        console.warn(
-                            `[legend-list] Based on the ${num} items rendered so far, the optimal estimated size is ${avg}.`,
-                        );
-                    }, 1000);
-                }
-
-                // Reset scrollForNextCalculateItemsInView because a position may have changed making the previous
-                // precomputed scroll range invalid
-                state.scrollForNextCalculateItemsInView = undefined;
-
-                addTotalSize(itemKey, diff);
-
-                if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
-                    // Maintain scroll at end if this item has already rendered and is changing by more than 5px
-                    // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
-                    doMaintainScrollAtEnd(false); // *animated*/ index === data.length - 1);
-                }
-
-                if (onItemSizeChanged) {
-                    onItemSizeChanged({
-                        size,
-                        previous: prevSize,
-                        index,
-                        itemKey,
-                        itemData: data[index],
-                    });
-                }
-
-                const scrollTarget = state.scrollingTo?.index;
-                // Determine if this item needs adjustment based on its position relative to the scroll target
-                const shouldAdjustItem =
-                    maintainVisibleContentPosition &&
-                    itemKey !== undefined &&
-                    (scrollTarget !== undefined
-                        ? // When scrolling to a specific index, adjust items that are at or before the target
-                          // - If viewPosition > 0 (scrolling to show bottom part), include the target index
-                          // - If viewPosition <= 0 (scrolling to show top part), exclude the target index
-                          index <= scrollTarget - ((state.scrollingTo?.viewPosition || 0) > 0 ? 0 : 1)
-                        : // When not scrolling to a specific target, adjust items up to the first fully visible item
-                          index <= state.firstFullyOnScreenIndex);
-
-                if (shouldAdjustItem) {
-                    // Apply viewPosition scaling if this is the exact target index
-                    if (state.scrollingTo?.viewPosition && index === scrollTarget) {
-                        diff *= state.scrollingTo.viewPosition;
-                    }
-                    // Adjust scroll position to maintain visible content position
-                    requestAdjust(diff);
-                    calculateItemsInView();
-                    didMvcp = true;
-                }
+            if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
+                // Maintain scroll at end if this item has already rendered and is changing by more than 5px
+                // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
+                doMaintainScrollAtEnd(false); // *animated*/ index === data.length - 1);
             }
 
-            if (!queuedInitialLayout && checkAllSizesKnown()) {
-                needsUpdateContainersDidLayout = true;
+            if (onItemSizeChanged) {
+                onItemSizeChanged({
+                    size,
+                    previous: prevSize,
+                    index,
+                    itemKey,
+                    itemData: data[index],
+                });
             }
 
-            // We can skip calculating items in view if they have already gone out of view. This can happen on slow
-            // devices or when the list is scrolled quickly.
-            let isInView = index >= startBuffered && index <= endBuffered;
+            const scrollTarget = state.scrollingTo?.index;
+            // Determine if this item needs adjustment based on its position relative to the scroll target
+            const shouldAdjustItem =
+                maintainVisibleContentPosition &&
+                itemKey !== undefined &&
+                (scrollTarget !== undefined
+                    ? // When scrolling to a specific index, adjust items that are at or before the target
+                      // - If viewPosition > 0 (scrolling to show bottom part), include the target index
+                      // - If viewPosition <= 0 (scrolling to show top part), exclude the target index
+                      index <= scrollTarget - ((state.scrollingTo?.viewPosition || 0) > 0 ? 0 : 1)
+                    : // When not scrolling to a specific target, adjust items up to the first fully visible item
+                      index <= state.firstFullyOnScreenIndex);
 
-            if (!isInView) {
-                // If not in the range it could be in a container that's offscreen but not yet recycled
-                const numContainers = ctx.values.get("numContainers") as number;
+            if (shouldAdjustItem) {
+                // Apply viewPosition scaling if this is the exact target index
+                if (state.scrollingTo?.viewPosition && index === scrollTarget) {
+                    diff *= state.scrollingTo.viewPosition;
+                }
+                // Adjust scroll position to maintain visible content position
+                requestAdjust(diff);
+            }
+        }
 
-                for (let i = 0; i < numContainers; i++) {
-                    if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
-                        isInView = true;
-                        break;
-                    }
+        if (!queuedInitialLayout && checkAllSizesKnown()) {
+            needsUpdateContainersDidLayout = true;
+        }
+
+        // We can skip calculating items in view if they have already gone out of view. This can happen on slow
+        // devices or when the list is scrolled quickly.
+        let isInView = index >= startBuffered && index <= endBuffered;
+
+        if (!isInView) {
+            // If not in the range it could be in a container that's offscreen but not yet recycled
+            const numContainers = ctx.values.get("numContainers") as number;
+
+            for (let i = 0; i < numContainers; i++) {
+                if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
+                    isInView = true;
+                    break;
                 }
             }
+        }
 
-            if (
-                !didMvcp &&
-                (needsUpdateContainersDidLayout ||
-                    (!fromFixGaps && needsCalculate && (isInView || !queuedInitialLayout)))
-            ) {
-                const scrollVelocity = state.scrollVelocity;
-                let didCalculate = false;
+        calculateItemsInView();
 
-                // TODO: The second part of this if should be merged into the previous if
-                // Can this be less complex in general?
-                if (
-                    (Number.isNaN(scrollVelocity) || Math.abs(scrollVelocity) < 1 || state.scrollingTo !== undefined) &&
-                    (!waitForInitialLayout || needsUpdateContainersDidLayout || queuedInitialLayout)
-                ) {
-                    // Calculate positions if not currently scrolling and not waiting on other items to layout
-                    if (Date.now() - state.lastBatchingAction < 500) {
-                        // If this item layout is within 500ms of the most recent list layout, scroll, or column change,
-                        // batch calculations from layout to reduce the number of computations and renders.
-                        // This heuristic is basically to determine whether this comes from an internal List action or an external component action.
-                        // Batching adds a slight delay so this ensures that calculation is batched only if
-                        // it's likely that multiple items will have changed size and a one frame delay is acceptable,
-                        // such as when items are changed, the list changed size, or during scrolling.
-                        if (!state.queuedCalculateItemsInView) {
-                            state.queuedCalculateItemsInView = requestAnimationFrame(() => {
-                                state.queuedCalculateItemsInView = undefined;
-                                calculateItemsInView();
-                            });
-                        }
-                    } else {
-                        // Otherwise this action is likely from a single item changing so it should run immediately
-                        calculateItemsInView();
-                        didCalculate = true;
-                    }
-                }
-
-                // If this did not trigger a full calculate we should fix any gaps/overlaps
-                if (!didCalculate && !needsUpdateContainersDidLayout && IsNewArchitecture) {
-                    fixGaps();
-                }
+        if (state.needsOtherAxisSize) {
+            const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
+            const cur = peek$(ctx, "otherAxisSize");
+            // console.log("cur", cur, otherAxisSize, sizeObj);
+            if (!cur || otherAxisSize > cur) {
+                set$(ctx, "otherAxisSize", otherAxisSize);
             }
-
-            if (state.needsOtherAxisSize) {
-                const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
-                const cur = peek$(ctx, "otherAxisSize");
-                // console.log("cur", cur, otherAxisSize, sizeObj);
-                if (!cur || otherAxisSize > cur) {
-                    set$(ctx, "otherAxisSize", otherAxisSize);
-                }
-            }
-        },
-        [],
-    );
+        }
+    }, []);
 
     const handleLayout = useCallback((size: { width: number; height: number }) => {
         const scrollLength = size[horizontal ? "width" : "height"];
