@@ -285,13 +285,63 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     refState.current.onScroll = onScrollProp;
 
     const updateAllPositions = () => {
-        const { columns, data, indexByKey, positions } = refState.current!;
+        const { columns, data, indexByKey, positions, scrollVelocity, firstFullyOnScreenIndex } = refState.current!;
         // const start = performance.now();
+        const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
+        const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
+
+        // Check if we should use backwards optimization when scrolling up
+        const shouldUseBackwards =
+            scrollVelocity < 0 && firstFullyOnScreenIndex > 5 && firstFullyOnScreenIndex < data!.length;
+
+        if (shouldUseBackwards && firstFullyOnScreenIndex !== undefined) {
+            // Get the current position of firstFullyOnScreenIndex as anchor
+            const anchorId = getId(firstFullyOnScreenIndex)!;
+            const anchorPosition = positions.get(anchorId);
+
+            // If we don't have the anchor position, fall back to regular behavior
+            if (anchorPosition !== undefined) {
+                // Start from the anchor and go backwards
+                let currentRowTop = anchorPosition;
+                let maxSizeInRow = 0;
+                let bailout = false;
+
+                // Process items backwards from firstFullyOnScreenIndex - 1 to 0
+                for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
+                    const id = getId(i)!;
+                    const size = getItemSize(id, i, data[i], false);
+                    const itemColumn = columns.get(id)!;
+
+                    maxSizeInRow = Math.max(maxSizeInRow, size);
+
+                    // When we reach column 1, we're at the start of a new row going backwards
+                    if (itemColumn === 1) {
+                        currentRowTop -= maxSizeInRow;
+                        maxSizeInRow = 0;
+                    }
+
+                    // Check if position goes too low - bail if so
+                    if (currentRowTop < -2000) {
+                        bailout = true;
+                        break;
+                    }
+
+                    // Update position for this item (columns and indexByKey already set)
+                    positions.set(id, currentRowTop);
+                }
+
+                if (!bailout) {
+                    // We successfully processed backwards, we're done
+                    updateTotalSize();
+                    return;
+                }
+            }
+        }
+
+        // Regular ascending behavior (either not scrolling up or bailed out)
         let currentRowTop = 0;
         let column = 1;
         let maxSizeInRow = 0;
-        const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
-        const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
 
         for (let i = 0; i < data!.length; i++) {
             const id = getId(i)!;
