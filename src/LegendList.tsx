@@ -341,25 +341,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             viewPosition = 1;
         }
         const firstIndexScrollPostion = firstIndexOffset - viewOffset;
-        const diff = Math.abs(state.scroll - firstIndexScrollPostion);
-        const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
 
         // TODO: include checking if destination element position is already known, to avoid unneeded anchor element switches
-        const needsReanchoring = maintainVisibleContentPosition && diff > 100;
         state.scrollForNextCalculateItemsInView = undefined;
-
-        // if (needsReanchoring) {
-        //     // in the maintainVisibleContentPosition we can choose element we are scrolling to as anchor element
-        //     // now let's cleanup old positions and set new anchor element
-        //     const id = getId(index);
-        //     state.positions.clear();
-        //     calcTotalSizesAndPositions({ forgetPositions: true }); // since we are choosing new anchor, we need to recalulate positions
-        //     state.startBufferedId = id;
-        //     state.minIndexSizeChanged = index;
-
-        //     // when doing scrollTo, it's important to use latest adjust value
-        //     firstIndexScrollPostion = firstIndexOffset - viewOffset;
-        // }
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
         // Do the scroll
@@ -522,7 +506,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const requestAdjust = (positionDiff: number) => {
         if (Math.abs(positionDiff) > 0.1) {
             const state = refState.current!;
-            console.log("requesting adjust", positionDiff);
             state.scrollAdjustHandler.requestAdjust(positionDiff);
             state.scroll += positionDiff;
             state.scrollForNextCalculateItemsInView = undefined;
@@ -613,7 +596,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                         const positionDiff = newPosition - prevPosition;
                         if (Math.abs(positionDiff) > 0.1) {
-                            console.log("from calc", positionDiff);
                             requestAdjust(positionDiff);
                         }
                     }
@@ -1019,9 +1001,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const state = refState.current;
         if (state) {
             state.scrollingTo = undefined;
-            state.scrollAdjustHandler.setDisableAdjust(false);
             state.scrollHistory.length = 0;
-            calculateItemsInView();
         }
     };
 
@@ -1040,7 +1020,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const offset = calculateOffsetWithOffsetPosition(params.offset, params);
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
-        state.scrollAdjustHandler.setDisableAdjust(true);
         state.scrollHistory.length = 0;
         state.scrollingTo = params;
         state.scrollPending = offset;
@@ -1419,37 +1398,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     useLayoutEffect(() => {
         if (maintainVisibleContentPosition && !isFirst) {
-            // const state = refState.current!;
-            // const idsInView = state.idsInView;
-            // const positions = state.positions;
-
-            // // 1. Get the old positions
-            // const oldPositions = new Map<string, number>();
-            // for (const id of idsInView) {
-            //     const index = state.indexByKey.get(id)!;
-            //     const size = getItemSize(id, index, dataProp[index]);
-            //     oldPositions.set(id, size);
-            // }
-
-            // 2. Update the positions with the new data
             calculateItemsInView({ isNewData: true });
-
-            // // 3. Find the first of the ids that was previously on screen that's still in the array
-            // const indexByKey = state.indexByKey;
-            // const firstIdInView = idsInView.find((id) => indexByKey.get(id) !== undefined);
-
-            // // 4. Calculate the diff of its new position - old position
-            // if (firstIdInView) {
-            //     const oldPosition = oldPositions.get(firstIdInView)!;
-            //     const newPosition = positions.get(firstIdInView)!;
-            //     const diff = newPosition - oldPosition;
-
-            //     // 5. Adjust the scroll by that amount
-            //     state.scrollAdjustHandler.requestAdjust(diff);
-            // }
-
-            // // 5. Calculate items in view
-            // calculateItemsInView();
         }
     }, [dataProp]);
 
@@ -1873,10 +1822,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const state = refState.current!;
         const scrollingTo = state.scrollingTo;
 
-        // if (scrollingTo !== undefined && Math.abs(newScroll - scrollingTo.offset) < 10) {
-        //     finishScrollTo();
-        // }
-
         state.hasScrolled = true;
         state.lastBatchingAction = Date.now();
         const currentTime = performance.now();
@@ -2014,12 +1959,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     if (Platform.OS === "web") {
         useEffect(() => {
             if (initialContentOffset) {
-                refState.current?.scrollAdjustHandler.setDisableAdjust(true);
                 scrollTo({ offset: initialContentOffset, animated: false });
-
-                setTimeout(() => {
-                    refState.current?.scrollAdjustHandler.setDisableAdjust(false);
-                }, 0);
             }
         }, []);
     }
@@ -2035,29 +1975,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 updateItemSize={updateItemSize}
                 handleScroll={handleScroll}
                 onMomentumScrollEnd={(event) => {
-                    const scrollingTo = refState.current?.scrollingTo;
-                    // if (scrollingTo !== undefined) {
-                    //     // If we are scrolling to an offset, its position may have changed during the scroll
-                    //     // if the actual sizes are different from the estimated sizes
-                    //     // So do another scroll to the same offset to make sure it's in the correct position
+                    requestAnimationFrame(() => {
+                        finishScrollTo();
+                    });
 
-                    //     // Android doesn't scroll correctly if called in onMomentumScrollEnd
-                    //     // so do the scroll in a requestAnimationFrame
-                    //     requestAnimationFrame(() => {
-                    //         scrollTo({ ...scrollingTo, animated: false });
-                    //         refState.current!.scrollingTo = undefined;
-                    //         requestAnimationFrame(() => {
-                    //             refState.current!.scrollAdjustHandler.setDisableAdjust(false);
-                    //         });
-                    //     });
-                    // }
-
-                    const wasPaused = refState.current!.scrollAdjustHandler.unPauseAdjust();
-                    if (wasPaused) {
-                        refState.current!.scrollVelocity = 0;
-                        refState.current!.scrollHistory = [];
-                        calculateItemsInView();
-                    }
                     if (onMomentumScrollEnd) {
                         onMomentumScrollEnd(event);
                     }
