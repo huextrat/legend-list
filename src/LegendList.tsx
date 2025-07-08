@@ -1780,6 +1780,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
                 style={style}
                 contentContainerStyle={contentContainerStyle}
+                scrollAdjustHandler={refState.current?.scrollAdjustHandler}
             />
             {__DEV__ && ENABLE_DEBUG_VIEW && <DebugView state={refState.current!} />}
         </>

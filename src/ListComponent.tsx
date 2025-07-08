@@ -13,6 +13,7 @@ import {
 import { Containers } from "./Containers";
 import { ListHeaderComponentContainer } from "./ListHeaderComponentContainer";
 import { ScrollAdjust } from "./ScrollAdjust";
+import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { ENABLE_DEVMODE } from "./constants";
 import { set$, useStateContext } from "./state";
 import { type LegendListProps, typedMemo } from "./types";
@@ -40,6 +41,7 @@ interface ListComponentProps<ItemT>
     renderScrollComponent?: (props: ScrollViewProps) => React.ReactElement<ScrollViewProps>;
     style: ViewStyle;
     canRender: boolean;
+    scrollAdjustHandler: ScrollAdjustHandler;
 }
 
 const getComponent = (Component: React.ComponentType<any> | React.ReactElement) => {
@@ -100,6 +102,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     refScrollView,
     maintainVisibleContentPosition,
     renderScrollComponent,
+    scrollAdjustHandler,
     ...rest
 }: ListComponentProps<ItemT>) {
     const ctx = useStateContext();
@@ -111,6 +114,14 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
               [renderScrollComponent],
           )
         : ScrollView;
+
+    React.useEffect(() => {
+        if (canRender) {
+            setTimeout(() => {
+                scrollAdjustHandler.setMounted();
+            }, 0);
+        }
+    }, [canRender]);
 
     return (
         <ScrollComponent
