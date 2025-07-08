@@ -228,7 +228,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     if (!refState.current) {
-        const initialScrollLength = (estimatedListSize ?? Dimensions.get("window"))[horizontal ? "width" : "height"];
+        const initialScrollLength = (estimatedListSize ??
+            (IsNewArchitecture ? { width: 0, height: 0 } : Dimensions.get("window")))[horizontal ? "width" : "height"];
+
         refState.current = {
             sizes: new Map(),
             positions: new Map(),
@@ -1298,13 +1300,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             set$(ctx, "numContainers", numContainers);
             set$(ctx, "numContainersPooled", numContainers * initialContainerPoolRatio);
 
-            if (initialScroll) {
-                requestAnimationFrame(() => {
-                    // immediate render causes issues with initial index position
+            if (!IsNewArchitecture) {
+                if (initialScroll) {
+                    requestAnimationFrame(() => {
+                        // immediate render causes issues with initial index position
+                        calculateItemsInView();
+                    });
+                } else {
                     calculateItemsInView();
-                });
-            } else {
-                calculateItemsInView();
+                }
             }
 
             return true;
@@ -1322,9 +1326,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         state.enableScrollForNextCalculateItemsInView = !viewability;
     }, [viewabilityConfig, viewabilityConfigCallbackPairs, onViewableItemsChanged]);
 
-    useInit(() => {
-        doInitialAllocateContainers();
-    });
+    if (!IsNewArchitecture) {
+        // Needs to use the initial estimated size on old arch, new arch will come within the useLayoutEffect
+        useInit(() => {
+            doInitialAllocateContainers();
+        });
+    }
 
     const updateOneItemSize = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
         const state = refState.current!;
