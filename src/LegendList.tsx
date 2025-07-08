@@ -1367,7 +1367,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const state = refState.current!;
             if (!state.data) return;
 
-            state.scrollForNextCalculateItemsInView = undefined;
             let needsRecalculate = false;
             let shouldMaintainScrollAtEnd = false;
             let minIndexSizeChanged: number | undefined;
@@ -1458,6 +1457,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             if (containersDidLayout || checkAllSizesKnown()) {
                 if (needsRecalculate) {
+                    state.scrollForNextCalculateItemsInView = undefined;
+
                     calculateItemsInView({ doMVCP: true });
                 }
                 if (shouldMaintainScrollAtEnd) {
@@ -1484,7 +1485,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 if (itemKey === containerItemKey) {
                     // If it's this item just use the param
                     changes.push({ itemKey, sizeObj });
-                } else if (!sizesKnown.get(containerItemKey) && containerItemKey !== undefined) {
+                } else if (!sizesKnown.has(containerItemKey) && containerItemKey !== undefined) {
                     // if (itemKey !== undefined) {
                     const containerRef = ctx.viewRefs.get(i);
                     if (containerRef) {
