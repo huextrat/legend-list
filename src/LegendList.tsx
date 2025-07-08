@@ -499,14 +499,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const previousScrollAdjust = 0;
         const { doMVCP } = params;
 
-        // TODO: This should only run if a size changed or items changed
-        // Handle maintainVisibleContentPosition adjustment early
-        const checkMVCP = doMVCP ? prepareMVCP() : undefined;
+        if (doMVCP) {
+            // TODO: This should only run if a size changed or items changed
+            // Handle maintainVisibleContentPosition adjustment early
+            const checkMVCP = doMVCP ? prepareMVCP() : undefined;
 
-        // Update all positions upfront so we can assume they're correct
-        updateAllPositions();
+            // Update all positions upfront so we can assume they're correct
+            updateAllPositions();
 
-        checkMVCP?.();
+            checkMVCP?.();
+        }
 
         let scrollState = state.scroll;
         const scrollExtra = 0;
@@ -646,7 +648,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                     if (top <= scrollBottomBuffered) {
                         endBuffered = i;
-                        nextBottom = top + size - scrollLength;
+                        nextBottom = top + size;
                     } else {
                         foundEnd = true;
                     }
