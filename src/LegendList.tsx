@@ -1044,13 +1044,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     const updateTotalSize = () => {
-        const { positions } = refState.current!;
+        const { data, positions } = refState.current!;
 
-        const lastId = getId(dataProp.length - 1);
+        const lastId = getId(data.length - 1);
         if (lastId !== undefined) {
             const lastPosition = positions.get(lastId);
             if (lastPosition !== undefined) {
-                const lastSize = getItemSize(lastId, dataProp.length - 1, dataProp[dataProp.length - 1]);
+                const lastSize = getItemSize(lastId, data.length - 1, data[dataProp.length - 1]);
                 if (lastSize !== undefined) {
                     const totalSize = lastPosition + lastSize;
                     addTotalSize(null, totalSize);
@@ -1399,24 +1399,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // precomputed scroll range invalid
             state.scrollForNextCalculateItemsInView = undefined;
 
-            addTotalSize(itemKey, diff);
-
-            if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
-                // Maintain scroll at end if this item has already rendered and is changing by more than 5px
-                // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
-                doMaintainScrollAtEnd(false); // *animated*/ index === data.length - 1);
-            }
-
-            if (onItemSizeChanged) {
-                onItemSizeChanged({
-                    size,
-                    previous: prevSize,
-                    index,
-                    itemKey,
-                    itemData: data[index],
-                });
-            }
-
             const scrollTarget = state.scrollingTo?.index;
             // Determine if this item needs adjustment based on its position relative to the scroll target
             const shouldAdjustItem =
@@ -1438,34 +1420,50 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 // Adjust scroll position to maintain visible content position
                 requestAdjust(diff);
             }
-        }
 
-        // We can skip calculating items in view if they have already gone out of view. This can happen on slow
-        // devices or when the list is scrolled quickly.
-        let isInView = index >= startBuffered && index <= endBuffered;
+            // We can skip calculating items in view if they have already gone out of view. This can happen on slow
+            // devices or when the list is scrolled quickly.
+            let isInView = index >= startBuffered && index <= endBuffered;
 
-        if (!isInView) {
-            // If not in the range it could be in a container that's offscreen but not yet recycled
-            const numContainers = ctx.values.get("numContainers") as number;
+            if (!isInView) {
+                // If not in the range it could be in a container that's offscreen but not yet recycled
+                const numContainers = ctx.values.get("numContainers") as number;
 
-            for (let i = 0; i < numContainers; i++) {
-                if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
-                    isInView = true;
-                    break;
+                for (let i = 0; i < numContainers; i++) {
+                    if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
+                        isInView = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (isInView) {
-            calculateItemsInView();
-        }
+            if (isInView) {
+                calculateItemsInView();
+            }
 
-        if (state.needsOtherAxisSize) {
-            const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
-            const cur = peek$(ctx, "otherAxisSize");
-            // console.log("cur", cur, otherAxisSize, sizeObj);
-            if (!cur || otherAxisSize > cur) {
-                set$(ctx, "otherAxisSize", otherAxisSize);
+            if (state.needsOtherAxisSize) {
+                const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
+                const cur = peek$(ctx, "otherAxisSize");
+                // console.log("cur", cur, otherAxisSize, sizeObj);
+                if (!cur || otherAxisSize > cur) {
+                    set$(ctx, "otherAxisSize", otherAxisSize);
+                }
+            }
+
+            if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
+                // Maintain scroll at end if this item has already rendered and is changing by more than 5px
+                // This prevents a bug where the list will scroll to the bottom when scrolling up and an item lays out
+                doMaintainScrollAtEnd(false); // *animated*/ index === data.length - 1);
+            }
+
+            if (onItemSizeChanged) {
+                onItemSizeChanged({
+                    size,
+                    previous: prevSize,
+                    index,
+                    itemKey,
+                    itemData: data[index],
+                });
             }
         }
     }, []);
