@@ -202,34 +202,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         state.sizes.set(key, size);
         return size;
     };
-    const calculateOffsetForIndex = (indexParam: number | undefined) => {
-        const isFromInit = indexParam === undefined;
-        const index = isFromInit ? initialScrollIndex : indexParam;
-        // This function is called before refState is initialized, so we need to use dataProp
-        const data = dataProp;
+    const calculateOffsetForIndex = (index: number | undefined) => {
+        let position = 0;
         if (index !== undefined) {
-            let offset = 0;
-            const canGetSize = !!refState.current;
-            if (canGetSize || getEstimatedItemSize) {
-                const sizeFn = (index: number) => {
-                    if (canGetSize) {
-                        return getItemSize(getId(index), index, data[index], true);
-                    }
-                    return getEstimatedItemSize!(index, data[index]);
-                };
-                for (let i = 0; i < index; i++) {
-                    offset += sizeFn(i);
-                }
-            } else {
-                offset = index * estimatedItemSize;
-            }
-
-            const stylePaddingTop = isFromInit ? stylePaddingTopState : peek$(ctx, "stylePaddingTop");
-            const topPad = (stylePaddingTop ?? 0) + peek$(ctx, "headerSize");
-
-            return offset / numColumnsProp + topPad;
+            position = refState.current?.positions.get(getId(index!)) || 0;
         }
-        return 0;
+        return position;
     };
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
         const { index, viewOffset, viewPosition } = params;
@@ -248,8 +226,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return offset;
     };
 
-    const initialContentOffset = initialScrollOffset ?? useMemo(() => calculateOffsetForIndex(undefined), []);
-
     if (!refState.current) {
         const initialScrollLength = (estimatedListSize ?? Dimensions.get("window"))[horizontal ? "width" : "height"];
         refState.current = {
@@ -257,7 +233,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             positions: new Map(),
             columns: new Map(),
             pendingAdjust: 0,
-            isStartReached: initialContentOffset < initialScrollLength * onStartReachedThreshold!,
+            isStartReached: false,
             isEndReached: false,
             isAtEnd: false,
             isAtStart: false,
@@ -268,7 +244,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             endBuffered: -1,
             endNoBuffer: -1,
             firstFullyOnScreenIndex: -1,
-            scroll: initialContentOffset || 0,
+            scroll: 0,
             totalSize: 0,
             timeouts: new Set(),
             viewabilityConfigCallbackPairs: undefined as never,
@@ -364,9 +340,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             index = 0;
         }
 
-        updateAllPositions();
-
-        const firstIndexOffset = state.positions.get(getId(index))!; // || calculateOffsetForIndex(index);
+        const firstIndexOffset = calculateOffsetForIndex(index);
 
         const isLast = index === state.data.length - 1;
         if (isLast && viewPosition === undefined) {
@@ -1284,7 +1258,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
     if (isFirst) {
         initalizeStateVars();
+        updateAllPositions();
     }
+    const initialContentOffset = useMemo(() => {
+        const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(initialScrollIndex);
+        refState.current!.isStartReached =
+            initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
+        refState.current!.scroll = initialContentOffset;
+
+        return initialContentOffset;
+    }, []);
+
     if (isFirst || didDataChange || numColumnsProp !== peek$(ctx, "numColumns")) {
         refState.current.lastBatchingAction = Date.now();
         if (!keyExtractorProp && !isFirst && didDataChange) {
@@ -1296,10 +1280,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // If we have no keyExtractor then we have no guarantees about previous item sizes so we have to reset
             refState.current.sizes.clear();
             refState.current.positions.clear();
-        }
-
-        if (isFirst) {
-            updateAllPositions();
         }
     }
 
@@ -1531,6 +1511,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 const scrollTarget = state.scrollingTo?.index;
                 // Determine if this item needs adjustment based on its position relative to the scroll target
                 const shouldAdjustItem =
+                    maintainVisibleContentPosition &&
                     itemKey !== undefined &&
                     (scrollTarget !== undefined
                         ? // When scrolling to a specific index, adjust items that are at or before the target
@@ -1547,7 +1528,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                     // Adjust scroll position to maintain visible content position
                     requestAdjust(diff);
-                    updateAllPositions();
                     calculateItemsInView();
                     didMvcp = true;
                 }
@@ -1735,7 +1715,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // Don't add to the history if it's initial scroll event otherwise invalid velocity will be calculated
         // Don't add to the history if we are scrolling to an offset
-        if (scrollingTo === undefined && !(state.scrollHistory.length === 0 && newScroll === initialContentOffset)) {
+        if (scrollingTo === undefined && !(state.scrollHistory.length === 0 && newScroll === state.scroll)) {
             // Update scroll history
             state.scrollHistory.push({ scroll: newScroll, time: currentTime });
         }
