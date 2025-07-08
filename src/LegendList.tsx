@@ -632,6 +632,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             positions.clear();
         }
 
+        // Update all positions upfront so we can assume they're correct
+        updateAllPositions();
+
         let scrollState = state.scroll;
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
@@ -709,23 +712,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Go backwards from the last start position to find the first item that is in view
         // This is an optimization to avoid looping through all items, which could slow down
         // when scrolling at the end of a long list.
-
-        // TODO: Fix this logic for numColumns
-        let runningTop: number | undefined;
         for (let i = loopStart; i >= 0; i--) {
             const id = getId(i)!;
-            const top = positions.get(id)! ?? runningTop;
-            loopStart = i;
+            const top = positions.get(id)!;
+            const size = getItemSize(id, i, data[i], useAverageSize);
+            const bottom = top + size;
 
-            if (top !== undefined) {
-                const size = getItemSize(id, i, data[i], useAverageSize);
-                runningTop = top - size;
-                const bottom = top + size;
-                if (bottom > scroll - scrollBuffer) {
-                    loopStart = i;
-                } else {
-                    break;
-                }
+            if (bottom > scroll - scrollBuffer) {
+                loopStart = i;
+            } else {
+                break;
             }
         }
 
@@ -733,20 +729,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (loopStartMod > 0) {
             loopStart -= loopStartMod;
         }
-
-        let top: number | undefined = undefined;
-
-        let column = 1;
-        let maxSizeInRow = 0;
-
-        const getInitialTop = (i: number): number => {
-            const id = getId(i)!;
-            let topOffset = 0;
-            if (positions.get(id)) {
-                topOffset = positions.get(id)!;
-            }
-            return topOffset;
-        };
 
         let foundEnd = false;
         let nextTop: number | undefined;
@@ -771,20 +753,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = Math.max(0, loopStart); i < data!.length && (!foundEnd || i <= maxIndexRendered); i++) {
             const id = getId(i)!;
             const size = getItemSize(id, i, data[i], useAverageSize);
-
-            maxSizeInRow = Math.max(maxSizeInRow, size);
-
-            if (top === undefined) {
-                top = getInitialTop(i);
-            }
-
-            if (positions.get(id) !== top) {
-                positions.set(id, top);
-            }
-
-            if (columns.get(id) !== column) {
-                columns.set(id, column);
-            }
+            const top = positions.get(id)!;
 
             if (!foundEnd) {
                 if (startNoBuffer === null && top + size > scroll) {
@@ -804,18 +773,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                     if (top <= scrollBottomBuffered) {
                         endBuffered = i;
-                        nextBottom = top + maxSizeInRow - scrollLength;
+                        nextBottom = top + size - scrollLength;
                     } else {
                         foundEnd = true;
                     }
                 }
-            }
-
-            column++;
-            if (column > numColumns) {
-                top += maxSizeInRow;
-                column = 1;
-                maxSizeInRow = 0;
             }
         }
 
