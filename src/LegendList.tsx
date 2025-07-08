@@ -1438,7 +1438,40 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     );
 
     const updateItemSize = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
-        updateItemSizes([{ itemKey, sizeObj }]);
+        if (IsNewArchitecture) {
+            const { sizesKnown } = refState.current!;
+            const numContainers = ctx.values.get("numContainers") as number;
+            const changes: { itemKey: string; sizeObj: { width: number; height: number } }[] = [];
+
+            // Run through all containers and if we don't already have a known size then measure the item
+            // This is useful because when multiple items render in one frame, the first container fires a
+            // useLayoutEffect and we can measure all containers before their useLayoutEffects fire after a delay.
+            // This lets use fix any gaps/overlaps that might be visible before the useLayoutEffects fire for each container.
+            for (let i = 0; i < numContainers; i++) {
+                const containerItemKey = peek$(ctx, `containerItemKey${i}`);
+                if (itemKey === containerItemKey) {
+                    // If it's this item just use the param
+                    changes.push({ itemKey, sizeObj });
+                } else if (!sizesKnown.get(containerItemKey) && containerItemKey !== undefined) {
+                    // if (itemKey !== undefined) {
+                    const containerRef = ctx.viewRefs.get(i);
+                    if (containerRef) {
+                        let measured: { width: number; height: number } | undefined;
+                        containerRef.current?.measure((x, y, width, height) => {
+                            measured = { width, height };
+                        });
+
+                        if (measured) {
+                            changes.push({ itemKey: containerItemKey, sizeObj: measured });
+                        }
+                    }
+                }
+            }
+
+            updateItemSizes(changes);
+        } else {
+            updateItemSizes([{ itemKey, sizeObj }]);
+        }
     }, []);
 
     const handleLayout = useCallback((size: { width: number; height: number }) => {
