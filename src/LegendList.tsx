@@ -307,17 +307,29 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     refState.current.onScroll = onScrollProp;
 
     const updateAllPositions = () => {
-        const { data, positions, columns } = refState.current!;
-        const start = performance.now();
+        const { columns, data, indexByKey, positions } = refState.current!;
+        // const start = performance.now();
         let currentRowTop = 0;
         let column = 1;
         let maxSizeInRow = 0;
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
+        const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
 
         for (let i = 0; i < data!.length; i++) {
             const id = getId(i)!;
             const size = getItemSize(id, i, data[i], false);
             maxSizeInRow = Math.max(maxSizeInRow, size);
+
+            // Set index mapping for this item
+            if (__DEV__) {
+                if (indexByKeyForChecking!.has(id)) {
+                    console.error(
+                        `[legend-list] Error: Detected overlapping key (${id}) which causes missing items and gaps and other terrrible things. Check that keyExtractor returns unique values.`,
+                    );
+                }
+                indexByKeyForChecking!.set(id, i);
+            }
+            indexByKey.set(id, i);
 
             // Set position for this item
             positions.set(id, currentRowTop);
@@ -333,6 +345,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 maxSizeInRow = 0;
             }
         }
+
+        updateTotalSize();
+
         // console.log("updating all positions took", performance.now() - start);
     };
 
@@ -585,7 +600,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         };
     }, []);
 
-    const calculateItemsInView = useCallback((params: { isNewData?: boolean; didMvcp?: boolean } = {}) => {
+    const calculateItemsInView = useCallback((params: { isNewData?: boolean } = {}) => {
         const state = refState.current!;
         const {
             data,
@@ -1143,59 +1158,19 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     const updateTotalSize = () => {
-        const state = refState.current;
-        let totalSize = 0;
-        const indexByKey = new Map();
-        const newPositions = new Map();
-        let column = 1;
-        let maxSizeInRow = 0;
-        const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
+        const { positions } = refState.current!;
 
-        if (!state) {
-            return;
-        }
-
-        for (let i = 0; i < dataProp.length; i++) {
-            const key = getId(i);
-            if (__DEV__) {
-                if (indexByKey.has(key)) {
-                    console.error(
-                        `[legend-list] Error: Detected overlapping key (${key}) which causes missing items and gaps and other terrrible things. Check that keyExtractor returns unique values.`,
-                    );
+        const lastId = getId(dataProp.length - 1);
+        if (lastId !== undefined) {
+            const lastPosition = positions.get(lastId);
+            if (lastPosition !== undefined) {
+                const lastSize = getItemSize(lastId, dataProp.length - 1, dataProp[dataProp.length - 1]);
+                if (lastSize !== undefined) {
+                    const totalSize = lastPosition + lastSize;
+                    addTotalSize(null, totalSize);
                 }
             }
-            indexByKey.set(key, i);
-            // save positions for items that are still in the list at the same indices
-            // throw out everything else
-            if (state.positions.get(key) != null && state.indexByKey.get(key) === i) {
-                newPositions.set(key, state.positions.get(key)!);
-            }
         }
-        state.indexByKey = indexByKey;
-
-        // TODO: If getEstimatedItemSize is not provided we can just multiply
-        // length by the estimatedItemSize
-        for (let i = 0; i < dataProp.length; i++) {
-            const key = getId(i);
-
-            const size = getItemSize(key, i, dataProp[i]);
-            maxSizeInRow = Math.max(maxSizeInRow, size);
-
-            column++;
-            if (column > numColumns) {
-                totalSize += maxSizeInRow;
-                column = 1;
-                maxSizeInRow = 0;
-            }
-        }
-
-        if (maxSizeInRow > 0) {
-            // If have any height leftover from a row that doesn't extend through the last column
-            // add it to total size
-            totalSize += maxSizeInRow;
-        }
-
-        addTotalSize(null, totalSize);
     };
 
     const findAvailableContainers = (numNeeded: number, startBuffered: number, endBuffered: number): number[] => {
@@ -1324,13 +1299,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         if (isFirst) {
-            updateTotalSize();
+            updateAllPositions();
         }
     }
 
     useLayoutEffect(() => {
         if (!isFirst) {
-            updateTotalSize();
             calculateItemsInView({ isNewData: true });
         }
     }, [dataProp]);
@@ -1574,7 +1548,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     // Adjust scroll position to maintain visible content position
                     requestAdjust(diff);
                     updateAllPositions();
-                    calculateItemsInView({ didMvcp: true });
+                    calculateItemsInView();
                     didMvcp = true;
                 }
             }
@@ -1624,12 +1598,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         if (!state.queuedCalculateItemsInView) {
                             state.queuedCalculateItemsInView = requestAnimationFrame(() => {
                                 state.queuedCalculateItemsInView = undefined;
-                                calculateItemsInView({ didMvcp });
+                                calculateItemsInView();
                             });
                         }
                     } else {
                         // Otherwise this action is likely from a single item changing so it should run immediately
-                        calculateItemsInView({ didMvcp });
+                        calculateItemsInView();
                         didCalculate = true;
                     }
                 }
