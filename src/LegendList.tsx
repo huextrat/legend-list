@@ -369,12 +369,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const addTotalSize = useCallback((key: string | null, add: number) => {
         const state = refState.current!;
-        const { indexByKey } = state;
-        const index = key === null ? 0 : indexByKey.get(key)!;
-        let isAboveAnchor = false;
-        if (maintainVisibleContentPosition) {
-            isAboveAnchor = index < state.startNoBuffer;
-        }
         if (key === null) {
             state.totalSize = add;
         } else {
