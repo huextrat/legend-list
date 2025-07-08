@@ -552,53 +552,37 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const checkMVCP = useCallback(() => {
+    const prepareMVCP = useCallback((): (() => void) => {
         const state = refState.current!;
-        const { data, positions } = state;
+        const { positions } = state;
+
+        let prevPosition: number;
+        let firstIdInView: string | undefined;
 
         if (maintainVisibleContentPosition && state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
             const indexByKey = state.indexByKey;
-            const firstIdInView = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
+            firstIdInView = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
 
             if (firstIdInView !== undefined) {
                 const firstIdInViewIndex = indexByKey.get(firstIdInView!);
                 if (firstIdInViewIndex !== undefined) {
                     // const prevStartNoBufferKey = getId(state.startNoBuffer);
-                    const prevPosition = positions.get(firstIdInView);
-
-                    if (prevPosition !== undefined) {
-                        // TODO: Feels like there's some duplication here, and we're calculating up from 0.
-                        // Should be able to optimize this using similar logic as farther down in this function
-                        // or even mixed in. But for now it works.
-                        // Calculate what the new position would be based on current sizes
-                        let newPosition = 0;
-                        let column = 1;
-                        let maxSizeInRow = 0;
-                        const numColumns = peek$(ctx, "numColumns");
-
-                        for (let i = 0; i < firstIdInViewIndex; i++) {
-                            const id = getId(i);
-                            const size = getItemSize(id, i, data[i]);
-                            maxSizeInRow = Math.max(maxSizeInRow, size);
-
-                            column++;
-                            if (column > numColumns) {
-                                newPosition += maxSizeInRow;
-                                column = 1;
-                                maxSizeInRow = 0;
-                            }
-                        }
-
-                        const positionDiff = newPosition - prevPosition;
-                        if (Math.abs(positionDiff) > 0.1) {
-                            requestAdjust(positionDiff);
-                            return true;
-                        }
-                    }
+                    prevPosition = positions.get(firstIdInView)!;
                 }
             }
         }
-        return false;
+        return () => {
+            if (firstIdInView !== undefined) {
+                const newPosition = positions.get(firstIdInView);
+
+                if (prevPosition !== undefined && newPosition !== undefined) {
+                    const positionDiff = newPosition - prevPosition;
+                    if (Math.abs(positionDiff) > 0.1) {
+                        requestAdjust(positionDiff);
+                    }
+                }
+            }
+        };
     }, []);
 
     const calculateItemsInView = useCallback((params: { isNewData?: boolean; didMvcp?: boolean } = {}) => {
@@ -619,21 +603,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
-        const { isNewData, didMvcp } = params;
+        const { isNewData } = params;
 
         // TODO: This should only run if a size changed or items changed
         // Handle maintainVisibleContentPosition adjustment early
-        if (!didMvcp) {
-            checkMVCP();
-        }
-
-        if (isNewData) {
-            // Need to clear all positions?
-            positions.clear();
-        }
+        const checkMVCP = isNewData ? prepareMVCP() : undefined;
 
         // Update all positions upfront so we can assume they're correct
         updateAllPositions();
+
+        checkMVCP?.();
 
         let scrollState = state.scroll;
         const scrollExtra = 0;
@@ -1163,7 +1142,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const updateTotalSize = ({ forgetPositions = false }) => {
+    const updateTotalSize = () => {
         const state = refState.current;
         let totalSize = 0;
         const indexByKey = new Map();
@@ -1188,7 +1167,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             indexByKey.set(key, i);
             // save positions for items that are still in the list at the same indices
             // throw out everything else
-            if (!forgetPositions && state.positions.get(key) != null && state.indexByKey.get(key) === i) {
+            if (state.positions.get(key) != null && state.indexByKey.get(key) === i) {
                 newPositions.set(key, state.positions.get(key)!);
             }
         }
@@ -1345,16 +1324,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         if (isFirst) {
-            updateTotalSize({ forgetPositions: false });
+            updateTotalSize();
         }
     }
 
     useLayoutEffect(() => {
         if (!isFirst) {
-            updateTotalSize({ forgetPositions: false });
-            if (maintainVisibleContentPosition) {
-                calculateItemsInView({ isNewData: true });
-            }
+            updateTotalSize();
+            calculateItemsInView({ isNewData: true });
         }
     }, [dataProp]);
 
