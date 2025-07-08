@@ -1177,7 +1177,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const calcTotalSizesAndPositions = ({ forgetPositions = false }) => {
+    const updateTotalSize = ({ forgetPositions = false }) => {
         const state = refState.current;
         let totalSize = 0;
         const indexByKey = new Map();
@@ -1207,39 +1207,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
         state.indexByKey = indexByKey;
-        // state.positions = newPositions;
-
-        // if (!forgetPositions && !isFirst) {
-        //     let didChange = false;
-        //     // TODO Can all of this be removed?
-        //     if (maintainVisibleContentPosition) {
-        //         // anchorElement functionality removed
-        //         if (dataProp.length) {
-        //             // Keep startBufferedId if it's still in the list
-        //             if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
-        //                 state.startBufferedId = getId(0);
-        //                 didChange = true;
-        //             }
-        //         } else {
-        //             state.startBufferedId = undefined;
-        //         }
-        //     } else if (state.startBufferedId != null && newPositions.get(state.startBufferedId) == null) {
-        //         // if maintainVisibleContentPosition not used, reset startBufferedId if it's not in the list
-        //         if (dataProp.length) {
-        //             state.startBufferedId = getId(0);
-        //         } else {
-        //             state.startBufferedId = undefined;
-        //         }
-        //         didChange = true;
-        //     }
-
-        //     if (didChange) {
-        //         // schedule rerender
-        //         setTimeout(() => {
-        //             calculateItemsInView(/*reset*/ true);
-        //         }, 0);
-        //     }
-        // }
 
         // TODO: If getEstimatedItemSize is not provided we can just multiply
         // length by the estimatedItemSize
@@ -1393,7 +1360,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         refState.current.previousTotalSize = peek$(ctx, "totalSize");
 
-        calcTotalSizesAndPositions({ forgetPositions: false });
+        updateTotalSize({ forgetPositions: false });
     }
 
     useLayoutEffect(() => {
