@@ -1353,9 +1353,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const prevSize = getItemSize(itemKey, index, data as any);
         const prevSizeKnown = sizesKnown.get(itemKey);
 
-        let needsCalculate = false;
-        let needsUpdateContainersDidLayout = false;
-
         const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
 
         sizesKnown!.set(itemKey, size);
@@ -1374,7 +1371,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         if (!prevSize || Math.abs(prevSize - size) > 0.1) {
             let diff: number;
-            needsCalculate = true;
 
             if (numColumns > 1) {
                 const rowNumber = Math.floor(index / numColumnsProp);
@@ -1450,10 +1446,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        if (!queuedInitialLayout && checkAllSizesKnown()) {
-            needsUpdateContainersDidLayout = true;
-        }
-
         // We can skip calculating items in view if they have already gone out of view. This can happen on slow
         // devices or when the list is scrolled quickly.
         let isInView = index >= startBuffered && index <= endBuffered;
@@ -1470,7 +1462,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        calculateItemsInView();
+        if (isInView) {
+            calculateItemsInView();
+        }
 
         if (state.needsOtherAxisSize) {
             const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
