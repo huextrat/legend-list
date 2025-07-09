@@ -11,7 +11,6 @@ import {
     type ViewStyle,
 } from "react-native";
 import { Containers } from "./Containers";
-import { ListHeaderComponentContainer } from "./ListHeaderComponentContainer";
 import { ScrollAdjust } from "./ScrollAdjust";
 import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { ENABLE_DEVMODE } from "./constants";
@@ -153,14 +152,13 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
             {maintainVisibleContentPosition && <ScrollAdjust />}
             {ENABLE_DEVMODE ? <PaddingDevMode /> : <Padding />}
             {ListHeaderComponent && (
-                <ListHeaderComponentContainer
+                <View
                     style={ListHeaderComponentStyle}
-                    ctx={ctx}
-                    horizontal={horizontal}
-                    waitForInitialLayout={waitForInitialLayout}
-                >
-                    {getComponent(ListHeaderComponent)}
-                </ListHeaderComponentContainer>
+                    onLayout={(event) => {
+                        const size = event.nativeEvent.layout[horizontal ? "width" : "height"];
+                        set$(ctx, "headerSize", size);
+                    }}
+                />
             )}
             {ListEmptyComponent && getComponent(ListEmptyComponent)}
 
