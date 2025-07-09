@@ -684,9 +684,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 if (startNoBuffer === null && top + size > scroll) {
                     startNoBuffer = i;
                 }
-                if (firstFullyOnScreenIndex === undefined && top >= scroll) {
+                // Subtract 10px for a little buffer so it can be slightly off screen
+                if (firstFullyOnScreenIndex === undefined && top >= scroll - 10) {
                     firstFullyOnScreenIndex = i;
                 }
+
                 if (startBuffered === null && top + size > scrollTopBuffered) {
                     startBuffered = i;
                     startBufferedId = id;
@@ -736,10 +738,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // console.log(
         //     "start",
-        //     Math.round(scroll),
-        //     Math.round(scrollState),
-        //     Math.round(scrollExtra),
-        //     scrollAdjustPad,
+        // Math.round(scroll),
+        // Math.round(scrollState),
+        // Math.round(scrollExtra),
+        // scrollAdjustPad,
         //     startBuffered,
         //     startNoBuffer,
         //     endNoBuffer,
