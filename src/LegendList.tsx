@@ -1109,6 +1109,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const updateTotalSize = () => {
         const { data, positions } = refState.current!;
 
+        if (data.length === 0) {
+            addTotalSize(null, 0);
+        } else {
         const lastId = getId(data.length - 1);
         if (lastId !== undefined) {
             const lastPosition = positions.get(lastId);
@@ -1119,6 +1122,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     addTotalSize(null, totalSize);
                 }
             }
+        }
         }
     };
 
