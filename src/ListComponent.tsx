@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo } from "react";
+import { useMemo } from "react";
 import * as React from "react";
 import {
     Animated,
@@ -16,7 +16,7 @@ import { ScrollAdjust } from "./ScrollAdjust";
 import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { ENABLE_DEVMODE } from "./constants";
 import { set$, useStateContext } from "./state";
-import { type LegendListProps, typedMemo } from "./types";
+import { type GetRenderedItem, type LegendListProps, typedMemo } from "./types";
 import { useValue$ } from "./useValue$";
 
 interface ListComponentProps<ItemT>
@@ -33,7 +33,7 @@ interface ListComponentProps<ItemT>
     horizontal: boolean;
     initialContentOffset: number | undefined;
     refScrollView: React.Ref<ScrollView>;
-    getRenderedItem: (key: string) => { index: number; item: ItemT; renderedItem: ReactNode } | null;
+    getRenderedItem: GetRenderedItem;
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
     handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
     onLayout: (event: LayoutChangeEvent) => void;

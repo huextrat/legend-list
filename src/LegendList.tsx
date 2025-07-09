@@ -22,11 +22,10 @@ import {
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
-import { ANCHORED_POSITION_OUT_OF_VIEW, ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
+import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
 import { StateProvider, getContentSize, listen$, peek$, set$, useStateContext } from "./state";
 import type {
-    AnchoredPosition,
     ColumnWrapperStyle,
     InternalState,
     LegendListProps,
@@ -834,20 +833,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     if (position === undefined) {
                         // This item may have been in view before data changed and positions were reset
                         // so we need to set it to out of view
-                        set$(ctx, `containerPosition${i}`, ANCHORED_POSITION_OUT_OF_VIEW);
+                        set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
                     } else {
-                        const pos: AnchoredPosition = {
-                            type: "top",
-                            relativeCoordinate: positions.get(id)!,
-                            top: positions.get(id)!,
-                        };
+                        const pos = positions.get(id)!;
                         const column = columns.get(id) || 1;
 
                         const prevPos = peek$(ctx, `containerPosition${i}`);
                         const prevColumn = peek$(ctx, `containerColumn${i}`);
                         const prevData = peek$(ctx, `containerItemData${i}`);
 
-                        if (!prevPos || (pos.relativeCoordinate > POSITION_OUT_OF_VIEW && pos.top !== prevPos.top)) {
+                        if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
                             set$(ctx, `containerPosition${i}`, pos);
                         }
                         if (column >= 0 && column !== prevColumn) {
@@ -1089,7 +1084,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
                         set$(ctx, `containerItemKey${i}`, undefined);
                         set$(ctx, `containerItemData${i}`, undefined);
-                        set$(ctx, `containerPosition${i}`, ANCHORED_POSITION_OUT_OF_VIEW);
+                        set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
                         set$(ctx, `containerColumn${i}`, -1);
                     }
                 }
@@ -1366,7 +1361,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const numContainers = Math.ceil((scrollLength + scrollBuffer * 2) / averageItemSize) * numColumnsProp;
 
             for (let i = 0; i < numContainers; i++) {
-                set$(ctx, `containerPosition${i}`, ANCHORED_POSITION_OUT_OF_VIEW);
+                set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
                 set$(ctx, `containerColumn${i}`, -1);
             }
 

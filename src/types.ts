@@ -267,12 +267,6 @@ export interface ColumnWrapperStyle {
     columnGap?: number;
 }
 
-export type AnchoredPosition = {
-    type: "top" | "bottom";
-    relativeCoordinate: number; // used for display
-    top: number; // used for calculating the position of the container
-};
-
 export type LegendListProps<ItemT> = LegendListPropsBase<
     ItemT,
     Omit<ComponentProps<typeof ScrollView>, "scrollEventThrottle">
@@ -303,7 +297,6 @@ export interface InternalState {
     scrollTime: number;
     scrollPrev: number;
     scrollPrevTime: number;
-    scrollVelocity: number;
     scrollAdjustHandler: ScrollAdjustHandler;
     maintainingScrollAtEnd?: boolean;
     totalSize: number;
@@ -317,7 +310,6 @@ export interface InternalState {
         | ((props: LegendListRenderItemProps<any>) => ReactNode)
         | React.ComponentType<LegendListRenderItemProps<any>>;
     scrollHistory: Array<{ scroll: number; time: number }>;
-    scrollTimer: Timer | undefined;
     startReachedBlockedByTimer: boolean;
     endReachedBlockedByTimer: boolean;
     scrollForNextCalculateItemsInView: { top: number; bottom: number } | undefined;
@@ -555,3 +547,6 @@ export type ScrollIndexWithOffsetPosition = {
     viewOffset?: number;
     viewPosition?: number;
 };
+
+export type GetRenderedItemResult<ItemT> = { index: number; item: ItemT; renderedItem: React.ReactNode };
+export type GetRenderedItem = (key: string) => GetRenderedItemResult<any> | null;

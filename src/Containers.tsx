@@ -4,7 +4,7 @@ import { Animated, type StyleProp, type ViewStyle } from "react-native";
 import { Container } from "./Container";
 import { IsNewArchitecture } from "./constants";
 import { useArr$, useStateContext } from "./state";
-import { typedMemo } from "./types";
+import { type GetRenderedItem, typedMemo } from "./types";
 import { useValue$ } from "./useValue$";
 
 interface ContainersProps<ItemT> {
@@ -13,7 +13,7 @@ interface ContainersProps<ItemT> {
     ItemSeparatorComponent?: React.ComponentType<{ leadingItem: ItemT }>;
     waitForInitialLayout: boolean | undefined;
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
-    getRenderedItem: (key: string) => { index: number; item: ItemT; renderedItem: React.ReactNode } | null;
+    getRenderedItem: GetRenderedItem;
 }
 
 export const Containers = typedMemo(function Containers<ItemT>({

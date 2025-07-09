@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
-import { Text } from "react-native";
 import { ContextContainer, type ContextContainerType } from "./ContextContainer";
 import { LeanView } from "./LeanView";
-import { ANCHORED_POSITION_OUT_OF_VIEW, ENABLE_DEVMODE, IsNewArchitecture } from "./constants";
+import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { isNullOrUndefined } from "./helpers";
 import { useArr$, useStateContext } from "./state";
+import type { GetRenderedItem } from "./types";
 
 export const Container = <ItemT,>({
     id,
@@ -18,30 +19,20 @@ export const Container = <ItemT,>({
     id: number;
     recycleItems?: boolean;
     horizontal: boolean;
-    getRenderedItem: (key: string) => { index: number; item: ItemT; renderedItem: React.ReactNode } | null;
+    getRenderedItem: GetRenderedItem;
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
     ItemSeparatorComponent?: React.ComponentType<{ leadingItem: ItemT }>;
 }) => {
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
 
-    const [
-        maintainVisibleContentPosition,
-        position = ANCHORED_POSITION_OUT_OF_VIEW,
-        column = 0,
-        numColumns,
-        lastItemKeys,
-        itemKey,
-        data,
-        extraData,
-    ] = useArr$([
-        "maintainVisibleContentPosition",
-        `containerPosition${id}`,
+    const [column = 0, data, itemKey, position = POSITION_OUT_OF_VIEW, numColumns, lastItemKeys, extraData] = useArr$([
         `containerColumn${id}`,
+        `containerItemData${id}`,
+        `containerItemKey${id}`,
+        `containerPosition${id}`,
         "numColumns",
         "lastItemKeys",
-        `containerItemKey${id}`,
-        `containerItemData${id}`,
         "extraData",
     ]);
 
@@ -52,6 +43,7 @@ export const Container = <ItemT,>({
     const otherAxisPos: DimensionValue | undefined = numColumns > 1 ? `${((column - 1) / numColumns) * 100}%` : 0;
     const otherAxisSize: DimensionValue | undefined = numColumns > 1 ? `${(1 / numColumns) * 100}%` : undefined;
     const isALastItem = lastItemKeys.includes(itemKey);
+    let didLayout = false;
 
     let paddingStyles: ViewStyle | undefined;
     if (columnWrapperStyle) {
@@ -78,7 +70,7 @@ export const Container = <ItemT,>({
               position: "absolute",
               top: otherAxisPos,
               height: otherAxisSize,
-              left: position.relativeCoordinate,
+              left: position,
               ...(paddingStyles || {}),
           }
         : {
@@ -86,7 +78,7 @@ export const Container = <ItemT,>({
               left: otherAxisPos,
               right: numColumns > 1 ? null : 0,
               width: otherAxisSize,
-              top: position.relativeCoordinate,
+              top: position,
               ...(paddingStyles || {}),
           };
 
@@ -96,13 +88,18 @@ export const Container = <ItemT,>({
     );
     const { index, renderedItem } = renderedItemInfo || {};
 
-    const didLayout = false;
     const triggerLayout = useCallback(() => {
         forceLayoutRender((v) => v + 1);
     }, []);
 
+    const contextValue = useMemo<ContextContainerType>(() => {
+        ctx.viewRefs.set(id, ref);
+        return { containerId: id, itemKey, index: index!, value: data, triggerLayout };
+    }, [id, itemKey, index, data]);
+
     const onLayout = (event: LayoutChangeEvent) => {
         if (!isNullOrUndefined(itemKey)) {
+            didLayout = true;
             let layout: { width: number; height: number } = event.nativeEvent.layout;
             const size = layout[horizontal ? "width" : "height"];
 
@@ -159,55 +156,17 @@ export const Container = <ItemT,>({
         }, [itemKey]);
     }
 
-    const contextValue = useMemo<ContextContainerType>(() => {
-        ctx.viewRefs.set(id, ref);
-        return { containerId: id, itemKey, index: index!, value: data, triggerLayout };
-    }, [id, itemKey, index, data]);
-
-    const contentFragment = (
-        <React.Fragment key={recycleItems ? undefined : itemKey}>
+    // Use a reactive View to ensure the container element itself
+    // is not rendered when style changes, only the style prop.
+    // This is a big perf boost to do less work rendering.
+    return (
+        <LeanView style={style} onLayout={onLayout} ref={ref} key={recycleItems ? undefined : itemKey}>
             <ContextContainer.Provider value={contextValue}>
                 {renderedItem}
                 {renderedItemInfo && ItemSeparatorComponent && !isALastItem && (
                     <ItemSeparatorComponent leadingItem={renderedItemInfo.item} />
                 )}
             </ContextContainer.Provider>
-        </React.Fragment>
-    );
-
-    // TODO: Is this needed?
-    // If maintainVisibleContentPosition is enabled, we need a way items to grow upwards
-    if (!IsNewArchitecture && maintainVisibleContentPosition) {
-        const anchorStyle: StyleProp<ViewStyle> = horizontal
-            ? position.type === "top"
-                ? { position: "absolute", left: 0, top: 0, bottom: 0, flexDirection: "row", alignItems: "stretch" }
-                : { position: "absolute", right: 0, top: 0, bottom: 0, flexDirection: "row", alignItems: "stretch" }
-            : position.type === "top"
-              ? { position: "absolute", top: 0, left: 0, right: 0 }
-              : { position: "absolute", bottom: 0, left: 0, right: 0 };
-
-        if (__DEV__ && ENABLE_DEVMODE) {
-            anchorStyle.borderColor = position.type === "top" ? "red" : "blue";
-            anchorStyle.borderWidth = 1;
-        }
-        return (
-            <LeanView style={style}>
-                <LeanView style={[anchorStyle, paddingStyles]} onLayout={onLayout} ref={ref}>
-                    {contentFragment}
-                    {__DEV__ && ENABLE_DEVMODE && (
-                        <Text style={{ position: "absolute", top: 0, left: 0, zIndex: 1000 }}>{position.top}</Text>
-                    )}
-                </LeanView>
-            </LeanView>
-        );
-    }
-
-    // Use a reactive View to ensure the container element itself
-    // is not rendered when style changes, only the style prop.
-    // This is a big perf boost to do less work rendering.
-    return (
-        <LeanView style={style} onLayout={onLayout} ref={ref}>
-            {contentFragment}
         </LeanView>
     );
 };

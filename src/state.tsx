@@ -2,7 +2,6 @@ import * as React from "react";
 import type { View } from "react-native";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
 import type {
-    AnchoredPosition,
     ColumnWrapperStyle,
     ViewAmountToken,
     ViewToken,
@@ -66,7 +65,7 @@ export type ListenerTypeValueMap = {
 } & {
     [K in ListenerType as K extends `containerItemData${number}` ? K : never]: any;
 } & {
-    [K in ListenerType as K extends `containerPosition${number}` ? K : never]: AnchoredPosition;
+    [K in ListenerType as K extends `containerPosition${number}` ? K : never]: number;
 } & {
     [K in ListenerType as K extends `containerColumn${number}` ? K : never]: number;
 };
