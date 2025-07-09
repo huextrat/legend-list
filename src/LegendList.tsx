@@ -204,9 +204,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
     const calculateOffsetForIndex = (index: number | undefined) => {
         let position = 0;
+
         if (index !== undefined) {
             position = refState.current?.positions.get(getId(index!)) || 0;
         }
+
+        const paddingTop = peek$(ctx, "stylePaddingTop");
+        if (paddingTop) {
+            position += paddingTop;
+        }
+
         return position;
     };
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
