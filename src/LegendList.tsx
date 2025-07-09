@@ -1234,9 +1234,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // If the style padding has changed then adjust the paddingTop and update scroll to compensate
         // Only iOS seems to need the scroll compensation
         if (paddingDiff && prevPaddingTop !== undefined && Platform.OS === "ios") {
-            queueMicrotask(() => {
-                scrollTo({ offset: refState.current!.scrollPending + paddingDiff, animated: false });
-            });
+            requestAdjust(paddingDiff);
+            calculateItemsInView();
         }
     };
     if (isFirst) {
@@ -1319,9 +1318,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     refState.current.renderItem = renderItem!;
 
-    // TODO: This needs to support horizontal and other ways of defining padding
-
-    useEffect(initalizeStateVars, [
+    useLayoutEffect(initalizeStateVars, [
         memoizedLastItemKeys.join(","),
         numColumnsProp,
         stylePaddingTopState,
