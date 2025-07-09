@@ -61,7 +61,7 @@ const Padding = () => {
 };
 
 const PaddingDevMode = () => {
-    const animPaddingTop = useValue$("paddingTop", { delay: 0 });
+    const animPaddingTop = useValue$("alignItemsPaddingTop", { delay: 0 });
 
     return (
         <>

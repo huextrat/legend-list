@@ -29,7 +29,6 @@ export type ListenerType =
     | "numColumns"
     | "lastItemKeys"
     | "totalSize"
-    | "paddingTop"
     | "alignItemsPaddingTop"
     | "stylePaddingTop"
     | "scrollAdjust"
@@ -49,7 +48,6 @@ export type ListenerTypeValueMap = {
     numColumns: number;
     lastItemKeys: string[];
     totalSize: number;
-    paddingTop: number;
     alignItemsPaddingTop: number;
     stylePaddingTop: number;
     scrollAdjust: number;
@@ -87,7 +85,6 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
     const [value] = React.useState<StateContext>(() => ({
         listeners: new Map(),
         values: new Map<ListenerType, any>([
-            ["paddingTop", 0],
             ["alignItemsPaddingTop", 0],
             ["stylePaddingTop", 0],
             ["headerSize", 0],

@@ -902,13 +902,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (alignItemsPaddingTop !== undefined) {
             set$(ctx, "alignItemsPaddingTop", alignItemsPaddingTop);
         }
-
-        set$(
-            ctx,
-            "paddingTop",
-            (stylePaddingTop ?? peek$(ctx, "stylePaddingTop")) +
-                (alignItemsPaddingTop ?? peek$(ctx, "alignItemsPaddingTop")),
-        );
     };
 
     const updateAlignItemsPaddingTop = () => {
@@ -1112,17 +1105,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (data.length === 0) {
             addTotalSize(null, 0);
         } else {
-        const lastId = getId(data.length - 1);
-        if (lastId !== undefined) {
-            const lastPosition = positions.get(lastId);
-            if (lastPosition !== undefined) {
-                const lastSize = getItemSize(lastId, data.length - 1, data[dataProp.length - 1]);
-                if (lastSize !== undefined) {
-                    const totalSize = lastPosition + lastSize;
-                    addTotalSize(null, totalSize);
+            const lastId = getId(data.length - 1);
+            if (lastId !== undefined) {
+                const lastPosition = positions.get(lastId);
+                if (lastPosition !== undefined) {
+                    const lastSize = getItemSize(lastId, data.length - 1, data[dataProp.length - 1]);
+                    if (lastSize !== undefined) {
+                        const totalSize = lastPosition + lastSize;
+                        addTotalSize(null, totalSize);
+                    }
                 }
             }
-        }
         }
     };
 
