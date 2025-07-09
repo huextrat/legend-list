@@ -55,7 +55,7 @@ const getComponent = (Component: React.ComponentType<any> | React.ReactElement) 
 };
 
 const Padding = () => {
-    const animPaddingTop = useValue$("paddingTop", { delay: 0 });
+    const animPaddingTop = useValue$("alignItemsPaddingTop", { delay: 0 });
 
     return <Animated.View style={{ paddingTop: animPaddingTop }} />;
 };

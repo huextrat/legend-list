@@ -134,14 +134,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const stylePaddingTopState = extractPadding(style, contentContainerStyle, "Top");
     const stylePaddingBottomState = extractPadding(style, contentContainerStyle, "Bottom");
 
-    // Padding top is handled by PaddingAndAdjust so remove it from the style
-    if (style?.paddingTop) {
-        style.paddingTop = undefined;
-    }
-    if (contentContainerStyle?.paddingTop) {
-        contentContainerStyle.paddingTop = undefined;
-    }
-
     const ctx = useStateContext();
     ctx.columnWrapperStyle =
         columnWrapperStyle || (contentContainerStyle ? createColumnWrapperStyle(contentContainerStyle) : undefined);
@@ -1235,7 +1227,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Only iOS seems to need the scroll compensation
         if (paddingDiff && prevPaddingTop !== undefined && Platform.OS === "ios") {
             requestAdjust(paddingDiff);
-            calculateItemsInView();
         }
     };
     if (isFirst) {
