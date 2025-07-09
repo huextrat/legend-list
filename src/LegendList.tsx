@@ -260,10 +260,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             scrollPending: 0,
             indexByKey: new Map(),
             scrollHistory: [],
-            scrollVelocity: 0,
             sizesKnown: new Map(),
             timeoutSizeMessage: 0,
-            scrollTimer: undefined,
             startReachedBlockedByTimer: false,
             endReachedBlockedByTimer: false,
             scrollForNextCalculateItemsInView: undefined,
@@ -284,11 +282,38 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     refState.current.data = dataProp;
     refState.current.onScroll = onScrollProp;
 
+    const getScrollVelocity = () => {
+        const state = refState.current!;
+        let velocity = 0;
+        if (state.scrollHistory.length >= 2) {
+            const newest = state.scrollHistory[state.scrollHistory.length - 1];
+            let oldest: (typeof state.scrollHistory)[0] | undefined;
+
+            // Find oldest entry within 60ms of newest
+            for (let i = 0; i < state.scrollHistory.length - 1; i++) {
+                const entry = state.scrollHistory[i];
+                if (newest.time - entry.time <= 100) {
+                    oldest = entry;
+                    break;
+                }
+            }
+
+            if (oldest) {
+                const scrollDiff = newest.scroll - oldest.scroll;
+                const timeDiff = newest.time - oldest.time;
+                velocity = timeDiff > 0 ? scrollDiff / timeDiff : 0;
+            }
+        }
+
+        return velocity;
+    };
+
     const updateAllPositions = () => {
-        const { columns, data, indexByKey, positions, scrollVelocity, firstFullyOnScreenIndex } = refState.current!;
+        const { columns, data, indexByKey, positions, firstFullyOnScreenIndex } = refState.current!;
         // const start = performance.now();
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
+        const scrollVelocity = getScrollVelocity();
 
         // Check if we should use backwards optimization when scrolling up
         const shouldUseBackwards =
@@ -531,14 +556,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const calculateItemsInView = useCallback((params: { doMVCP?: boolean } = {}) => {
         const state = refState.current!;
-        const {
-            data,
-            scrollLength,
-            startBufferedId: startBufferedIdOrig,
-            positions,
-            columns,
-            scrollVelocity: speed,
-        } = state!;
+        const { data, scrollLength, startBufferedId: startBufferedIdOrig, positions, columns } = state!;
         if (!data || scrollLength === 0) {
             return;
         }
@@ -548,6 +566,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
         const { doMVCP } = params;
+        const speed = getScrollVelocity();
 
         if (doMVCP) {
             // TODO: This should only run if a size changed or items changed
@@ -1670,42 +1689,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             state.scrollHistory.shift();
         }
 
-        if (state.scrollTimer !== undefined) {
-            clearTimeout(state.scrollTimer);
-        }
-
-        state.scrollTimer = setTimeout(() => {
-            state.scrollVelocity = 0;
-        }, 500);
-
-        // Calculate average velocity from history
-        let velocity = 0;
-        if (state.scrollHistory.length >= 2) {
-            const newest = state.scrollHistory[state.scrollHistory.length - 1];
-            let oldest: (typeof state.scrollHistory)[0] | undefined;
-
-            // Find oldest entry within 60ms of newest
-            for (let i = 0; i < state.scrollHistory.length - 1; i++) {
-                const entry = state.scrollHistory[i];
-                if (newest.time - entry.time <= 100) {
-                    oldest = entry;
-                    break;
-                }
-            }
-
-            if (oldest) {
-                const scrollDiff = newest.scroll - oldest.scroll;
-                const timeDiff = newest.time - oldest.time;
-                velocity = timeDiff > 0 ? scrollDiff / timeDiff : 0;
-            }
-        }
-
         // Update current scroll state
         state.scrollPrev = state.scroll;
         state.scrollPrevTime = state.scrollTime;
         state.scroll = newScroll;
         state.scrollTime = currentTime;
-        state.scrollVelocity = velocity;
         // Use velocity to predict scroll position
         calculateItemsInView();
         checkAtBottom();
