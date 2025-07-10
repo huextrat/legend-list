@@ -158,7 +158,9 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                         const size = event.nativeEvent.layout[horizontal ? "width" : "height"];
                         set$(ctx, "headerSize", size);
                     }}
-                />
+                >
+                    {getComponent(ListHeaderComponent)}
+                </View>
             )}
             {ListEmptyComponent && getComponent(ListEmptyComponent)}
 
