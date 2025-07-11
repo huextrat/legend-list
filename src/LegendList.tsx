@@ -576,7 +576,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const { dataChanged, doMVCP } = params;
         const speed = getScrollVelocity();
 
-        if (doMVCP) {
+        if (doMVCP || dataChanged) {
             // TODO: This should only run if a size changed or items changed
             // Handle maintainVisibleContentPosition adjustment early
             const checkMVCP = doMVCP ? prepareMVCP() : undefined;
@@ -775,6 +775,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         //     endBuffered,
         // );
 
+        // Reset containers that aren't used anymore because the data has changed
+        const numContainers = peek$(ctx, "numContainers");
+        for (let i = 0; i < numContainers; i++) {
+            const itemKey = peek$(ctx, `containerItemKey${i}`);
+            if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
+                set$(ctx, `containerItemKey${i}`, undefined);
+                set$(ctx, `containerItemData${i}`, undefined);
+                set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
+                set$(ctx, `containerColumn${i}`, -1);
+            }
+        }
+
         if (startBuffered !== null && endBuffered !== null) {
             let numContainers = prevNumContainers;
 
@@ -815,8 +827,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     if (containerIndex >= numContainers) {
                         numContainers = containerIndex + 1;
                     }
-
-                    // console.log("A", i, containerIndex, id, data[i]);
                 }
 
                 if (numContainers !== prevNumContainers) {
@@ -1080,18 +1090,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             if (!isFirst) {
                 calculateItemsInView({ dataChanged: true, doMVCP: true });
-
-                // Reset containers that aren't used anymore because the data has changed
-                const numContainers = peek$(ctx, "numContainers");
-                for (let i = 0; i < numContainers; i++) {
-                    const itemKey = peek$(ctx, `containerItemKey${i}`);
-                    if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
-                        set$(ctx, `containerItemKey${i}`, undefined);
-                        set$(ctx, `containerItemData${i}`, undefined);
-                        set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                        set$(ctx, `containerColumn${i}`, -1);
-                    }
-                }
 
                 const didMaintainScrollAtEnd = doMaintainScrollAtEnd(false);
 
