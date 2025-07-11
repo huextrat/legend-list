@@ -7,10 +7,12 @@ import {
     useLayoutEffect,
     useMemo,
     useRef,
+    useState,
 } from "react";
 import {
     Dimensions,
     type LayoutChangeEvent,
+    type LayoutRectangle,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
     Platform,
@@ -24,7 +26,7 @@ import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
-import { StateProvider, getContentSize, listen$, peek$, set$, useStateContext } from "./state";
+import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
     ColumnWrapperStyle,
     InternalState,
@@ -113,6 +115,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         ...rest
     } = props;
 
+    const [renderNum, setRenderNum] = useState(0);
     const initialScroll: ScrollIndexWithOffsetPosition | undefined =
         typeof initialScrollIndexProp === "number" ? { index: initialScrollIndexProp } : initialScrollIndexProp;
     const initialScrollIndex = initialScroll?.index;
@@ -204,6 +207,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const paddingTop = peek$(ctx, "stylePaddingTop");
         if (paddingTop) {
             position += paddingTop;
+        }
+
+        const headerSize = peek$(ctx, "headerSize");
+        if (headerSize) {
+            position += headerSize;
         }
 
         return position;
@@ -484,7 +492,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 requestAnimationFrame(doit);
             }
 
-            // if (peek$(ctx, "containersDidLayout")) {
             // Calculate a threshold to ignore scroll jumps for a short period of time
             // This is to avoid the case where a scroll event comes in that was relevant from before
             // the requestAdjust. So we ignore scroll events that are closer to the previous
@@ -505,7 +512,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
                 state.ignoreScrollFromMVCP = undefined;
             }, 100);
-            // }
         }
     };
 
@@ -1240,7 +1246,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         return initialContentOffset;
-    }, []);
+    }, [renderNum]);
 
     if (isFirst || didDataChange || numColumnsProp !== peek$(ctx, "numColumns")) {
         refState.current.lastBatchingAction = Date.now();
@@ -1274,22 +1280,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, [dataProp]);
 
-    useEffect(() => {
-        if (initialScroll && ListHeaderComponent) {
-            // Once we get a headerSize we need to fix the initial scroll offset
-            // to include the headerSize
-            const dispose = listen$(ctx, "headerSize", (size) => {
-                if (size > 0) {
-                    scrollToIndex({ ...initialScroll, animated: false });
-                    dispose?.();
+    const onLayoutHeader = useCallback((rect: LayoutRectangle, fromLayoutEffect: boolean) => {
+        const size = rect[horizontal ? "width" : "height"];
+        set$(ctx, "headerSize", size);
+
+        if (initialScroll) {
+            if (IsNewArchitecture) {
+                if (fromLayoutEffect) {
+                    setRenderNum((v) => v + 1);
                 }
-            });
-
-            // Dispose after timeout 0 because header should have laid out already.
-            // If it didn't we don't want to erroneously scroll sometime later.
-            setTimeout(dispose, 0);
-
-            return dispose;
+            } else {
+                setTimeout(() => {
+                    scrollToIndex({ ...initialScroll, animated: false });
+                }, 17);
+            }
         }
     }, []);
 
@@ -1300,6 +1304,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, [dataProp, numColumnsProp]);
 
+    // TODO: Should this be a useLayoutEffect?
     useEffect(() => {
         set$(ctx, "extraData", extraData);
     }, [extraData]);
@@ -1818,6 +1823,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 style={style}
                 contentContainerStyle={contentContainerStyle}
                 scrollAdjustHandler={refState.current?.scrollAdjustHandler}
+                onLayoutHeader={onLayoutHeader}
             />
             {__DEV__ && ENABLE_DEBUG_VIEW && <DebugView state={refState.current!} />}
         </>

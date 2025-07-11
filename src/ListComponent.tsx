@@ -3,6 +3,7 @@ import * as React from "react";
 import {
     Animated,
     type LayoutChangeEvent,
+    type LayoutRectangle,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
     ScrollView,
@@ -16,6 +17,7 @@ import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { ENABLE_DEVMODE } from "./constants";
 import { set$, useStateContext } from "./state";
 import { type GetRenderedItem, type LegendListProps, typedMemo } from "./types";
+import { useSyncLayout } from "./useSyncLayout";
 import { useValue$ } from "./useValue$";
 
 interface ListComponentProps<ItemT>
@@ -36,6 +38,7 @@ interface ListComponentProps<ItemT>
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
     handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
     onLayout: (event: LayoutChangeEvent) => void;
+    onLayoutHeader: (rect: LayoutRectangle, fromLayoutEffect: boolean) => void;
     maintainVisibleContentPosition: boolean;
     renderScrollComponent?: (props: ScrollViewProps) => React.ReactElement<ScrollViewProps>;
     style: ViewStyle;
@@ -102,9 +105,13 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     maintainVisibleContentPosition,
     renderScrollComponent,
     scrollAdjustHandler,
+    onLayoutHeader,
     ...rest
 }: ListComponentProps<ItemT>) {
     const ctx = useStateContext();
+    const { onLayout: onLayoutHeaderSync, ref: refHeader } = useSyncLayout({
+        onChange: onLayoutHeader,
+    });
 
     // Use renderScrollComponent if provided, otherwise a regular ScrollView
     const ScrollComponent = renderScrollComponent
@@ -152,13 +159,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
             {maintainVisibleContentPosition && <ScrollAdjust />}
             {ENABLE_DEVMODE ? <PaddingDevMode /> : <Padding />}
             {ListHeaderComponent && (
-                <View
-                    style={ListHeaderComponentStyle}
-                    onLayout={(event) => {
-                        const size = event.nativeEvent.layout[horizontal ? "width" : "height"];
-                        set$(ctx, "headerSize", size);
-                    }}
-                >
+                <View style={ListHeaderComponentStyle} onLayout={onLayoutHeaderSync} ref={refHeader}>
                     {getComponent(ListHeaderComponent)}
                 </View>
             )}
