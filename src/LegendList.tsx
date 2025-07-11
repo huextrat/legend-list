@@ -314,16 +314,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return velocity;
     };
 
-    const updateAllPositions = () => {
+    const updateAllPositions = (dataChanged?: boolean) => {
         const { columns, data, indexByKey, positions, firstFullyOnScreenIndex } = refState.current!;
         // const start = performance.now();
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
         const scrollVelocity = getScrollVelocity();
 
+        if (dataChanged) {
+            indexByKey.clear();
+        }
+
         // Check if we should use backwards optimization when scrolling up
         const shouldUseBackwards =
-            scrollVelocity < 0 && firstFullyOnScreenIndex > 5 && firstFullyOnScreenIndex < data!.length;
+            !dataChanged && scrollVelocity < 0 && firstFullyOnScreenIndex > 5 && firstFullyOnScreenIndex < data!.length;
 
         if (shouldUseBackwards && firstFullyOnScreenIndex !== undefined) {
             // Get the current position of firstFullyOnScreenIndex as anchor
@@ -558,7 +562,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         };
     }, []);
 
-    const calculateItemsInView = useCallback((params: { doMVCP?: boolean } = {}) => {
+    const calculateItemsInView = useCallback((params: { doMVCP?: boolean; dataChanged?: boolean } = {}) => {
         const state = refState.current!;
         const { data, scrollLength, startBufferedId: startBufferedIdOrig, positions, columns } = state!;
         if (!data || scrollLength === 0) {
@@ -569,7 +573,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
-        const { doMVCP } = params;
+        const { dataChanged, doMVCP } = params;
         const speed = getScrollVelocity();
 
         if (doMVCP) {
@@ -578,7 +582,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const checkMVCP = doMVCP ? prepareMVCP() : undefined;
 
             // Update all positions upfront so we can assume they're correct
-            updateAllPositions();
+            updateAllPositions(dataChanged);
 
             checkMVCP?.();
         }
@@ -1075,6 +1079,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             state.data = dataProp;
 
             if (!isFirst) {
+                calculateItemsInView({ dataChanged: true, doMVCP: true });
+
                 // Reset containers that aren't used anymore because the data has changed
                 const numContainers = peek$(ctx, "numContainers");
                 for (let i = 0; i < numContainers; i++) {
@@ -1086,8 +1092,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         set$(ctx, `containerColumn${i}`, -1);
                     }
                 }
-
-                calculateItemsInView({ doMVCP: true });
 
                 const didMaintainScrollAtEnd = doMaintainScrollAtEnd(false);
 
@@ -1297,15 +1301,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, []);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const didAllocateContainers = doInitialAllocateContainers();
         if (!didAllocateContainers) {
             checkResetContainers(/*isFirst*/ isFirst);
         }
     }, [dataProp, numColumnsProp]);
 
-    // TODO: Should this be a useLayoutEffect?
-    useEffect(() => {
+    useLayoutEffect(() => {
         set$(ctx, "extraData", extraData);
     }, [extraData]);
 
