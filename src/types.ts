@@ -277,6 +277,7 @@ export interface InternalState {
     columns: Map<string, number>;
     sizes: Map<string, number>;
     sizesKnown: Map<string, number>;
+    containerItemKeys: Set<string>;
     pendingAdjust: number;
     isStartReached: boolean;
     isEndReached: boolean;

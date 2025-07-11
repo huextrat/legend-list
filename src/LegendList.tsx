@@ -278,6 +278,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             averageSizes: {},
             onScroll: onScrollProp,
             idsInView: [],
+            containerItemKeys: new Set(),
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
@@ -564,7 +565,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const calculateItemsInView = useCallback((params: { doMVCP?: boolean; dataChanged?: boolean } = {}) => {
         const state = refState.current!;
-        const { data, scrollLength, startBufferedId: startBufferedIdOrig, positions, columns } = state!;
+        const {
+            data,
+            scrollLength,
+            startBufferedId: startBufferedIdOrig,
+            positions,
+            columns,
+            containerItemKeys,
+        } = state!;
         if (!data || scrollLength === 0) {
             return;
         }
@@ -789,20 +797,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         if (startBuffered !== null && endBuffered !== null) {
             let numContainers = prevNumContainers;
-
             const needNewContainers: number[] = [];
-            const isContained = (i: number) => {
-                const id = getId(i)!;
-                // See if this item is already in a container
-                for (let j = 0; j < numContainers; j++) {
-                    const key = peek$(ctx, `containerItemKey${j}`);
-                    if (key === id) {
-                        return true;
-                    }
-                }
-            };
+
             for (let i = startBuffered!; i <= endBuffered; i++) {
-                if (!isContained(i)) {
+                const id = getId(i)!;
+                if (!containerItemKeys.has(id)) {
                     needNewContainers.push(i);
                 }
             }
@@ -819,8 +818,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const containerIndex = availableContainers[idx];
                     const id = getId(i)!;
 
+                    // Remove old key from cache
+                    const oldKey = peek$(ctx, `containerItemKey${containerIndex}`);
+                    if (oldKey && oldKey !== id) {
+                        containerItemKeys!.delete(oldKey);
+                    }
+
                     set$(ctx, `containerItemKey${containerIndex}`, id);
                     set$(ctx, `containerItemData${containerIndex}`, data[i]);
+
+                    // Update cache when adding new item
+                    containerItemKeys!.add(id);
 
                     if (containerIndex >= numContainers) {
                         numContainers = containerIndex + 1;
@@ -841,6 +849,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 // If it was
                 if (pendingRemoval.includes(i)) {
+                    // Update cache when removing item
+                    if (itemKey) {
+                        state.containerItemKeys!.delete(itemKey);
+                    }
+
                     set$(ctx, `containerItemKey${i}`, undefined);
                     set$(ctx, `containerItemData${i}`, undefined);
                     set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
