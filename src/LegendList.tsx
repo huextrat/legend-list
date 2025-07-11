@@ -775,15 +775,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         //     endBuffered,
         // );
 
-        // Reset containers that aren't used anymore because the data has changed
         const numContainers = peek$(ctx, "numContainers");
-        for (let i = 0; i < numContainers; i++) {
-            const itemKey = peek$(ctx, `containerItemKey${i}`);
-            if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
-                set$(ctx, `containerItemKey${i}`, undefined);
-                set$(ctx, `containerItemData${i}`, undefined);
-                set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                set$(ctx, `containerColumn${i}`, -1);
+        // Reset containers that aren't used anymore because the data has changed
+        const pendingRemoval: number[] = [];
+        if (dataChanged) {
+            for (let i = 0; i < numContainers; i++) {
+                const itemKey = peek$(ctx, `containerItemKey${i}`);
+                if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
+                    pendingRemoval.push(i);
+                }
             }
         }
 
@@ -801,9 +801,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     }
                 }
             };
-            // Note: There was previously an optimization here to only check items that are newly visible
-            // but it may have been causing issues with some items not being rendered,
-            // and it's likely not enough of a performance improvement to be worth it
             for (let i = startBuffered!; i <= endBuffered; i++) {
                 if (!isContained(i)) {
                     needNewContainers.push(i);
@@ -815,6 +812,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     needNewContainers.length,
                     startBuffered,
                     endBuffered,
+                    pendingRemoval,
                 );
                 for (let idx = 0; idx < needNewContainers.length; idx++) {
                     const i = needNewContainers[idx];
@@ -838,38 +836,44 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
 
             // Update top positions of all containers
-            // TODO: This could be optimized to only update the containers that have changed
-            // but it likely would have little impact. Remove this comment if not worth doing.
             for (let i = 0; i < numContainers; i++) {
                 const itemKey = peek$(ctx, `containerItemKey${i}`);
-                const itemIndex = state.indexByKey.get(itemKey)!;
-                const item = data[itemIndex];
-                if (item !== undefined) {
-                    const id = getId(itemIndex);
-                    const position = positions.get(id);
 
-                    // console.log("B", i, itemKey, itemIndex, id, position);
-                    if (position === undefined) {
-                        // This item may have been in view before data changed and positions were reset
-                        // so we need to set it to out of view
-                        set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                    } else {
-                        const pos = positions.get(id)!;
-                        const column = columns.get(id) || 1;
+                // If it was
+                if (pendingRemoval.includes(i)) {
+                    set$(ctx, `containerItemKey${i}`, undefined);
+                    set$(ctx, `containerItemData${i}`, undefined);
+                    set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
+                    set$(ctx, `containerColumn${i}`, -1);
+                } else {
+                    const itemIndex = state.indexByKey.get(itemKey)!;
+                    const item = data[itemIndex];
+                    if (item !== undefined) {
+                        const id = getId(itemIndex);
+                        const position = positions.get(id);
 
-                        const prevPos = peek$(ctx, `containerPosition${i}`);
-                        const prevColumn = peek$(ctx, `containerColumn${i}`);
-                        const prevData = peek$(ctx, `containerItemData${i}`);
+                        if (position === undefined) {
+                            // This item may have been in view before data changed and positions were reset
+                            // so we need to set it to out of view
+                            set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
+                        } else {
+                            const pos = positions.get(id)!;
+                            const column = columns.get(id) || 1;
 
-                        if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
-                            set$(ctx, `containerPosition${i}`, pos);
-                        }
-                        if (column >= 0 && column !== prevColumn) {
-                            set$(ctx, `containerColumn${i}`, column);
-                        }
+                            const prevPos = peek$(ctx, `containerPosition${i}`);
+                            const prevColumn = peek$(ctx, `containerColumn${i}`);
+                            const prevData = peek$(ctx, `containerItemData${i}`);
 
-                        if (prevData !== item) {
-                            set$(ctx, `containerItemData${i}`, data[itemIndex]);
+                            if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
+                                set$(ctx, `containerPosition${i}`, pos);
+                            }
+                            if (column >= 0 && column !== prevColumn) {
+                                set$(ctx, `containerColumn${i}`, column);
+                            }
+
+                            if (prevData !== item) {
+                                set$(ctx, `containerItemData${i}`, data[itemIndex]);
+                            }
                         }
                     }
                 }
@@ -1127,12 +1131,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const findAvailableContainers = (numNeeded: number, startBuffered: number, endBuffered: number): number[] => {
+    const findAvailableContainers = (
+        numNeeded: number,
+        startBuffered: number,
+        endBuffered: number,
+        pendingRemoval: number[],
+    ): number[] => {
         const state = refState.current!;
         const numContainers = peek$(ctx, "numContainers") as number;
-
-        // Quick return for common case
-        if (numNeeded === 0) return [];
 
         const result: number[] = [];
         const availableContainers: Array<{ index: number; distance: number }> = [];
@@ -1140,8 +1146,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // First pass: collect unallocated containers (most efficient to use)
         for (let u = 0; u < numContainers; u++) {
             const key = peek$(ctx, `containerItemKey${u}`);
-            // Hasn't been allocated yet, just use it
-            if (key === undefined) {
+            let isOk = key === undefined;
+            if (!isOk) {
+                const index = pendingRemoval.indexOf(u);
+                if (index !== -1) {
+                    pendingRemoval.splice(index, 1);
+                    isOk = true;
+                }
+            }
+            // Hasn't been allocated yet or is pending removal, so use it
+            if (isOk) {
                 result.push(u);
                 if (result.length >= numNeeded) {
                     return result; // Early exit if we have enough unallocated containers
