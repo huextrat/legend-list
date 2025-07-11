@@ -1285,7 +1285,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         set$(ctx, "headerSize", size);
 
         if (initialScroll) {
-            if (IsNewArchitecture) {
+            if (IsNewArchitecture && Platform.OS !== "android") {
                 if (fromLayoutEffect) {
                     setRenderNum((v) => v + 1);
                 }
