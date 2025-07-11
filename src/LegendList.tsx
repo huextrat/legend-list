@@ -160,11 +160,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const getItemSize = (key: string, index: number, data: T, useAverageSize = false) => {
         const state = refState.current!;
         const sizeKnown = state.sizesKnown.get(key)!;
-        // Note: Can't return sizeKnown because it will throw off the total size calculations
-        // because this is called in updateItemSize
+        if (sizeKnown !== undefined) {
+            return sizeKnown;
+        }
         const sizePrevious = state.sizes.get(key)!;
-        let size: number | undefined;
-        const numColumns = peek$(ctx, "numColumns");
+
+        if (sizePrevious !== undefined) {
+            return sizePrevious;
+        }
 
         // TODO: Using averages was causing many problems, so we're disabling it for now
         // Specifically, it was causing the scrollToIndex to not work correctly
@@ -183,15 +186,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         //     }
         // }
 
-        if (size === undefined && sizePrevious !== undefined) {
-            // If we already have a cached size, use it
-            return sizePrevious;
-        }
-
         // Get estimated size if we don't have an average or already cached size
-        if (size === undefined) {
-            size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
-        }
+        const size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
 
         // Save to rendered sizes
         state.sizes.set(key, size);
