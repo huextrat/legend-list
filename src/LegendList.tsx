@@ -162,7 +162,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return id;
     };
 
-    const getItemSize = (key: string, index: number, data: T, useAverageSize = false) => {
+    const getItemSize = (key: string, index: number, data: T, useAverageSize?: number | undefined) => {
         const state = refState.current!;
         const sizeKnown = state.sizesKnown.get(key)!;
         if (sizeKnown !== undefined) {
@@ -171,22 +171,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         let size: number | undefined;
 
-        if (sizeKnown === undefined && !getEstimatedItemSize && !state.scrollingTo && useAverageSize) {
+        if ((useAverageSize !== undefined && sizeKnown) === undefined && !getEstimatedItemSize && !state.scrollingTo) {
             // TODO: Hook this up to actual item type later once we have item types
-            const itemType = "";
-            const average = state.averageSizes[itemType];
-            if (average) {
-                size = roundSize(average.avg);
+            size = useAverageSize;
+        }
+
+        if (size === undefined) {
+            size = state.sizes.get(key)!;
+
+            if (size !== undefined) {
+                return size;
             }
         }
 
         if (size === undefined) {
-            const sizePrevious = state.sizes.get(key)!;
-
-            if (sizePrevious !== undefined) {
-                return sizePrevious;
-            }
-
             // Get estimated size if we don't have an average or already cached size
             size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
         }
@@ -335,7 +333,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     const updateAllPositions = (dataChanged?: boolean) => {
-        const { columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } =
+        const { averageSizes, columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } =
             refState.current!;
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
@@ -344,6 +342,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (dataChanged) {
             indexByKey.clear();
             idCache.clear();
+        }
+
+        // TODO: Hook this up to actual item types later once we have item types
+        const itemType = "";
+        let averageSize = averageSizes[itemType]?.avg;
+        if (averageSize !== undefined) {
+            averageSize = roundSize(averageSize);
         }
 
         // Check if we should use backwards optimization when scrolling up
@@ -365,7 +370,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 // Process items backwards from firstFullyOnScreenIndex - 1 to 0
                 for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
                     const id = idCache.get(i) ?? getId(i)!;
-                    const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], false);
+                    const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
                     const itemColumn = columns.get(id)!;
 
                     maxSizeInRow = Math.max(maxSizeInRow, size);
@@ -407,7 +412,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = 0; i < dataLength; i++) {
             // Inline the map get calls to avoid the overhead of the function call
             const id = idCache.get(i) ?? getId(i)!;
-            const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], true);
+            const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
 
             // Set index mapping for this item
             if (__DEV__ && needsIndexByKey) {
@@ -641,11 +646,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
         // const scrollExtra = Math.max(-16, Math.min(16, speed)) * 24;
 
-        // Don't use averages when disabling scroll jumps because adding items to the top of the list
-        // causes jumpiness if using averages
-        // TODO Figure out why using average caused jumpiness, maybe we can fix it a better way
-        const useAverageSize = false; // speed >= 0 && peek$(ctx, "containersDidLayout");
-
         const { queuedInitialLayout } = state!;
         let { scroll: scrollState } = state!;
 
@@ -716,7 +716,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = loopStart; i >= 0; i--) {
             const id = idCache.get(i) ?? getId(i)!;
             const top = positions.get(id)!;
-            const size = sizes.get(id) ?? getItemSize(id, i, data[i], useAverageSize);
+            const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
             const bottom = top + size;
 
             if (bottom > scroll - scrollBuffer) {
@@ -754,7 +754,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const dataLength = data!.length;
         for (let i = Math.max(0, loopStart); i < dataLength && (!foundEnd || i <= maxIndexRendered); i++) {
             const id = idCache.get(i) ?? getId(i)!;
-            const size = sizes.get(id) ?? getItemSize(id, i, data[i], useAverageSize);
+            const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
             const top = positions.get(id)!;
 
             if (!foundEnd) {
@@ -1177,6 +1177,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 const lastPosition = positions.get(lastId);
                 if (lastPosition !== undefined) {
                     const lastSize = getItemSize(lastId, data.length - 1, data[dataProp.length - 1]);
+                    // TODO: This is likely incorrect for columns with rows having different heights, need to get max size of the last row
                     if (lastSize !== undefined) {
                         const totalSize = lastPosition + lastSize;
                         addTotalSize(null, totalSize);
