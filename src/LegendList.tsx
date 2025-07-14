@@ -318,9 +318,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     const updateAllPositions = (dataChanged?: boolean) => {
-        const { columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown, sizes } =
-            refState.current!;
-        // const start = performance.now();
+        const { columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizes } = refState.current!;
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
         const scrollVelocity = getScrollVelocity();
@@ -387,10 +385,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const needsIndexByKey = dataChanged || indexByKey.size === 0;
 
         // Note that this loop is micro-optimized because it's a hot path
-        for (let i = 0; i < data!.length; i++) {
+        const dataLength = data!.length;
+        for (let i = 0; i < dataLength; i++) {
             // Inline the map get calls to avoid the overhead of the function call
             const id = idCache.get(i) ?? getId(i)!;
-            const size = sizesKnown.get(id) ?? sizes.get(id) ?? getItemSize(id, i, data[i], false);
+            const size = sizes.get(id) ?? getItemSize(id, i, data[i], false);
 
             // Set index mapping for this item
             if (__DEV__ && needsIndexByKey) {
@@ -591,6 +590,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             columns,
             containerItemKeys,
             idCache,
+            sizes,
+            indexByKey,
+            scrollForNextCalculateItemsInView,
+            enableScrollForNextCalculateItemsInView,
+            minIndexSizeChanged,
         } = state!;
         if (!data || scrollLength === 0) {
             return;
@@ -614,7 +618,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             checkMVCP?.();
         }
 
-        let scrollState = state.scroll;
         const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
@@ -625,10 +628,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // TODO Figure out why using average caused jumpiness, maybe we can fix it a better way
         const useAverageSize = false; // speed >= 0 && peek$(ctx, "containersDidLayout");
 
+        const { queuedInitialLayout } = state!;
+        let { scroll: scrollState } = state!;
+
         // If this is before the initial layout, and we have an initialScrollIndex,
         // then ignore the actual scroll which might be shifting due to scrollAdjustHandler
         // and use the calculated offset of the initialScrollIndex instead.
-        if (!state.queuedInitialLayout && initialScroll) {
+        if (!queuedInitialLayout && initialScroll) {
             const updatedOffset = calculateOffsetWithOffsetPosition(
                 calculateOffsetForIndex(initialScroll.index),
                 initialScroll,
@@ -668,8 +674,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const scrollBottomBuffered = scrollBottom + scrollBufferBottom;
 
         // Check precomputed scroll range to see if we can skip this check
-        if (state.scrollForNextCalculateItemsInView) {
-            const { top, bottom } = state.scrollForNextCalculateItemsInView;
+        if (scrollForNextCalculateItemsInView) {
+            const { top, bottom } = scrollForNextCalculateItemsInView;
             if (scrollTopBuffered > top && scrollBottomBuffered < bottom) {
                 return;
             }
@@ -681,10 +687,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         let endNoBuffer: number | null = null;
         let endBuffered: number | null = null;
 
-        let loopStart: number = startBufferedIdOrig ? state.indexByKey.get(startBufferedIdOrig) || 0 : 0;
+        let loopStart: number = startBufferedIdOrig ? indexByKey.get(startBufferedIdOrig) || 0 : 0;
 
-        if (state.minIndexSizeChanged !== undefined) {
-            loopStart = Math.min(state.minIndexSizeChanged, loopStart);
+        if (minIndexSizeChanged !== undefined) {
+            loopStart = Math.min(minIndexSizeChanged, loopStart);
             state.minIndexSizeChanged = undefined;
         }
 
@@ -694,7 +700,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = loopStart; i >= 0; i--) {
             const id = idCache.get(i) ?? getId(i)!;
             const top = positions.get(id)!;
-            const size = getItemSize(id, i, data[i], useAverageSize);
+            const size = sizes.get(id) ?? getItemSize(id, i, data[i], useAverageSize);
             const bottom = top + size;
 
             if (bottom > scroll - scrollBuffer) {
@@ -720,7 +726,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = 0; i < prevNumContainers; i++) {
             const key = peek$(ctx, `containerItemKey${i}`);
             if (key !== undefined) {
-                const index = state.indexByKey.get(key)!;
+                const index = indexByKey.get(key)!;
                 maxIndexRendered = Math.max(maxIndexRendered, index);
             }
         }
@@ -729,9 +735,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // scan data forwards
         // Continue until we've found the end and we've updated positions of all items that were previously in view
-        for (let i = Math.max(0, loopStart); i < data!.length && (!foundEnd || i <= maxIndexRendered); i++) {
+        const dataLength = data!.length;
+        for (let i = Math.max(0, loopStart); i < dataLength && (!foundEnd || i <= maxIndexRendered); i++) {
             const id = idCache.get(i) ?? getId(i)!;
-            const size = getItemSize(id, i, data[i], useAverageSize);
+            const size = sizes.get(id) ?? getItemSize(id, i, data[i], useAverageSize);
             const top = positions.get(id)!;
 
             if (!foundEnd) {
@@ -780,7 +787,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // Precompute the scroll that will be needed for the range to change
         // so it can be skipped if not needed
-        if (state.enableScrollForNextCalculateItemsInView && nextTop !== undefined && nextBottom !== undefined) {
+        if (enableScrollForNextCalculateItemsInView && nextTop !== undefined && nextBottom !== undefined) {
             state.scrollForNextCalculateItemsInView =
                 nextTop !== undefined && nextBottom !== undefined
                     ? {
@@ -795,7 +802,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Math.round(scroll),
         // Math.round(scrollState),
         // Math.round(scrollExtra),
-        // scrollAdjustPad,
+        //     Math.round(scrollAdjustPad),
         //     startBuffered,
         //     startNoBuffer,
         //     endNoBuffer,
@@ -808,7 +815,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (dataChanged) {
             for (let i = 0; i < numContainers; i++) {
                 const itemKey = peek$(ctx, `containerItemKey${i}`);
-                if (!keyExtractorProp || (itemKey && state.indexByKey.get(itemKey) === undefined)) {
+                if (!keyExtractorProp || (itemKey && indexByKey.get(itemKey) === undefined)) {
                     pendingRemoval.push(i);
                 }
             }
@@ -870,7 +877,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 if (pendingRemoval.includes(i)) {
                     // Update cache when removing item
                     if (itemKey) {
-                        state.containerItemKeys!.delete(itemKey);
+                        containerItemKeys!.delete(itemKey);
                     }
 
                     set$(ctx, `containerItemKey${i}`, undefined);
@@ -878,7 +885,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
                     set$(ctx, `containerColumn${i}`, -1);
                 } else {
-                    const itemIndex = state.indexByKey.get(itemKey)!;
+                    const itemIndex = indexByKey.get(itemKey)!;
                     const item = data[itemIndex];
                     if (item !== undefined) {
                         const id = idCache.get(itemIndex) ?? getId(itemIndex);
@@ -912,7 +919,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        if (!state.queuedInitialLayout && endBuffered !== null) {
+        if (!queuedInitialLayout && endBuffered !== null) {
             // If waiting for initial layout and all items in view have a known size then
             // initial layout is complete
             if (checkAllSizesKnown()) {
@@ -920,11 +927,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        if (state.viewabilityConfigCallbackPairs) {
+        if (viewabilityConfigCallbackPairs) {
             updateViewableItems(
                 state,
                 ctx,
-                state.viewabilityConfigCallbackPairs,
+                viewabilityConfigCallbackPairs,
                 getId,
                 scrollLength,
                 startNoBuffer!,
@@ -1595,7 +1602,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     // If it's this item just use the param
                     changes.push({ itemKey, sizeObj });
                 } else if (!sizesKnown.has(containerItemKey) && containerItemKey !== undefined) {
-                    // if (itemKey !== undefined) {
                     const containerRef = ctx.viewRefs.get(i);
                     if (containerRef) {
                         const measured: { width: number; height: number } = (
@@ -1687,7 +1693,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (ignoreScrollFromMVCP && !state.scrollingTo) {
                 const { lt, gt } = ignoreScrollFromMVCP;
                 if ((lt && newScroll < lt) || (gt && newScroll > gt)) {
-                    // console.log("ignore mcp scroll", newScroll);
                     return;
                 }
             }
