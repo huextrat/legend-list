@@ -1,4 +1,5 @@
-import type React from "react";
+// biome-ignore lint/style/useImportType: Leaving this out makes it crash in some environments
+import * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 import { ContextContainer, type ContextContainerType } from "./ContextContainer";
