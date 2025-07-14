@@ -6,8 +6,8 @@ import { useArr$ } from "./state";
 export function ScrollAdjust() {
     // Use a large bias to ensure this value never goes negative
     const bias = 10_000_000;
-    const [scrollAdjust] = useArr$(["scrollAdjust"]);
-    const scrollOffset = (scrollAdjust || 0) + bias;
+    const [scrollAdjust, scrollAdjustUserOffset] = useArr$(["scrollAdjust", "scrollAdjustUserOffset"]);
+    const scrollOffset = (scrollAdjust || 0) + (scrollAdjustUserOffset || 0) + bias;
     const horizontal = false;
 
     return (

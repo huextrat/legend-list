@@ -32,6 +32,7 @@ export type ListenerType =
     | "alignItemsPaddingTop"
     | "stylePaddingTop"
     | "scrollAdjust"
+    | "scrollAdjustUserOffset"
     | "headerSize"
     | "footerSize"
     | "maintainVisibleContentPosition"
@@ -51,6 +52,7 @@ export type ListenerTypeValueMap = {
     alignItemsPaddingTop: number;
     stylePaddingTop: number;
     scrollAdjust: number;
+    scrollAdjustUserOffset: number;
     headerSize: number;
     footerSize: number;
     maintainVisibleContentPosition: boolean;

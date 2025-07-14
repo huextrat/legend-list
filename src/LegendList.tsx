@@ -1829,6 +1829,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         });
                     }
                 },
+                setVisibleContentAnchorOffset: (value: number | ((value: number) => number)) => {
+                    const val = typeof value === "function" ? value(peek$(ctx, "scrollAdjustUserOffset") || 0) : value;
+                    set$(ctx, "scrollAdjustUserOffset", val);
+                },
             };
         },
         [],
