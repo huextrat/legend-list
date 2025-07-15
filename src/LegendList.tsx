@@ -37,6 +37,7 @@ import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
 import { requestAdjust } from "./requestAdjust";
+import { setDidLayout } from "./setDidLayout";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
     InternalState,
@@ -112,6 +113,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onViewableItemsChanged,
         onStartReached,
         onEndReached,
+        onLoad,
         ...rest
     } = props;
 
@@ -188,6 +190,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             props: {} as any,
             calculateItemsInView: undefined as any,
             refScroller: undefined as any,
+            loadStartTime: Date.now(),
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
@@ -215,6 +218,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         getEstimatedItemSize,
         onStartReached,
         onEndReached,
+        onLoad,
     };
 
     const updateAllPositions = (dataChanged?: boolean) => {
@@ -363,17 +367,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         state.scrollForNextCalculateItemsInView = undefined;
 
         scrollTo({ offset: firstIndexScrollPostion, animated, index, viewPosition: viewPosition ?? 0, viewOffset });
-    };
-
-    const setDidLayout = () => {
-        state.queuedInitialLayout = true;
-        checkAtBottom(ctx, state);
-
-        set$(ctx, "containersDidLayout", true);
-
-        if (props.onLoad) {
-            props.onLoad({ elapsedTimeInMs: Date.now() - refLoadStartTime.current });
-        }
     };
 
     const prepareMVCP = useCallback((): (() => void) => {
@@ -754,7 +747,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // If waiting for initial layout and all items in view have a known size then
             // initial layout is complete
             if (checkAllSizesKnown(state)) {
-                setDidLayout();
+                setDidLayout(ctx, state);
             }
         }
 

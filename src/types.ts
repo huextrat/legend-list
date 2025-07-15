@@ -333,6 +333,7 @@ export interface InternalState {
         }
     >;
     refScroller: React.RefObject<ScrollView>;
+    loadStartTime: number;
     calculateItemsInView: (params: { doMVCP?: boolean }) => void;
     props: {
         alignItemsAtEnd: boolean;
@@ -355,6 +356,7 @@ export interface InternalState {
                   itemData: any;
               }) => void)
             | undefined;
+        onLoad: ((info: { elapsedTimeInMs: number }) => void) | undefined;
         onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
         onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
         onStartReachedThreshold: number | null | undefined;
