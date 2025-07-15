@@ -24,7 +24,10 @@ import {
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
+import { checkThreshold } from "./checkThreshold";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
+import { finishScrollTo } from "./finishScrollTo";
+import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
@@ -286,58 +289,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     refState.current.data = dataProp;
     refState.current.onScroll = onScrollProp;
 
-    const getScrollVelocity = () => {
-        const { scrollHistory } = refState.current!;
-        let velocity = 0;
-        if (scrollHistory.length >= 1) {
-            const newest = scrollHistory[scrollHistory.length - 1];
-            let oldest: (typeof scrollHistory)[0] | undefined;
-            let start = 0;
-
-            // If there's a change in direction, remove all entries before that point
-            for (let i = 0; i < scrollHistory.length - 1; i++) {
-                const entry = scrollHistory[i];
-                const nextEntry = scrollHistory[i + 1];
-
-                // Check if direction changes - if so, remove older entries
-                if (i > 0) {
-                    const prevEntry = scrollHistory[i - 1];
-                    const prevDirection = entry.scroll - prevEntry.scroll;
-                    const currentDirection = nextEntry.scroll - entry.scroll;
-
-                    // If direction changed, remove all entries before this point
-                    if ((prevDirection > 0 && currentDirection < 0) || (prevDirection < 0 && currentDirection > 0)) {
-                        start = i;
-                        break;
-                    }
-                }
-            }
-
-            // Find oldest recent event
-            for (let i = 0; i < scrollHistory.length - 1; i++) {
-                const entry = scrollHistory[i];
-                if (newest.time - entry.time <= 1000) {
-                    oldest = entry;
-                    break;
-                }
-            }
-
-            if (oldest) {
-                const scrollDiff = newest.scroll - oldest.scroll;
-                const timeDiff = newest.time - oldest.time;
-                velocity = timeDiff > 0 ? scrollDiff / timeDiff : 0;
-            }
-        }
-
-        return velocity;
-    };
-
     const updateAllPositions = (dataChanged?: boolean) => {
         const { averageSizes, columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } =
             refState.current!;
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
-        const scrollVelocity = getScrollVelocity();
+        const scrollVelocity = getScrollVelocity(refState.current!);
 
         if (dataChanged) {
             indexByKey.clear();
@@ -628,7 +585,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const numColumns = peek$(ctx, "numColumns");
         const previousScrollAdjust = 0;
         const { dataChanged, doMVCP } = params;
-        const speed = getScrollVelocity();
+        const speed = getScrollVelocity(refState.current!);
 
         if (doMVCP || dataChanged) {
             // TODO: This should only run if a size changed or items changed
@@ -995,14 +952,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const finishScrollTo = () => {
-        const state = refState.current;
-        if (state) {
-            state.scrollingTo = undefined;
-            state.scrollHistory.length = 0;
-        }
-    };
-
     const scrollTo = (
         params: {
             animated?: boolean;
@@ -1032,7 +981,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             refState.current!.scroll = offset;
             // TODO: Should this not be a timeout, and instead wait for all item layouts to settle?
             // It's used for mvcp for when items change size above scroll.
-            setTimeout(finishScrollTo, 100);
+            setTimeout(() => finishScrollTo(refState.current), 100);
         }
     };
 
@@ -1062,37 +1011,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             return true;
         }
-    };
-
-    const checkThreshold = (
-        distance: number,
-        atThreshold: boolean,
-        threshold: number,
-        isReached: boolean,
-        isBlockedByTimer: boolean,
-        onReached?: (distance: number) => void,
-        blockTimer?: (block: boolean) => void,
-    ) => {
-        const distanceAbs = Math.abs(distance);
-        const isAtThreshold = atThreshold || distanceAbs < threshold;
-
-        if (!isReached && !isBlockedByTimer) {
-            if (isAtThreshold) {
-                onReached?.(distance);
-                blockTimer?.(true);
-                setTimeout(() => {
-                    blockTimer?.(false);
-                }, 700);
-                return true;
-            }
-        } else {
-            // reset flag when user scrolls back out of the threshold
-            // add hysteresis to avoid multiple events triggered
-            if (distance >= 1.3 * threshold) {
-                return false;
-            }
-        }
-        return isReached;
     };
 
     const checkAtBottom = () => {
@@ -1858,7 +1776,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 handleScroll={handleScroll}
                 onMomentumScrollEnd={(event) => {
                     requestAnimationFrame(() => {
-                        finishScrollTo();
+                        finishScrollTo(refState.current);
                     });
 
                     if (onMomentumScrollEnd) {
