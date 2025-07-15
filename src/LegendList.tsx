@@ -28,6 +28,7 @@ import { checkThreshold } from "./checkThreshold";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
+import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
@@ -213,37 +214,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.data = dataProp;
     state.keyExtractor = keyExtractor;
     state.onScroll = onScrollProp;
-
-    const getItemSize = (key: string, index: number, data: T, useAverageSize?: number | undefined) => {
-        const sizeKnown = state.sizesKnown.get(key)!;
-        if (sizeKnown !== undefined) {
-            return sizeKnown;
-        }
-
-        let size: number | undefined;
-
-        if ((useAverageSize !== undefined && sizeKnown) === undefined && !getEstimatedItemSize && !state.scrollingTo) {
-            // TODO: Hook this up to actual item type later once we have item types
-            size = useAverageSize;
-        }
-
-        if (size === undefined) {
-            size = state.sizes.get(key)!;
-
-            if (size !== undefined) {
-                return size;
-            }
-        }
-
-        if (size === undefined) {
-            // Get estimated size if we don't have an average or already cached size
-            size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
-        }
-
-        // Save to rendered sizes
-        state.sizes.set(key, size);
-        return size;
-    };
+    state.getEstimatedItemSize = getEstimatedItemSize;
+    state.estimatedItemSize = estimatedItemSize;
 
     const calculateOffsetForIndex = (index: number | undefined) => {
         let position = 0;
@@ -276,7 +248,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (viewPosition !== undefined && index !== undefined) {
             // TODO: This can be inaccurate if the item size is very different from the estimatedItemSize
             // In the future we can improve this by listening for the item size change and then updating the scroll position
-            offset -= viewPosition * (state.scrollLength - getItemSize(getId(state, index), index, state.data[index]));
+            offset -=
+                viewPosition * (state.scrollLength - getItemSize(state, getId(state, index), index, state.data[index]));
         }
 
         return offset;
@@ -320,7 +293,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 // Process items backwards from firstFullyOnScreenIndex - 1 to 0
                 for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
                     const id = idCache.get(i) ?? getId(state, i)!;
-                    const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
+                    const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
                     const itemColumn = columns.get(id)!;
 
                     maxSizeInRow = Math.max(maxSizeInRow, size);
@@ -362,7 +335,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = 0; i < dataLength; i++) {
             // Inline the map get calls to avoid the overhead of the function call
             const id = idCache.get(i) ?? getId(state, i)!;
-            const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
+            const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
 
             // Set index mapping for this item
             if (__DEV__ && needsIndexByKey) {
@@ -661,7 +634,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         for (let i = loopStart; i >= 0; i--) {
             const id = idCache.get(i) ?? getId(state, i)!;
             const top = positions.get(id)!;
-            const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
+            const size = sizes.get(id) ?? getItemSize(state, id, i, data[i]);
             const bottom = top + size;
 
             if (bottom > scroll - scrollBuffer) {
@@ -699,7 +672,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const dataLength = data!.length;
         for (let i = Math.max(0, loopStart); i < dataLength && (!foundEnd || i <= maxIndexRendered); i++) {
             const id = idCache.get(i) ?? getId(state, i)!;
-            const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
+            const size = sizes.get(id) ?? getItemSize(state, id, i, data[i]);
             const top = positions.get(id)!;
 
             if (!foundEnd) {
@@ -1075,7 +1048,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (lastId !== undefined) {
                 const lastPosition = positions.get(lastId);
                 if (lastPosition !== undefined) {
-                    const lastSize = getItemSize(lastId, data.length - 1, data[dataProp.length - 1]);
+                    const lastSize = getItemSize(state, lastId, data.length - 1, data[dataProp.length - 1]);
                     // TODO: This is likely incorrect for columns with rows having different heights, need to get max size of the last row
                     if (lastSize !== undefined) {
                         const totalSize = lastPosition + lastSize;
@@ -1372,12 +1345,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (!data) return 0;
 
         const index = indexByKey.get(itemKey)!;
-        const prevSize = getItemSize(itemKey, index, data as any);
+        const prevSize = getItemSize(state, itemKey, index, data as any);
         const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
 
         sizesKnown.set(itemKey, size);
 
-        // Update averages for dev warning
+        // Update averages
         const itemType = "";
         let averages = averageSizes[itemType];
         if (!averages) {
