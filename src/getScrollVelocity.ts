@@ -28,7 +28,7 @@ export const getScrollVelocity = (state: InternalState) => {
         }
 
         // Find oldest recent event
-        for (let i = 0; i < scrollHistory.length - 1; i++) {
+        for (let i = start; i < scrollHistory.length - 1; i++) {
             const entry = scrollHistory[i];
             if (newest.time - entry.time <= 1000) {
                 oldest = entry;
