@@ -103,11 +103,12 @@ export function useRecyclingState<ItemT>(valueOrFun: ((info: LegendListRecycling
         value: null,
     });
     const [_, setRenderNum] = useState(0);
+    const state = refState.current;
 
-    if (refState.current.itemKey !== itemKey) {
-        refState.current.itemKey = itemKey;
+    if (state.itemKey !== itemKey) {
+        state.itemKey = itemKey;
         // Reset local state in ref
-        refState.current.value = isFunction(valueOrFun)
+        state.value = isFunction(valueOrFun)
             ? valueOrFun({
                   index,
                   item: value,
@@ -120,18 +121,16 @@ export function useRecyclingState<ItemT>(valueOrFun: ((info: LegendListRecycling
     const setState: Dispatch<SetStateAction<ItemT>> = useCallback(
         (newState: SetStateAction<ItemT>) => {
             // Update local state in ref
-            refState.current.value = isFunction(newState)
-                ? (newState as (prevState: ItemT) => ItemT)(refState.current.value!)
-                : newState;
+            state.value = isFunction(newState) ? (newState as (prevState: ItemT) => ItemT)(state.value!) : newState;
             // Trigger item to re-render
             setRenderNum((v) => v + 1);
             // Trigger container to re-render to update item size
             triggerLayout();
         },
-        [triggerLayout],
+        [triggerLayout, state],
     );
 
-    return [refState.current.value, setState] as const;
+    return [state.value, setState] as const;
 }
 
 export function useIsLastItem(): boolean {
