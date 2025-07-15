@@ -24,6 +24,7 @@ import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
+import { calculateOffsetWithOffsetPosition } from "./calculateOffsetWithOffsetPosition";
 import { checkAtBottom } from "./checkAtBottom";
 import { checkAtTop } from "./checkAtTop";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
@@ -42,6 +43,7 @@ import type {
     ScrollState,
 } from "./types";
 import { typedForwardRef } from "./types";
+import { updateTotalSize } from "./updateTotalSize";
 import { useCombinedRef } from "./useCombinedRef";
 import { useInit } from "./useInit";
 import { setupViewability, updateViewableItems } from "./viewability";
@@ -190,35 +192,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const didDataChange = state.props.data !== dataProp;
     state.props = {
+        alignItemsAtEnd,
         data: dataProp,
         estimatedItemSize,
         maintainScrollAtEndThreshold,
         onEndReachedThreshold,
         onStartReachedThreshold,
+        stylePaddingBottom: stylePaddingBottomState,
         keyExtractor,
         onScroll: onScrollProp,
         getEstimatedItemSize,
         onStartReached,
         onEndReached,
-    };
-
-    const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
-        const { index, viewOffset, viewPosition } = params;
-        let offset = offsetParam;
-
-        if (viewOffset) {
-            offset -= viewOffset;
-        }
-
-        if (viewPosition !== undefined && index !== undefined) {
-            // TODO: This can be inaccurate if the item size is very different from the estimatedItemSize
-            // In the future we can improve this by listening for the item size change and then updating the scroll position
-            offset -=
-                viewPosition *
-                (state.scrollLength - getItemSize(state, getId(state, index), index, state.props.data[index]!));
-        }
-
-        return offset;
     };
 
     const updateAllPositions = (dataChanged?: boolean) => {
@@ -282,7 +267,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 if (!bailout) {
                     // We successfully processed backwards, we're done
-                    updateTotalSize();
+                    updateTotalSize(ctx, state);
                     return;
                 }
             }
@@ -341,7 +326,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
         }
 
-        updateTotalSize();
+        updateTotalSize(ctx, state);
     };
 
     const scrollToIndex = ({
@@ -379,20 +364,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             props.onLoad({ elapsedTimeInMs: Date.now() - refLoadStartTime.current });
         }
     };
-
-    const addTotalSize = useCallback((key: string | null, add: number) => {
-        if (key === null) {
-            state.totalSize = add;
-        } else {
-            state.totalSize += add;
-        }
-
-        set$(ctx, "totalSize", state.totalSize);
-
-        if (alignItemsAtEnd) {
-            updateAlignItemsPaddingTop();
-        }
-    }, []);
 
     const checkAllSizesKnown = useCallback(() => {
         const { startBuffered, endBuffered, sizesKnown } = refState.current!;
@@ -538,6 +509,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // and use the calculated offset of the initialScrollIndex instead.
         if (!queuedInitialLayout && initialScroll) {
             const updatedOffset = calculateOffsetWithOffsetPosition(
+                state,
                 calculateOffsetForIndex(ctx, state, initialScroll.index),
                 initialScroll,
             );
@@ -883,7 +855,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     ) => {
         const { animated } = params;
 
-        const offset = calculateOffsetWithOffsetPosition(params.offset, params);
+        const offset = calculateOffsetWithOffsetPosition(state, params.offset, params);
 
         // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
         state.scrollHistory.length = 0;
@@ -949,30 +921,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
 
                 if (!didMaintainScrollAtEnd) {
-                    checkAtTop(ctx, state);
+                    checkAtTop(state);
                     checkAtBottom(ctx, state);
-                }
-            }
-        }
-    };
-
-    const updateTotalSize = () => {
-        const { positions } = refState.current!;
-        const data = refState.current!.props.data;
-
-        if (data.length === 0) {
-            addTotalSize(null, 0);
-        } else {
-            const lastId = getId(state, data.length - 1);
-            if (lastId !== undefined) {
-                const lastPosition = positions.get(lastId);
-                if (lastPosition !== undefined) {
-                    const lastSize = getItemSize(state, lastId, data.length - 1, data[dataProp.length - 1]);
-                    // TODO: This is likely incorrect for columns with rows having different heights, need to get max size of the last row
-                    if (lastSize !== undefined) {
-                        const totalSize = lastPosition + lastSize;
-                        addTotalSize(null, totalSize);
-                    }
                 }
             }
         }
@@ -1454,7 +1404,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         doMaintainScrollAtEnd(false);
         updateAlignItemsPaddingTop();
         checkAtBottom(ctx, state);
-        checkAtTop(ctx, state);
+        checkAtTop(state);
 
         if (refState.current) {
             // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis
@@ -1541,7 +1491,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Use velocity to predict scroll position
         calculateItemsInView();
         checkAtBottom(ctx, state);
-        checkAtTop(ctx, state);
+        checkAtTop(state);
     }, []);
 
     useImperativeHandle(

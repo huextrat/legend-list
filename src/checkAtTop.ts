@@ -1,8 +1,7 @@
 import { checkThreshold } from "./checkThreshold";
-import type { StateContext } from "./state";
 import type { InternalState } from "./types";
 
-export function checkAtTop(ctx: StateContext, state: InternalState) {
+export function checkAtTop(state: InternalState) {
     if (!state) {
         return;
     }

@@ -333,17 +333,18 @@ export interface InternalState {
         }
     >;
     props: {
+        alignItemsAtEnd: boolean;
         data: readonly any[];
         keyExtractor: ((item: any, index: number) => string) | undefined;
         onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-        stylePaddingBottom?: number;
-        getEstimatedItemSize?: (index: number, item: any) => number;
-        estimatedItemSize?: number;
-        onStartReached?: ((info: { distanceFromStart: number }) => void) | null | undefined;
-        onEndReached?: ((info: { distanceFromEnd: number }) => void) | null | undefined;
-        maintainScrollAtEndThreshold?: number;
-        onEndReachedThreshold?: number | null;
-        onStartReachedThreshold?: number | null;
+        stylePaddingBottom: number | undefined;
+        getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
+        estimatedItemSize: number | undefined;
+        onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
+        onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
+        maintainScrollAtEndThreshold: number | undefined;
+        onEndReachedThreshold: number | null | undefined;
+        onStartReachedThreshold: number | null | undefined;
     };
 }
 
