@@ -27,6 +27,7 @@ import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { checkThreshold } from "./checkThreshold";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { finishScrollTo } from "./finishScrollTo";
+import { getId } from "./getId";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
@@ -151,86 +152,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const keyExtractor = keyExtractorProp ?? ((item, index) => index.toString());
 
     const refState = useRef<InternalState>();
-    const getId = (index: number): string => {
-        const state = refState.current;
-        if (!state?.data) {
-            return "";
-        }
-
-        // Generate and cache the ID
-        const data = state.data;
-        const ret = index < data.length ? (keyExtractor ? keyExtractor(data[index], index) : index) : null;
-        const id = ret as string;
-        state.idCache.set(index, id);
-        return id;
-    };
-
-    const getItemSize = (key: string, index: number, data: T, useAverageSize?: number | undefined) => {
-        const sizeKnown = state.sizesKnown.get(key)!;
-        if (sizeKnown !== undefined) {
-            return sizeKnown;
-        }
-
-        let size: number | undefined;
-
-        if ((useAverageSize !== undefined && sizeKnown) === undefined && !getEstimatedItemSize && !state.scrollingTo) {
-            // TODO: Hook this up to actual item type later once we have item types
-            size = useAverageSize;
-        }
-
-        if (size === undefined) {
-            size = state.sizes.get(key)!;
-
-            if (size !== undefined) {
-                return size;
-            }
-        }
-
-        if (size === undefined) {
-            // Get estimated size if we don't have an average or already cached size
-            size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
-        }
-
-        // Save to rendered sizes
-        state.sizes.set(key, size);
-        return size;
-    };
-    const calculateOffsetForIndex = (index: number | undefined) => {
-        const state = refState.current;
-        let position = 0;
-
-        if (index !== undefined) {
-            position = state?.positions.get(getId(index!)) || 0;
-        }
-
-        const paddingTop = peek$(ctx, "stylePaddingTop");
-        if (paddingTop) {
-            position += paddingTop;
-        }
-
-        const headerSize = peek$(ctx, "headerSize");
-        if (headerSize) {
-            position += headerSize;
-        }
-
-        return position;
-    };
-    const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
-        const { index, viewOffset, viewPosition } = params;
-        let offset = offsetParam;
-
-        if (viewOffset) {
-            offset -= viewOffset;
-        }
-
-        if (viewPosition !== undefined && index !== undefined) {
-            // TODO: This can be inaccurate if the item size is very different from the estimatedItemSize
-            // In the future we can improve this by listening for the item size change and then updating the scroll position
-            offset -= viewPosition * (state.scrollLength - getItemSize(getId(index), index, state.data[index]));
-        }
-
-        return offset;
-    };
 
     if (!refState.current) {
         const initialScrollLength = (estimatedListSize ??
@@ -246,6 +167,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             isAtEnd: false,
             isAtStart: false,
             data: dataProp,
+            keyExtractor,
             scrollLength: initialScrollLength,
             startBuffered: -1,
             startNoBuffer: -1,
@@ -289,7 +211,76 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const didDataChange = state.data !== dataProp;
     state.data = dataProp;
+    state.keyExtractor = keyExtractor;
     state.onScroll = onScrollProp;
+
+    const getItemSize = (key: string, index: number, data: T, useAverageSize?: number | undefined) => {
+        const sizeKnown = state.sizesKnown.get(key)!;
+        if (sizeKnown !== undefined) {
+            return sizeKnown;
+        }
+
+        let size: number | undefined;
+
+        if ((useAverageSize !== undefined && sizeKnown) === undefined && !getEstimatedItemSize && !state.scrollingTo) {
+            // TODO: Hook this up to actual item type later once we have item types
+            size = useAverageSize;
+        }
+
+        if (size === undefined) {
+            size = state.sizes.get(key)!;
+
+            if (size !== undefined) {
+                return size;
+            }
+        }
+
+        if (size === undefined) {
+            // Get estimated size if we don't have an average or already cached size
+            size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize;
+        }
+
+        // Save to rendered sizes
+        state.sizes.set(key, size);
+        return size;
+    };
+
+    const calculateOffsetForIndex = (index: number | undefined) => {
+        let position = 0;
+
+        if (index !== undefined) {
+            position = state?.positions.get(getId(state, index)) || 0;
+        }
+
+        const paddingTop = peek$(ctx, "stylePaddingTop");
+        if (paddingTop) {
+            position += paddingTop;
+        }
+
+        const headerSize = peek$(ctx, "headerSize");
+        if (headerSize) {
+            position += headerSize;
+        }
+
+        return position;
+    };
+
+    const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
+        const { index, viewOffset, viewPosition } = params;
+        let offset = offsetParam;
+
+        if (viewOffset) {
+            offset -= viewOffset;
+        }
+
+        if (viewPosition !== undefined && index !== undefined) {
+            // TODO: This can be inaccurate if the item size is very different from the estimatedItemSize
+            // In the future we can improve this by listening for the item size change and then updating the scroll position
+            offset -= viewPosition * (state.scrollLength - getItemSize(getId(state, index), index, state.data[index]));
+        }
+
+        return offset;
+    };
 
     const updateAllPositions = (dataChanged?: boolean) => {
         const { averageSizes, columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } =
@@ -316,7 +307,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         if (shouldUseBackwards && firstFullyOnScreenIndex !== undefined) {
             // Get the current position of firstFullyOnScreenIndex as anchor
-            const anchorId = getId(firstFullyOnScreenIndex)!;
+            const anchorId = getId(state, firstFullyOnScreenIndex)!;
             const anchorPosition = positions.get(anchorId);
 
             // If we don't have the anchor position, fall back to regular behavior
@@ -328,7 +319,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 // Process items backwards from firstFullyOnScreenIndex - 1 to 0
                 for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
-                    const id = idCache.get(i) ?? getId(i)!;
+                    const id = idCache.get(i) ?? getId(state, i)!;
                     const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
                     const itemColumn = columns.get(id)!;
 
@@ -370,7 +361,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const dataLength = data!.length;
         for (let i = 0; i < dataLength; i++) {
             // Inline the map get calls to avoid the overhead of the function call
-            const id = idCache.get(i) ?? getId(i)!;
+            const id = idCache.get(i) ?? getId(state, i)!;
             const size = sizesKnown.get(id) ?? getItemSize(id, i, data[i], averageSize);
 
             // Set index mapping for this item
@@ -471,7 +462,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // initial layout is complete
             let areAllKnown = true;
             for (let i = startBuffered!; areAllKnown && i <= endBuffered!; i++) {
-                const key = getId(i)!;
+                const key = getId(state, i)!;
                 areAllKnown &&= sizesKnown.has(key);
             }
             return areAllKnown;
@@ -529,7 +520,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             if (scrollTarget !== undefined) {
                 // If we're currently scrolling to a target index, do MVCP for its position
-                targetId = getId(scrollTarget);
+                targetId = getId(state, scrollTarget);
                 targetIndex = scrollTarget;
             } else if (state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
                 // Do MVCP for the first item fully in view
@@ -668,7 +659,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // This is an optimization to avoid looping through all items, which could slow down
         // when scrolling at the end of a long list.
         for (let i = loopStart; i >= 0; i--) {
-            const id = idCache.get(i) ?? getId(i)!;
+            const id = idCache.get(i) ?? getId(state, i)!;
             const top = positions.get(id)!;
             const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
             const bottom = top + size;
@@ -707,7 +698,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Continue until we've found the end and we've updated positions of all items that were previously in view
         const dataLength = data!.length;
         for (let i = Math.max(0, loopStart); i < dataLength && (!foundEnd || i <= maxIndexRendered); i++) {
-            const id = idCache.get(i) ?? getId(i)!;
+            const id = idCache.get(i) ?? getId(state, i)!;
             const size = sizes.get(id) ?? getItemSize(id, i, data[i]);
             const top = positions.get(id)!;
 
@@ -741,7 +732,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         const idsInView: string[] = [];
         for (let i = firstFullyOnScreenIndex!; i <= endNoBuffer!; i++) {
-            const id = idCache.get(i) ?? getId(i)!;
+            const id = idCache.get(i) ?? getId(state, i)!;
             idsInView.push(id);
         }
 
@@ -796,7 +787,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const needNewContainers: number[] = [];
 
             for (let i = startBuffered!; i <= endBuffered; i++) {
-                const id = idCache.get(i) ?? getId(i)!;
+                const id = idCache.get(i) ?? getId(state, i)!;
                 if (!containerItemKeys.has(id)) {
                     needNewContainers.push(i);
                 }
@@ -812,7 +803,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 for (let idx = 0; idx < needNewContainers.length; idx++) {
                     const i = needNewContainers[idx];
                     const containerIndex = availableContainers[idx];
-                    const id = idCache.get(i) ?? getId(i)!;
+                    const id = idCache.get(i) ?? getId(state, i)!;
 
                     // Remove old key from cache
                     const oldKey = peek$(ctx, `containerItemKey${containerIndex}`);
@@ -858,7 +849,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const itemIndex = indexByKey.get(itemKey)!;
                     const item = data[itemIndex];
                     if (item !== undefined) {
-                        const id = idCache.get(itemIndex) ?? getId(itemIndex);
+                        const id = idCache.get(itemIndex) ?? getId(state, itemIndex);
                         const position = positions.get(id);
 
                         if (position === undefined) {
@@ -898,15 +889,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         if (viewabilityConfigCallbackPairs) {
-            updateViewableItems(
-                state,
-                ctx,
-                viewabilityConfigCallbackPairs,
-                getId,
-                scrollLength,
-                startNoBuffer!,
-                endNoBuffer!,
-            );
+            updateViewableItems(state, ctx, viewabilityConfigCallbackPairs, scrollLength, startNoBuffer!, endNoBuffer!);
         }
     }, []);
 
@@ -1088,7 +1071,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (data.length === 0) {
             addTotalSize(null, 0);
         } else {
-            const lastId = getId(data.length - 1);
+            const lastId = getId(state, data.length - 1);
             if (lastId !== undefined) {
                 const lastPosition = positions.get(lastId);
                 if (lastPosition !== undefined) {
@@ -1197,7 +1180,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const memoizedLastItemKeys = useMemo(() => {
         if (!dataProp.length) return [];
         return Array.from({ length: Math.min(numColumnsProp, dataProp.length) }, (_, i) =>
-            getId(dataProp.length - 1 - i),
+            getId(state, dataProp.length - 1 - i),
         );
     }, [dataProp, numColumnsProp]);
 
@@ -1703,7 +1686,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                               start: state.startNoBuffer,
                               startBuffered: state.startBuffered,
                               sizes: state.sizesKnown,
-                              sizeAtIndex: (index: number) => state.sizesKnown.get(getId(index))!,
+                              sizeAtIndex: (index: number) => state.sizesKnown.get(getId(state, index))!,
                           }
                         : ({} as ScrollState);
                 },

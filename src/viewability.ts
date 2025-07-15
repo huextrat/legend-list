@@ -1,3 +1,4 @@
+import { getId } from "./getId";
 import { type StateContext, peek$ } from "./state";
 import type {
     InternalState,
@@ -61,7 +62,6 @@ export function updateViewableItems(
     state: InternalState,
     ctx: StateContext,
     viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPair[],
-    getId: (index: number) => string,
     scrollSize: number,
     start: number,
     end: number,
@@ -75,11 +75,11 @@ export function updateViewableItems(
         if (viewabilityConfigCallbackPair.viewabilityConfig.minimumViewTime) {
             const timer: any = setTimeout(() => {
                 state.timeouts.delete(timer);
-                updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, getId, state, ctx, scrollSize);
+                updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
             }, viewabilityConfigCallbackPair.viewabilityConfig.minimumViewTime);
             state.timeouts.add(timer);
         } else {
-            updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, getId, state, ctx, scrollSize);
+            updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
         }
     }
 }
@@ -87,7 +87,6 @@ export function updateViewableItems(
 function updateViewableItemsWithConfig(
     data: readonly any[],
     viewabilityConfigCallbackPair: ViewabilityConfigCallbackPair,
-    getId: (index: number) => string,
     state: InternalState,
     ctx: StateContext,
     scrollSize: number,
@@ -140,7 +139,7 @@ function updateViewableItemsWithConfig(
     for (let i = start; i <= end; i++) {
         const item = data[i];
         if (item) {
-            const key = getId(i);
+            const key = getId(state, i);
             const containerId = findContainerId(ctx, key);
             if (isViewable(state, ctx, viewabilityConfig, containerId, key, scrollSize, item, i)) {
                 const viewToken: ViewToken = {

@@ -284,6 +284,7 @@ export interface InternalState {
     isAtEnd: boolean;
     isAtStart: boolean;
     data: readonly any[];
+    keyExtractor: ((item: any, index: number) => string) | undefined;
     hasScrolled?: boolean;
     scrollLength: number;
     startBuffered: number;
