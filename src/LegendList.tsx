@@ -19,7 +19,6 @@ import {
     RefreshControl,
     type ScrollView,
     StyleSheet,
-    type ViewStyle,
 } from "react-native";
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
@@ -27,6 +26,7 @@ import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
 import { checkThreshold } from "./checkThreshold";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
+import { createColumnWrapperStyle } from "./createColumnWrapperStyle";
 import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
@@ -34,7 +34,6 @@ import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
-    ColumnWrapperStyle,
     InternalState,
     LegendListProps,
     LegendListRef,
@@ -48,20 +47,6 @@ import { setupViewability, updateViewableItems } from "./viewability";
 
 const DEFAULT_DRAW_DISTANCE = 250;
 const DEFAULT_ITEM_SIZE = 100;
-
-function createColumnWrapperStyle(contentContainerStyle: ViewStyle): ColumnWrapperStyle | undefined {
-    const { gap, columnGap, rowGap } = contentContainerStyle;
-    if (gap || columnGap || rowGap) {
-        contentContainerStyle.gap = undefined;
-        contentContainerStyle.columnGap = undefined;
-        contentContainerStyle.rowGap = undefined;
-        return {
-            gap: gap as number,
-            columnGap: columnGap as number,
-            rowGap: rowGap as number,
-        };
-    }
-}
 
 export const LegendList = typedForwardRef(function LegendList<T>(
     props: LegendListProps<T>,
