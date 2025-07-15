@@ -331,7 +331,6 @@ export interface InternalState {
     >;
     refScroller: React.RefObject<ScrollView>;
     loadStartTime: number;
-    calculateItemsInView: (params: { doMVCP?: boolean }) => void;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
@@ -362,6 +361,9 @@ export interface InternalState {
         renderItem:
             | ((props: LegendListRenderItemProps<any>) => ReactNode)
             | React.ComponentType<LegendListRenderItemProps<any>>;
+        initialScroll: { index: number; viewOffset?: number; viewPosition?: number } | undefined;
+        scrollBuffer: number;
+        viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs | undefined;
     };
 }
 

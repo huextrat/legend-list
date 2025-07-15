@@ -1,3 +1,4 @@
+import { calculateItemsInView } from "./calculateItemsInView";
 import { checkAllSizesKnown } from "./checkAllSizesKnown";
 import { IsNewArchitecture } from "./constants";
 import { doMaintainScrollAtEnd } from "./doMaintainScrollAtEnd";
@@ -12,7 +13,6 @@ export function updateItemSizes(
     itemUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[],
 ) {
     const {
-        calculateItemsInView,
         props: { horizontal, maintainVisibleContentPosition, suggestEstimatedItemSize, onItemSizeChanged, data },
     } = state;
 
@@ -109,7 +109,7 @@ export function updateItemSizes(
         if (needsRecalculate) {
             state.scrollForNextCalculateItemsInView = undefined;
 
-            calculateItemsInView({ doMVCP: true });
+            calculateItemsInView(ctx, state, { doMVCP: true });
         }
         if (shouldMaintainScrollAtEnd) {
             doMaintainScrollAtEnd(ctx, state, false);
