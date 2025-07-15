@@ -20,7 +20,6 @@ import {
     type ScrollView,
     StyleSheet,
 } from "react-native";
-import { scrollToIndex } from "src/scrollToIndex";
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
@@ -37,8 +36,10 @@ import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
+import { prepareMVCP } from "./prepareMVCP";
 import { requestAdjust } from "./requestAdjust";
 import { scrollTo } from "./scrollTo";
+import { scrollToIndex } from "./scrollToIndex";
 import { setDidLayout } from "./setDidLayout";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
@@ -223,48 +224,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onLoad,
     };
 
-    const prepareMVCP = useCallback((): (() => void) => {
-        const { positions, scrollingTo } = state;
-
-        let prevPosition: number;
-        let targetId: string | undefined;
-        let targetIndex: number | undefined;
-        const scrollTarget = scrollingTo?.index;
-
-        if (maintainVisibleContentPosition) {
-            const indexByKey = state.indexByKey;
-
-            if (scrollTarget !== undefined) {
-                // If we're currently scrolling to a target index, do MVCP for its position
-                targetId = getId(state, scrollTarget);
-                targetIndex = scrollTarget;
-            } else if (state.idsInView.length > 0 && peek$(ctx, "containersDidLayout")) {
-                // Do MVCP for the first item fully in view
-                targetId = state.idsInView.find((id) => indexByKey.get(id) !== undefined);
-                targetIndex = indexByKey.get(targetId!);
-            }
-
-            if (targetId !== undefined && targetIndex !== undefined) {
-                prevPosition = positions.get(targetId)!;
-            }
-        }
-
-        // Return a function to do MVCP based on the prepared values
-        return () => {
-            if (targetId !== undefined && prevPosition !== undefined) {
-                const newPosition = positions.get(targetId);
-
-                if (newPosition !== undefined) {
-                    const positionDiff = newPosition - prevPosition;
-
-                    if (Math.abs(positionDiff) > 0.1) {
-                        requestAdjust(ctx, state, positionDiff);
-                    }
-                }
-            }
-        };
-    }, []);
-
     const calculateItemsInView = useCallback((params: { doMVCP?: boolean; dataChanged?: boolean } = {}) => {
         const {
             scrollLength,
@@ -294,7 +253,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (doMVCP || dataChanged) {
             // TODO: This should only run if a size changed or items changed
             // Handle maintainVisibleContentPosition adjustment early
-            const checkMVCP = doMVCP ? prepareMVCP() : undefined;
+            const checkMVCP = doMVCP ? prepareMVCP(ctx, state) : undefined;
 
             // Update all positions upfront so we can assume they're correct
             updateAllPositions(ctx, state, dataChanged);
