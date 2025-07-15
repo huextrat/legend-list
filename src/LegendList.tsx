@@ -31,17 +31,19 @@ import { checkAtTop } from "./checkAtTop";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { createColumnWrapperStyle } from "./createColumnWrapperStyle";
 import { doMaintainScrollAtEnd } from "./doMaintainScrollAtEnd";
+import { findAvailableContainers } from "./findAvailableContainers";
 import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
-import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
+import { extractPadding, warnDevOnce } from "./helpers";
 import { prepareMVCP } from "./prepareMVCP";
 import { requestAdjust } from "./requestAdjust";
 import { scrollTo } from "./scrollTo";
 import { scrollToIndex } from "./scrollToIndex";
 import { setDidLayout } from "./setDidLayout";
-import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
+import { setPaddingTop } from "./setPaddingTop";
+import { StateProvider, peek$, set$, useStateContext } from "./state";
 import type {
     InternalState,
     LegendListProps,
@@ -50,6 +52,7 @@ import type {
     ScrollState,
 } from "./types";
 import { typedForwardRef } from "./types";
+import { updateAlignItemsPaddingTop } from "./updateAlignItemsPaddingTop";
 import { updateAllPositions } from "./updateAllPositions";
 import { updateItemSize } from "./updateItemSize";
 import { useCombinedRef } from "./useCombinedRef";
@@ -471,6 +474,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             if (needNewContainers.length > 0) {
                 const availableContainers = findAvailableContainers(
+                    ctx,
+                    state,
                     needNewContainers.length,
                     startBuffered,
                     endBuffered,
@@ -572,46 +577,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.calculateItemsInView = calculateItemsInView;
     state.refScroller = refScroller;
 
-    const setPaddingTop = ({
-        stylePaddingTop,
-        alignItemsPaddingTop,
-    }: { stylePaddingTop?: number; alignItemsPaddingTop?: number }) => {
-        if (stylePaddingTop !== undefined) {
-            const prevStylePaddingTop = peek$(ctx, "stylePaddingTop") || 0;
-            if (stylePaddingTop < prevStylePaddingTop) {
-                // If reducing top padding then we need to make sure the ScrollView doesn't
-                // scroll itself because the height reduced.
-                // First add the padding to the total size so that the total height in the ScrollView
-                // doesn't change
-                const prevTotalSize = peek$(ctx, "totalSize") || 0;
-                set$(ctx, "totalSize", prevTotalSize + prevStylePaddingTop);
-                setTimeout(() => {
-                    // Then reset it back to how it was
-                    set$(ctx, "totalSize", prevTotalSize);
-                }, 16);
-            }
-
-            // Now set the padding
-            set$(ctx, "stylePaddingTop", stylePaddingTop);
-        }
-        if (alignItemsPaddingTop !== undefined) {
-            set$(ctx, "alignItemsPaddingTop", alignItemsPaddingTop);
-        }
-    };
-
-    const updateAlignItemsPaddingTop = () => {
-        if (alignItemsAtEnd) {
-            const { scrollLength } = refState.current!;
-            const data = refState.current!.props.data;
-            let alignItemsPaddingTop = 0;
-            if (data?.length > 0) {
-                const contentSize = getContentSize(ctx);
-                alignItemsPaddingTop = Math.max(0, Math.floor(scrollLength - contentSize));
-            }
-            setPaddingTop({ alignItemsPaddingTop });
-        }
-    };
-
     const checkResetContainers = (isFirst: boolean) => {
         const state = refState.current;
         if (state) {
@@ -636,95 +601,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const findAvailableContainers = (
-        numNeeded: number,
-        startBuffered: number,
-        endBuffered: number,
-        pendingRemoval: number[],
-    ): number[] => {
-        const numContainers = peek$(ctx, "numContainers") as number;
-
-        const result: number[] = [];
-        const availableContainers: Array<{ index: number; distance: number }> = [];
-
-        // First pass: collect unallocated containers (most efficient to use)
-        for (let u = 0; u < numContainers; u++) {
-            const key = peek$(ctx, `containerItemKey${u}`);
-            let isOk = key === undefined;
-            if (!isOk) {
-                const index = pendingRemoval.indexOf(u);
-                if (index !== -1) {
-                    pendingRemoval.splice(index, 1);
-                    isOk = true;
-                }
-            }
-            // Hasn't been allocated yet or is pending removal, so use it
-            if (isOk) {
-                result.push(u);
-                if (result.length >= numNeeded) {
-                    return result; // Early exit if we have enough unallocated containers
-                }
-            }
-        }
-
-        // Second pass: collect containers that are out of view
-        for (let u = 0; u < numContainers; u++) {
-            const key = peek$(ctx, `containerItemKey${u}`);
-            if (key === undefined) continue; // Skip already collected containers
-
-            const index = state.indexByKey.get(key)!;
-            if (index < startBuffered) {
-                availableContainers.push({ index: u, distance: startBuffered - index });
-            } else if (index > endBuffered) {
-                availableContainers.push({ index: u, distance: index - endBuffered });
-            }
-        }
-
-        // If we need more containers than we have available so far
-        const remaining = numNeeded - result.length;
-        if (remaining > 0) {
-            if (availableContainers.length > 0) {
-                // Only sort if we need to
-                if (availableContainers.length > remaining) {
-                    // Sort by distance (furthest first)
-                    availableContainers.sort(comparatorByDistance);
-                    // Take just what we need
-                    availableContainers.length = remaining;
-                }
-
-                // Add to result, keeping track of original indices
-                for (const container of availableContainers) {
-                    result.push(container.index);
-                }
-            }
-
-            // If we still need more, create new containers
-            const stillNeeded = numNeeded - result.length;
-            if (stillNeeded > 0) {
-                for (let i = 0; i < stillNeeded; i++) {
-                    result.push(numContainers + i);
-                }
-
-                if (__DEV__ && numContainers + stillNeeded > peek$(ctx, "numContainersPooled")) {
-                    console.warn(
-                        "[legend-list] No unused container available, so creating one on demand. This can be a minor performance issue and is likely caused by the estimatedItemSize being too large. Consider decreasing estimatedItemSize or increasing initialContainerPoolRatio.",
-                        {
-                            debugInfo: {
-                                numContainers,
-                                numNeeded,
-                                stillNeeded,
-                                numContainersPooled: peek$(ctx, "numContainersPooled"),
-                            },
-                        },
-                    );
-                }
-            }
-        }
-
-        // Sort by index for consistent ordering
-        return result.sort(comparatorDefault);
-    };
-
     const isFirst = !refState.current.renderItem;
 
     const memoizedLastItemKeys = useMemo(() => {
@@ -742,7 +618,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // If the stylePaddingTop has changed, scroll to an adjusted offset to
         // keep the same content in view
         const prevPaddingTop = peek$(ctx, "stylePaddingTop");
-        setPaddingTop({ stylePaddingTop: stylePaddingTopState });
+        setPaddingTop(ctx, { stylePaddingTop: stylePaddingTopState });
         refState.current!.props.stylePaddingBottom = stylePaddingBottomState;
 
         const paddingDiff = stylePaddingTopState - prevPaddingTop;
@@ -940,7 +816,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         doMaintainScrollAtEnd(ctx, state, false);
-        updateAlignItemsPaddingTop();
+        updateAlignItemsPaddingTop(ctx, state);
         checkAtBottom(ctx, state);
         checkAtTop(state);
 
