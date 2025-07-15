@@ -103,6 +103,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         viewabilityConfig,
         viewabilityConfigCallbackPairs,
         onViewableItemsChanged,
+        onStartReached,
+        onEndReached,
         ...rest
     } = props;
 
@@ -113,15 +115,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const refLoadStartTime = useRef<number>(Date.now());
     const [canRender, setCanRender] = React.useState(!IsNewArchitecture);
-
-    const callbacks = useRef({
-        onStartReached: rest.onStartReached,
-        onEndReached: rest.onEndReached,
-    });
-
-    // ensure that the callbacks are updated
-    callbacks.current.onStartReached = rest.onStartReached;
-    callbacks.current.onEndReached = rest.onEndReached;
 
     const contentContainerStyle = { ...StyleSheet.flatten(contentContainerStyleProp) };
     const style = { ...StyleSheet.flatten(styleProp) };
@@ -202,6 +195,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.onScroll = onScrollProp;
     state.getEstimatedItemSize = getEstimatedItemSize;
     state.estimatedItemSize = estimatedItemSize;
+    state.onStartReached = onStartReached;
+    state.onEndReached = onEndReached;
 
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
         const { index, viewOffset, viewPosition } = params;
@@ -950,7 +945,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 onEndReachedThreshold! * scrollLength,
                 state.isEndReached,
                 state.endReachedBlockedByTimer,
-                (distance) => callbacks.current.onEndReached?.({ distanceFromEnd: distance }),
+                (distance) => state.onEndReached?.({ distanceFromEnd: distance }),
                 (block) => {
                     state.endReachedBlockedByTimer = block;
                 },
@@ -973,7 +968,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             onStartReachedThreshold! * scrollLength,
             state.isStartReached,
             state.startReachedBlockedByTimer,
-            (distance) => callbacks.current.onStartReached?.({ distanceFromStart: distance }),
+            (distance) => state.onStartReached?.({ distanceFromStart: distance }),
             (block) => {
                 state.startReachedBlockedByTimer = block;
             },

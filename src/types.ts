@@ -338,6 +338,8 @@ export interface InternalState {
     stylePaddingBottom?: number;
     getEstimatedItemSize?: (index: number, item: any) => number;
     estimatedItemSize?: number;
+    onStartReached?: ((info: { distanceFromStart: number }) => void) | null | undefined;
+    onEndReached?: ((info: { distanceFromEnd: number }) => void) | null | undefined;
 }
 
 export interface ViewableRange<T> {
