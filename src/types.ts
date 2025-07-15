@@ -340,6 +340,8 @@ export interface InternalState {
     estimatedItemSize?: number;
     onStartReached?: ((info: { distanceFromStart: number }) => void) | null | undefined;
     onEndReached?: ((info: { distanceFromEnd: number }) => void) | null | undefined;
+    maintainScrollAtEndThreshold?: number;
+    onEndReachedThreshold?: number | null;
 }
 
 export interface ViewableRange<T> {
