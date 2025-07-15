@@ -7,7 +7,12 @@ export function getItemSize(
     data: any,
     useAverageSize?: number | undefined,
 ) {
-    const { sizesKnown, sizes, scrollingTo, estimatedItemSize, getEstimatedItemSize } = state;
+    const {
+        sizesKnown,
+        sizes,
+        scrollingTo,
+        props: { estimatedItemSize, getEstimatedItemSize },
+    } = state;
     const sizeKnown = sizesKnown.get(key)!;
     if (sizeKnown !== undefined) {
         return sizeKnown;

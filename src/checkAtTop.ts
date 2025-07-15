@@ -6,7 +6,11 @@ export function checkAtTop(ctx: StateContext, state: InternalState) {
     if (!state) {
         return;
     }
-    const { scrollLength, scroll, onStartReachedThreshold } = state;
+    const {
+        scrollLength,
+        scroll,
+        props: { onStartReachedThreshold },
+    } = state;
     const distanceFromTop = scroll;
     state.isAtStart = distanceFromTop <= 0;
 
@@ -16,7 +20,7 @@ export function checkAtTop(ctx: StateContext, state: InternalState) {
         onStartReachedThreshold! * scrollLength,
         state.isStartReached,
         state.startReachedBlockedByTimer,
-        (distance) => state.onStartReached?.({ distanceFromStart: distance }),
+        (distance) => state.props.onStartReached?.({ distanceFromStart: distance }),
         (block) => {
             state.startReachedBlockedByTimer = block;
         },

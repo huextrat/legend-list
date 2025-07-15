@@ -147,8 +147,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             isEndReached: false,
             isAtEnd: false,
             isAtStart: false,
-            data: dataProp,
-            keyExtractor,
             scrollLength: initialScrollLength,
             startBuffered: -1,
             startNoBuffer: -1,
@@ -178,10 +176,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             queuedCalculateItemsInView: 0,
             lastBatchingAction: Date.now(),
             averageSizes: {},
-            onScroll: onScrollProp,
             idsInView: [],
             containerItemKeys: new Set(),
             idCache: new Map(),
+            props: {} as any,
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
@@ -190,17 +188,19 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const state = refState.current!;
 
-    const didDataChange = state.data !== dataProp;
-    state.data = dataProp;
-    state.keyExtractor = keyExtractor;
-    state.onScroll = onScrollProp;
-    state.getEstimatedItemSize = getEstimatedItemSize;
-    state.estimatedItemSize = estimatedItemSize;
-    state.onStartReached = onStartReached;
-    state.onEndReached = onEndReached;
-    state.maintainScrollAtEndThreshold = maintainScrollAtEndThreshold;
-    state.onEndReachedThreshold = onEndReachedThreshold;
-    state.onStartReachedThreshold = onStartReachedThreshold;
+    const didDataChange = state.props.data !== dataProp;
+    state.props = {
+        data: dataProp,
+        estimatedItemSize,
+        maintainScrollAtEndThreshold,
+        onEndReachedThreshold,
+        onStartReachedThreshold,
+        keyExtractor,
+        onScroll: onScrollProp,
+        getEstimatedItemSize,
+        onStartReached,
+        onEndReached,
+    };
 
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
         const { index, viewOffset, viewPosition } = params;
@@ -214,15 +214,16 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             // TODO: This can be inaccurate if the item size is very different from the estimatedItemSize
             // In the future we can improve this by listening for the item size change and then updating the scroll position
             offset -=
-                viewPosition * (state.scrollLength - getItemSize(state, getId(state, index), index, state.data[index]));
+                viewPosition *
+                (state.scrollLength - getItemSize(state, getId(state, index), index, state.props.data[index]!));
         }
 
         return offset;
     };
 
     const updateAllPositions = (dataChanged?: boolean) => {
-        const { averageSizes, columns, data, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } =
-            state;
+        const { averageSizes, columns, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } = state;
+        const data = state.props.data;
         const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
         const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
         const scrollVelocity = getScrollVelocity(state);
@@ -349,15 +350,15 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         animated = true,
         viewPosition,
     }: Parameters<LegendListRef["scrollToIndex"]>[0]) => {
-        if (index >= state.data.length) {
-            index = state.data.length - 1;
+        if (index >= state.props.data.length) {
+            index = state.props.data.length - 1;
         } else if (index < 0) {
             index = 0;
         }
 
         const firstIndexOffset = calculateOffsetForIndex(ctx, state, index);
 
-        const isLast = index === state.data.length - 1;
+        const isLast = index === state.props.data.length - 1;
         if (isLast && viewPosition === undefined) {
             viewPosition = 1;
         }
@@ -489,7 +490,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const calculateItemsInView = useCallback((params: { doMVCP?: boolean; dataChanged?: boolean } = {}) => {
         const {
-            data,
             scrollLength,
             startBufferedId: startBufferedIdOrig,
             positions,
@@ -502,6 +502,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             enableScrollForNextCalculateItemsInView,
             minIndexSizeChanged,
         } = state!;
+        const data = state.props.data;
         if (!data || scrollLength === 0) {
             return;
         }
@@ -860,7 +861,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const updateAlignItemsPaddingTop = () => {
         if (alignItemsAtEnd) {
-            const { data, scrollLength } = refState.current!;
+            const { scrollLength } = refState.current!;
+            const data = refState.current!.props.data;
             let alignItemsPaddingTop = 0;
             if (data?.length > 0) {
                 const contentSize = getContentSize(ctx);
@@ -933,7 +935,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const checkResetContainers = (isFirst: boolean) => {
         const state = refState.current;
         if (state) {
-            state.data = dataProp;
+            state.props.data = dataProp;
 
             if (!isFirst) {
                 calculateItemsInView({ dataChanged: true, doMVCP: true });
@@ -942,7 +944,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 // Reset the endReached flag if new data has been added and we didn't
                 // just maintain the scroll at end
-                if (!didMaintainScrollAtEnd && dataProp.length > state.data.length) {
+                if (!didMaintainScrollAtEnd && dataProp.length > state.props.data.length) {
                     state.isEndReached = false;
                 }
 
@@ -955,7 +957,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
 
     const updateTotalSize = () => {
-        const { data, positions } = refState.current!;
+        const { positions } = refState.current!;
+        const data = refState.current!.props.data;
 
         if (data.length === 0) {
             addTotalSize(null, 0);
@@ -1082,7 +1085,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // keep the same content in view
         const prevPaddingTop = peek$(ctx, "stylePaddingTop");
         setPaddingTop({ stylePaddingTop: stylePaddingTopState });
-        refState.current!.stylePaddingBottom = stylePaddingBottomState;
+        refState.current!.props.stylePaddingBottom = stylePaddingBottomState;
 
         const paddingDiff = stylePaddingTopState - prevPaddingTop;
         // If the style padding has changed then adjust the paddingTop and update scroll to compensate
@@ -1182,7 +1185,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             return null;
         }
 
-        const { data, indexByKey } = state;
+        const { indexByKey } = state;
+        const data = state.props.data;
 
         const index = indexByKey.get(key);
 
@@ -1208,7 +1212,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const doInitialAllocateContainers = () => {
         // Allocate containers
-        const { scrollLength, data } = state;
+        const { scrollLength } = state;
+        const data = state.props.data;
         if (scrollLength > 0 && data.length > 0 && !peek$(ctx, "numContainers")) {
             const averageItemSize = getEstimatedItemSize ? getEstimatedItemSize(0, data[0]) : estimatedItemSize;
             const Extra = 1.5; // TODO make it a prop, experiment with whether it's faster with more containers
@@ -1257,7 +1262,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     }
 
     const updateOneItemSize = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
-        const { sizes, indexByKey, sizesKnown, data, averageSizes } = state;
+        const { sizes, indexByKey, sizesKnown, averageSizes } = state;
+        const data = state.props.data;
         if (!data) return 0;
 
         const index = indexByKey.get(itemKey)!;
@@ -1284,7 +1290,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const updateItemSizes = useCallback(
         (itemUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[]) => {
-            if (!state.data) return;
+            if (!state.props.data) return;
 
             let needsRecalculate = false;
             let shouldMaintainScrollAtEnd = false;
@@ -1341,7 +1347,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         previous: size - diff,
                         index,
                         itemKey,
-                        itemData: state.data[index],
+                        itemData: state.props.data[index],
                     });
                 }
             }
@@ -1503,7 +1509,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             updateScroll(newScroll);
 
-            state.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
+            state.props.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
         },
         [],
     );
@@ -1581,7 +1587,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 },
                 scrollIndexIntoView,
                 scrollItemIntoView: ({ item, ...props }) => {
-                    const { data } = refState.current!;
+                    const data = refState.current!.props.data;
                     const index = data.indexOf(item);
                     if (index !== -1) {
                         scrollIndexIntoView({ index, ...props });
@@ -1589,7 +1595,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 },
                 scrollToIndex,
                 scrollToItem: ({ item, ...props }) => {
-                    const { data } = refState.current!;
+                    const data = refState.current!.props.data;
                     const index = data.indexOf(item);
                     if (index !== -1) {
                         scrollToIndex({ index, ...props });
@@ -1597,7 +1603,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 },
                 scrollToOffset: (params) => scrollTo(params),
                 scrollToEnd: (options) => {
-                    const { data, stylePaddingBottom } = refState.current!;
+                    const data = refState.current!.props.data;
+                    const stylePaddingBottom = refState.current!.props.stylePaddingBottom;
                     const index = data.length - 1;
                     if (index !== -1) {
                         const paddingBottom = stylePaddingBottom || 0;

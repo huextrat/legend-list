@@ -283,8 +283,6 @@ export interface InternalState {
     isEndReached: boolean;
     isAtEnd: boolean;
     isAtStart: boolean;
-    data: readonly any[];
-    keyExtractor: ((item: any, index: number) => string) | undefined;
     hasScrolled?: boolean;
     scrollLength: number;
     startBuffered: number;
@@ -334,15 +332,19 @@ export interface InternalState {
             avg: number;
         }
     >;
-    onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-    stylePaddingBottom?: number;
-    getEstimatedItemSize?: (index: number, item: any) => number;
-    estimatedItemSize?: number;
-    onStartReached?: ((info: { distanceFromStart: number }) => void) | null | undefined;
-    onEndReached?: ((info: { distanceFromEnd: number }) => void) | null | undefined;
-    maintainScrollAtEndThreshold?: number;
-    onEndReachedThreshold?: number | null;
-    onStartReachedThreshold?: number | null;
+    props: {
+        data: readonly any[];
+        keyExtractor: ((item: any, index: number) => string) | undefined;
+        onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
+        stylePaddingBottom?: number;
+        getEstimatedItemSize?: (index: number, item: any) => number;
+        estimatedItemSize?: number;
+        onStartReached?: ((info: { distanceFromStart: number }) => void) | null | undefined;
+        onEndReached?: ((info: { distanceFromEnd: number }) => void) | null | undefined;
+        maintainScrollAtEndThreshold?: number;
+        onEndReachedThreshold?: number | null;
+        onStartReachedThreshold?: number | null;
+    };
 }
 
 export interface ViewableRange<T> {

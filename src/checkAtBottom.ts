@@ -12,8 +12,7 @@ export function checkAtBottom(ctx: StateContext, state: InternalState) {
         scrollLength,
         scroll,
         maintainingScrollAtEnd,
-        maintainScrollAtEndThreshold,
-        onEndReachedThreshold,
+        props: { maintainScrollAtEndThreshold, onEndReachedThreshold },
     } = state;
     const contentSize = getContentSize(ctx);
     if (contentSize > 0 && queuedInitialLayout && !maintainingScrollAtEnd) {
@@ -28,7 +27,7 @@ export function checkAtBottom(ctx: StateContext, state: InternalState) {
             onEndReachedThreshold! * scrollLength,
             state.isEndReached,
             state.endReachedBlockedByTimer,
-            (distance) => state.onEndReached?.({ distanceFromEnd: distance }),
+            (distance) => state.props.onEndReached?.({ distanceFromEnd: distance }),
             (block) => {
                 state.endReachedBlockedByTimer = block;
             },
