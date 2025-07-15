@@ -34,6 +34,7 @@ import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
+import { requestAdjust } from "./requestAdjust";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
     InternalState,
@@ -380,43 +381,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         return false;
     }, []);
 
-    const requestAdjust = (positionDiff: number) => {
-        if (Math.abs(positionDiff) > 0.1) {
-            const doit = () => {
-                state.scrollAdjustHandler.requestAdjust(positionDiff);
-            };
-            state.scroll += positionDiff;
-            state.scrollForNextCalculateItemsInView = undefined;
-
-            if (peek$(ctx, "containersDidLayout")) {
-                doit();
-            } else {
-                requestAnimationFrame(doit);
-            }
-
-            // Calculate a threshold to ignore scroll jumps for a short period of time
-            // This is to avoid the case where a scroll event comes in that was relevant from before
-            // the requestAdjust. So we ignore scroll events that are closer to the previous
-            // scroll position than the target position.
-            const threshold = state.scroll - positionDiff / 2;
-            if (!state.ignoreScrollFromMVCP) {
-                state.ignoreScrollFromMVCP = {};
-            }
-            if (positionDiff > 0) {
-                state.ignoreScrollFromMVCP.lt = threshold;
-            } else {
-                state.ignoreScrollFromMVCP.gt = threshold;
-            }
-
-            if (state.ignoreScrollFromMVCPTimeout) {
-                clearTimeout(state.ignoreScrollFromMVCPTimeout);
-            }
-            state.ignoreScrollFromMVCPTimeout = setTimeout(() => {
-                state.ignoreScrollFromMVCP = undefined;
-            }, 100);
-        }
-    };
-
     const prepareMVCP = useCallback((): (() => void) => {
         const { positions, scrollingTo } = state;
 
@@ -452,7 +416,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const positionDiff = newPosition - prevPosition;
 
                     if (Math.abs(positionDiff) > 0.1) {
-                        requestAdjust(positionDiff);
+                        requestAdjust(ctx, state, positionDiff);
                     }
                 }
             }
@@ -1041,7 +1005,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // If the style padding has changed then adjust the paddingTop and update scroll to compensate
         // Only iOS seems to need the scroll compensation
         if (paddingDiff && prevPaddingTop !== undefined && Platform.OS === "ios") {
-            requestAdjust(paddingDiff);
+            requestAdjust(ctx, state, paddingDiff);
         }
     };
     if (isFirst) {
@@ -1264,7 +1228,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         maintainVisibleContentPosition &&
                         index === state.scrollingTo.index
                     ) {
-                        requestAdjust(diff * state.scrollingTo.viewPosition);
+                        requestAdjust(ctx, state, diff * state.scrollingTo.viewPosition);
                     }
 
                     // Check if item is in view
