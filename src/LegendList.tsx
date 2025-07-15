@@ -25,7 +25,7 @@ import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
 import { checkAtBottom } from "./checkAtBottom";
-import { checkThreshold } from "./checkThreshold";
+import { checkAtTop } from "./checkAtTop";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { createColumnWrapperStyle } from "./createColumnWrapperStyle";
 import { finishScrollTo } from "./finishScrollTo";
@@ -200,6 +200,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.onEndReached = onEndReached;
     state.maintainScrollAtEndThreshold = maintainScrollAtEndThreshold;
     state.onEndReachedThreshold = onEndReachedThreshold;
+    state.onStartReachedThreshold = onStartReachedThreshold;
 
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
         const { index, viewOffset, viewPosition } = params;
@@ -929,28 +930,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const checkAtTop = () => {
-        const state = refState.current;
-        if (!state) {
-            return;
-        }
-        const { scrollLength, scroll } = state;
-        const distanceFromTop = scroll;
-        state.isAtStart = distanceFromTop <= 0;
-
-        state.isStartReached = checkThreshold(
-            distanceFromTop,
-            false,
-            onStartReachedThreshold! * scrollLength,
-            state.isStartReached,
-            state.startReachedBlockedByTimer,
-            (distance) => state.onStartReached?.({ distanceFromStart: distance }),
-            (block) => {
-                state.startReachedBlockedByTimer = block;
-            },
-        );
-    };
-
     const checkResetContainers = (isFirst: boolean) => {
         const state = refState.current;
         if (state) {
@@ -968,7 +947,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
 
                 if (!didMaintainScrollAtEnd) {
-                    checkAtTop();
+                    checkAtTop(ctx, state);
                     checkAtBottom(ctx, state);
                 }
             }
@@ -1469,7 +1448,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         doMaintainScrollAtEnd(false);
         updateAlignItemsPaddingTop();
         checkAtBottom(ctx, state);
-        checkAtTop();
+        checkAtTop(ctx, state);
 
         if (refState.current) {
             // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis
@@ -1556,7 +1535,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Use velocity to predict scroll position
         calculateItemsInView();
         checkAtBottom(ctx, state);
-        checkAtTop();
+        checkAtTop(ctx, state);
     }, []);
 
     useImperativeHandle(
