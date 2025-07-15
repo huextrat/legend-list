@@ -35,7 +35,7 @@ import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
-import { comparatorByDistance, comparatorDefault, extractPadding, roundSize, warnDevOnce } from "./helpers";
+import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
 import { requestAdjust } from "./requestAdjust";
 import { setDidLayout } from "./setDidLayout";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
@@ -47,8 +47,8 @@ import type {
     ScrollState,
 } from "./types";
 import { typedForwardRef } from "./types";
+import { updateAllPositions } from "./updateAllPositions";
 import { updateItemSize } from "./updateItemSize";
-import { updateTotalSize } from "./updateTotalSize";
 import { useCombinedRef } from "./useCombinedRef";
 import { useInit } from "./useInit";
 import { setupViewability, updateViewableItems } from "./viewability";
@@ -221,129 +221,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onLoad,
     };
 
-    const updateAllPositions = (dataChanged?: boolean) => {
-        const { averageSizes, columns, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } = state;
-        const data = state.props.data;
-        const numColumns = peek$(ctx, "numColumns") ?? numColumnsProp;
-        const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
-        const scrollVelocity = getScrollVelocity(state);
-
-        if (dataChanged) {
-            indexByKey.clear();
-            idCache.clear();
-        }
-
-        // TODO: Hook this up to actual item types later once we have item types
-        const itemType = "";
-        let averageSize = averageSizes[itemType]?.avg;
-        if (averageSize !== undefined) {
-            averageSize = roundSize(averageSize);
-        }
-
-        // Check if we should use backwards optimization when scrolling up
-        const shouldUseBackwards =
-            !dataChanged && scrollVelocity < 0 && firstFullyOnScreenIndex > 5 && firstFullyOnScreenIndex < data!.length;
-
-        if (shouldUseBackwards && firstFullyOnScreenIndex !== undefined) {
-            // Get the current position of firstFullyOnScreenIndex as anchor
-            const anchorId = getId(state, firstFullyOnScreenIndex)!;
-            const anchorPosition = positions.get(anchorId);
-
-            // If we don't have the anchor position, fall back to regular behavior
-            if (anchorPosition !== undefined) {
-                // Start from the anchor and go backwards
-                let currentRowTop = anchorPosition;
-                let maxSizeInRow = 0;
-                let bailout = false;
-
-                // Process items backwards from firstFullyOnScreenIndex - 1 to 0
-                for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
-                    const id = idCache.get(i) ?? getId(state, i)!;
-                    const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
-                    const itemColumn = columns.get(id)!;
-
-                    maxSizeInRow = Math.max(maxSizeInRow, size);
-
-                    // When we reach column 1, we're at the start of a new row going backwards
-                    if (itemColumn === 1) {
-                        currentRowTop -= maxSizeInRow;
-                        maxSizeInRow = 0;
-                    }
-
-                    // Check if position goes too low - bail if so
-                    if (currentRowTop < -2000) {
-                        bailout = true;
-                        break;
-                    }
-
-                    // Update position for this item (columns and indexByKey already set)
-                    positions.set(id, currentRowTop);
-                }
-
-                if (!bailout) {
-                    // We successfully processed backwards, we're done
-                    updateTotalSize(ctx, state);
-                    return;
-                }
-            }
-        }
-
-        // Regular ascending behavior (either not scrolling up or bailed out)
-        let currentRowTop = 0;
-        let column = 1;
-        let maxSizeInRow = 0;
-
-        const hasColumns = numColumns > 1;
-        const needsIndexByKey = dataChanged || indexByKey.size === 0;
-
-        // Note that this loop is micro-optimized because it's a hot path
-        const dataLength = data!.length;
-        for (let i = 0; i < dataLength; i++) {
-            // Inline the map get calls to avoid the overhead of the function call
-            const id = idCache.get(i) ?? getId(state, i)!;
-            const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
-
-            // Set index mapping for this item
-            if (__DEV__ && needsIndexByKey) {
-                if (indexByKeyForChecking!.has(id)) {
-                    console.error(
-                        `[legend-list] Error: Detected overlapping key (${id}) which causes missing items and gaps and other terrrible things. Check that keyExtractor returns unique values.`,
-                    );
-                }
-                indexByKeyForChecking!.set(id, i);
-            }
-
-            // Set position for this item
-            positions.set(id, currentRowTop);
-
-            // Update indexByKey if needed
-            if (needsIndexByKey) {
-                indexByKey.set(id, i);
-            }
-
-            // Set column for this item
-            columns.set(id, column);
-
-            if (hasColumns) {
-                if (size > maxSizeInRow) {
-                    maxSizeInRow = size;
-                }
-
-                column++;
-                if (column > numColumns) {
-                    // Move to next row
-                    currentRowTop += maxSizeInRow;
-                    column = 1;
-                    maxSizeInRow = 0;
-                }
-            } else {
-                currentRowTop += size;
-            }
-        }
-
-        updateTotalSize(ctx, state);
-    };
-
     const scrollToIndex = ({
         index,
         viewOffset = 0,
@@ -443,7 +320,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             const checkMVCP = doMVCP ? prepareMVCP() : undefined;
 
             // Update all positions upfront so we can assume they're correct
-            updateAllPositions(dataChanged);
+            updateAllPositions(ctx, state, dataChanged);
 
             checkMVCP?.();
         }
@@ -973,7 +850,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     };
     if (isFirst) {
         initalizeStateVars();
-        updateAllPositions();
+        updateAllPositions(ctx, state);
     }
     const initialContentOffset = useMemo(() => {
         const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(ctx, state, initialScrollIndex);
