@@ -332,19 +332,34 @@ export interface InternalState {
             avg: number;
         }
     >;
+    refScroller: React.RefObject<ScrollView>;
+    calculateItemsInView: (params: { doMVCP?: boolean }) => void;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
-        keyExtractor: ((item: any, index: number) => string) | undefined;
-        onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-        stylePaddingBottom: number | undefined;
-        getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
         estimatedItemSize: number | undefined;
-        onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
-        onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
+        getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
+        horizontal: boolean;
+        keyExtractor: ((item: any, index: number) => string) | undefined;
+        maintainScrollAtEnd: boolean;
         maintainScrollAtEndThreshold: number | undefined;
+        maintainVisibleContentPosition: boolean;
+        onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
         onEndReachedThreshold: number | null | undefined;
+        onItemSizeChanged:
+            | ((info: {
+                  size: number;
+                  previous: number;
+                  index: number;
+                  itemKey: string;
+                  itemData: any;
+              }) => void)
+            | undefined;
+        onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
+        onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
         onStartReachedThreshold: number | null | undefined;
+        suggestEstimatedItemSize: boolean;
+        stylePaddingBottom: number | undefined;
     };
 }
 
