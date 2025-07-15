@@ -307,9 +307,6 @@ export interface InternalState {
     indexByKey: Map<string, number>;
     idCache: Map<number, string>;
     viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs | undefined;
-    renderItem:
-        | ((props: LegendListRenderItemProps<any>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<any>>;
     scrollHistory: Array<{ scroll: number; time: number }>;
     startReachedBlockedByTimer: boolean;
     endReachedBlockedByTimer: boolean;
@@ -362,6 +359,9 @@ export interface InternalState {
         onStartReachedThreshold: number | null | undefined;
         suggestEstimatedItemSize: boolean;
         stylePaddingBottom: number | undefined;
+        renderItem:
+            | ((props: LegendListRenderItemProps<any>) => ReactNode)
+            | React.ComponentType<LegendListRenderItemProps<any>>;
     };
 }
 

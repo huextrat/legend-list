@@ -1,4 +1,4 @@
-import { calculateOffsetForIndex } from "src/calculateOffsetForIndex";
+import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
 import { scrollTo } from "./scrollTo";
 import type { StateContext } from "./state";
 import type { InternalState, LegendListRef } from "./types";

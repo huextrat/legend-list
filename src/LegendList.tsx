@@ -35,6 +35,7 @@ import { findAvailableContainers } from "./findAvailableContainers";
 import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
 import { getItemSize } from "./getItemSize";
+import { getRenderedItem } from "./getRenderedItem";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { extractPadding, warnDevOnce } from "./helpers";
 import { prepareMVCP } from "./prepareMVCP";
@@ -128,7 +129,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         typeof initialScrollIndexProp === "number" ? { index: initialScrollIndexProp } : initialScrollIndexProp;
     const initialScrollIndex = initialScroll?.index;
 
-    const refLoadStartTime = useRef<number>(Date.now());
     const [canRender, setCanRender] = React.useState(!IsNewArchitecture);
 
     const contentContainerStyle = { ...StyleSheet.flatten(contentContainerStyleProp) };
@@ -171,7 +171,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             totalSize: 0,
             timeouts: new Set(),
             viewabilityConfigCallbackPairs: undefined as never,
-            renderItem: undefined as never,
             scrollAdjustHandler: new ScrollAdjustHandler(ctx),
             nativeMarginTop: 0,
             scrollPrev: 0,
@@ -205,6 +204,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     const state = refState.current!;
 
+    const isFirst = !state.props.renderItem;
+
     const didDataChange = state.props.data !== dataProp;
     state.props = {
         alignItemsAtEnd,
@@ -225,6 +226,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onStartReached,
         onEndReached,
         onLoad,
+        renderItem: renderItem!,
     };
 
     const calculateItemsInView = useCallback((params: { doMVCP?: boolean; dataChanged?: boolean } = {}) => {
@@ -601,8 +603,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const isFirst = !refState.current.renderItem;
-
     const memoizedLastItemKeys = useMemo(() => {
         if (!dataProp.length) return [];
         return Array.from({ length: Math.min(numColumnsProp, dataProp.length) }, (_, i) =>
@@ -704,45 +704,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         set$(ctx, "extraData", extraData);
     }, [extraData]);
 
-    refState.current.renderItem = renderItem!;
-
     useLayoutEffect(initalizeStateVars, [
         memoizedLastItemKeys.join(","),
         numColumnsProp,
         stylePaddingTopState,
         stylePaddingBottomState,
     ]);
-
-    const getRenderedItem = useCallback((key: string) => {
-        const state = refState.current;
-        if (!state) {
-            return null;
-        }
-
-        const { indexByKey } = state;
-        const data = state.props.data;
-
-        const index = indexByKey.get(key);
-
-        if (index === undefined) {
-            return null;
-        }
-
-        const renderItemProp = refState.current!.renderItem;
-        let renderedItem: React.ReactNode = null;
-
-        if (renderItemProp) {
-            const itemProps = {
-                item: data[index],
-                index,
-                extraData: peek$(ctx, "extraData"),
-            };
-
-            renderedItem = React.createElement(renderItemProp, itemProps);
-        }
-
-        return { index, item: data[index], renderedItem };
-    }, []);
 
     const doInitialAllocateContainers = () => {
         // Allocate containers
@@ -998,9 +965,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }, []);
     }
 
-    const updateItemSizeCallback = useCallback((itemKey: string, sizeObj: { width: number; height: number }) => {
-        updateItemSize(ctx, state, itemKey, sizeObj);
-    }, []);
+    const fns = useMemo(
+        () => ({
+            updateItemSize: (itemKey: string, sizeObj: { width: number; height: number }) =>
+                updateItemSize(ctx, state, itemKey, sizeObj),
+            getRenderedItem: (key: string) => getRenderedItem(ctx, state, key),
+        }),
+        [],
+    );
 
     return (
         <>
@@ -1010,8 +982,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 horizontal={horizontal!}
                 refScrollView={combinedRef}
                 initialContentOffset={initialContentOffset}
-                getRenderedItem={getRenderedItem}
-                updateItemSize={updateItemSizeCallback}
+                getRenderedItem={fns.getRenderedItem}
+                updateItemSize={fns.updateItemSize}
                 handleScroll={handleScroll}
                 onMomentumScrollEnd={(event) => {
                     requestAnimationFrame(() => {
