@@ -37,6 +37,7 @@ import { getItemSize } from "./getItemSize";
 import { getScrollVelocity } from "./getScrollVelocity";
 import { comparatorByDistance, comparatorDefault, extractPadding, warnDevOnce } from "./helpers";
 import { requestAdjust } from "./requestAdjust";
+import { scrollTo } from "./scrollTo";
 import { setDidLayout } from "./setDidLayout";
 import { StateProvider, getContentSize, peek$, set$, useStateContext } from "./state";
 import type {
@@ -243,7 +244,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         state.scrollForNextCalculateItemsInView = undefined;
 
-        scrollTo({ offset: firstIndexScrollPostion, animated, index, viewPosition: viewPosition ?? 0, viewOffset });
+        scrollTo(state, {
+            offset: firstIndexScrollPostion,
+            animated,
+            index,
+            viewPosition: viewPosition ?? 0,
+            viewOffset,
+        });
     };
 
     const prepareMVCP = useCallback((): (() => void) => {
@@ -676,38 +683,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const scrollTo = (
-        params: {
-            animated?: boolean;
-            index?: number;
-            offset: number;
-            viewOffset?: number;
-            viewPosition?: number;
-        } = {} as any,
-    ) => {
-        const { animated } = params;
-
-        const offset = calculateOffsetWithOffsetPosition(state, params.offset, params);
-
-        // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
-        state.scrollHistory.length = 0;
-        state.scrollingTo = params;
-        state.scrollPending = offset;
-        // Do the scroll
-        refScroller.current?.scrollTo({
-            x: horizontal ? offset : 0,
-            y: horizontal ? 0 : offset,
-            animated: !!animated,
-        });
-
-        if (!animated) {
-            state.scroll = offset;
-            // TODO: Should this not be a timeout, and instead wait for all item layouts to settle?
-            // It's used for mvcp for when items change size above scroll.
-            setTimeout(() => finishScrollTo(state), 100);
-        }
-    };
-
     const checkResetContainers = (isFirst: boolean) => {
         const state = refState.current;
         if (state) {
@@ -858,7 +833,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
 
         if (initialContentOffset > 0) {
-            scrollTo({ offset: initialContentOffset, animated: false, index: initialScrollIndex });
+            scrollTo(state, { offset: initialContentOffset, animated: false, index: initialScrollIndex });
         }
 
         return initialContentOffset;
@@ -1185,7 +1160,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         scrollToIndex({ index, ...props });
                     }
                 },
-                scrollToOffset: (params) => scrollTo(params),
+                scrollToOffset: (params) => scrollTo(state, params),
                 scrollToEnd: (options) => {
                     const data = refState.current!.props.data;
                     const stylePaddingBottom = refState.current!.props.stylePaddingBottom;
@@ -1213,7 +1188,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     if (Platform.OS === "web") {
         useEffect(() => {
             if (initialContentOffset) {
-                scrollTo({ offset: initialContentOffset, animated: false });
+                scrollTo(state, { offset: initialContentOffset, animated: false });
             }
         }, []);
     }
