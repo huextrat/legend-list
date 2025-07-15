@@ -24,6 +24,7 @@ import {
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
+import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
 import { checkThreshold } from "./checkThreshold";
 import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { finishScrollTo } from "./finishScrollTo";
@@ -217,26 +218,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.getEstimatedItemSize = getEstimatedItemSize;
     state.estimatedItemSize = estimatedItemSize;
 
-    const calculateOffsetForIndex = (index: number | undefined) => {
-        let position = 0;
-
-        if (index !== undefined) {
-            position = state?.positions.get(getId(state, index)) || 0;
-        }
-
-        const paddingTop = peek$(ctx, "stylePaddingTop");
-        if (paddingTop) {
-            position += paddingTop;
-        }
-
-        const headerSize = peek$(ctx, "headerSize");
-        if (headerSize) {
-            position += headerSize;
-        }
-
-        return position;
-    };
-
     const calculateOffsetWithOffsetPosition = (offsetParam: number, params: Partial<ScrollIndexWithOffsetPosition>) => {
         const { index, viewOffset, viewPosition } = params;
         let offset = offsetParam;
@@ -390,7 +371,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             index = 0;
         }
 
-        const firstIndexOffset = calculateOffsetForIndex(index);
+        const firstIndexOffset = calculateOffsetForIndex(ctx, state, index);
 
         const isLast = index === state.data.length - 1;
         if (isLast && viewPosition === undefined) {
@@ -572,7 +553,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // and use the calculated offset of the initialScrollIndex instead.
         if (!queuedInitialLayout && initialScroll) {
             const updatedOffset = calculateOffsetWithOffsetPosition(
-                calculateOffsetForIndex(initialScroll.index),
+                calculateOffsetForIndex(ctx, state, initialScroll.index),
                 initialScroll,
             );
             scrollState = updatedOffset;
@@ -1180,7 +1161,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         updateAllPositions();
     }
     const initialContentOffset = useMemo(() => {
-        const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(initialScrollIndex);
+        const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(ctx, state, initialScrollIndex);
         refState.current!.isStartReached =
             initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
 

@@ -1,12 +1,12 @@
 import type { InternalState } from "./types";
 
-export const getItemSize = (
+export function getItemSize(
     state: InternalState,
     key: string,
     index: number,
     data: any,
     useAverageSize?: number | undefined,
-) => {
+) {
     const { sizesKnown, sizes, scrollingTo, estimatedItemSize, getEstimatedItemSize } = state;
     const sizeKnown = sizesKnown.get(key)!;
     if (sizeKnown !== undefined) {
@@ -36,4 +36,4 @@ export const getItemSize = (
     // Save to rendered sizes
     sizes.set(key, size);
     return size;
-};
+}
