@@ -54,12 +54,12 @@ export const Container = <ItemT,>({
         // Create padding styles for both horizontal and vertical layouts with multiple columns
         if (horizontal) {
             paddingStyles = {
-                paddingRight: !isALastItem ? columnGap || gap || undefined : undefined,
+                paddingRight: columnGap || gap || undefined,
                 paddingVertical: numColumns > 1 ? (rowGap || gap || 0) / 2 : undefined,
             };
         } else {
             paddingStyles = {
-                paddingBottom: !isALastItem ? rowGap || gap || undefined : undefined,
+                paddingBottom: rowGap || gap || undefined,
                 paddingHorizontal: numColumns > 1 ? (columnGap || gap || 0) / 2 : undefined,
             };
         }

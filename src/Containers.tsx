@@ -61,15 +61,22 @@ export const Containers = typedMemo(function Containers<ItemT>({
     if (columnWrapperStyle && numColumns > 1) {
         // Extract gap properties from columnWrapperStyle if available
         const { columnGap, rowGap, gap } = columnWrapperStyle;
+
+        const gapX = columnGap || gap || 0;
+        const gapY = rowGap || gap || 0;
         if (horizontal) {
-            const my = (rowGap || gap || 0) / 2;
-            if (my) {
-                style.marginVertical = -my;
+            if (gapY) {
+                style.marginVertical = -gapY / 2;
+            }
+            if (gapX) {
+                style.marginRight = -gapX;
             }
         } else {
-            const mx = (columnGap || gap || 0) / 2;
-            if (mx) {
-                style.marginHorizontal = -mx;
+            if (gapX) {
+                style.marginHorizontal = -gapX;
+            }
+            if (gapY) {
+                style.marginBottom = -gapY;
             }
         }
     }
