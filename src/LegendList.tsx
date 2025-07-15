@@ -20,6 +20,7 @@ import {
     type ScrollView,
     StyleSheet,
 } from "react-native";
+import { scrollToIndex } from "src/scrollToIndex";
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
 import { ScrollAdjustHandler } from "./ScrollAdjustHandler";
@@ -220,37 +221,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onStartReached,
         onEndReached,
         onLoad,
-    };
-
-    const scrollToIndex = ({
-        index,
-        viewOffset = 0,
-        animated = true,
-        viewPosition,
-    }: Parameters<LegendListRef["scrollToIndex"]>[0]) => {
-        if (index >= state.props.data.length) {
-            index = state.props.data.length - 1;
-        } else if (index < 0) {
-            index = 0;
-        }
-
-        const firstIndexOffset = calculateOffsetForIndex(ctx, state, index);
-
-        const isLast = index === state.props.data.length - 1;
-        if (isLast && viewPosition === undefined) {
-            viewPosition = 1;
-        }
-        const firstIndexScrollPostion = firstIndexOffset - viewOffset;
-
-        state.scrollForNextCalculateItemsInView = undefined;
-
-        scrollTo(state, {
-            offset: firstIndexScrollPostion,
-            animated,
-            index,
-            viewPosition: viewPosition ?? 0,
-            viewOffset,
-        });
     };
 
     const prepareMVCP = useCallback((): (() => void) => {
@@ -882,7 +852,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             } else {
                 setTimeout(() => {
-                    scrollToIndex({ ...initialScroll, animated: false });
+                    scrollToIndex(ctx, state, { ...initialScroll, animated: false });
                 }, 17);
             }
         }
@@ -1113,7 +1083,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const { startNoBuffer, endNoBuffer } = state;
                     if (index < startNoBuffer || index > endNoBuffer) {
                         const viewPosition = index < startNoBuffer ? 0 : 1;
-                        scrollToIndex({
+                        scrollToIndex(ctx, state, {
                             ...rest,
                             viewPosition,
                             index,
@@ -1152,12 +1122,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         scrollIndexIntoView({ index, ...props });
                     }
                 },
-                scrollToIndex,
+                scrollToIndex: (params) => scrollToIndex(ctx, state, params),
                 scrollToItem: ({ item, ...props }) => {
                     const data = refState.current!.props.data;
                     const index = data.indexOf(item);
                     if (index !== -1) {
-                        scrollToIndex({ index, ...props });
+                        scrollToIndex(ctx, state, { index, ...props });
                     }
                 },
                 scrollToOffset: (params) => scrollTo(state, params),
@@ -1168,7 +1138,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     if (index !== -1) {
                         const paddingBottom = stylePaddingBottom || 0;
                         const footerSize = peek$(ctx, "footerSize") || 0;
-                        scrollToIndex({
+                        scrollToIndex(ctx, state, {
                             index,
                             viewPosition: 1,
                             viewOffset: -paddingBottom - footerSize,
