@@ -1,6 +1,6 @@
 {
     "name": "@legendapp/list",
-    "version": "2.0.0-next.0",
+    "version": "2.0.0-next.1",
     "description": "Legend List is a drop-in replacement for FlatList with much better performance and supporting dynamically sized items.",
     "sideEffects": false,
     "private": false,
@@ -39,7 +39,9 @@
     },
     "scripts": {
         "build": "tsup && bun run posttsup.ts",
-        "publish:manual": "bun run build && cd dist && npm publish",
+        "publish": "bun run build && cd dist && npm publish",
+        "publish:next": "bun run build && cd dist && npm publish --tag next",
+        "publish:beta": "bun run build && cd dist && npm publish --tag beta",
         "lint": "bunx biome check ./src && bunx biome format ./src && bun run lint:example",
         "lint:example": "bunx biome check ./example/app && bunx biome format ./example/app",
         "lint:fix": "bunx biome lint --write ./src && bunx biome format --write ./src && bunx biome check --write ./src && bun run lint:fix:example",
