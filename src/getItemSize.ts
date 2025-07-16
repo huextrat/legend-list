@@ -1,3 +1,4 @@
+import { IsNewArchitecture } from "./constants";
 import type { InternalState } from "./types";
 
 export function getItemSize(
@@ -20,7 +21,14 @@ export function getItemSize(
 
     let size: number | undefined;
 
-    if ((useAverageSize !== undefined && sizeKnown) === undefined && !getEstimatedItemSize && !scrollingTo) {
+    // Using average size is not supported on old architecture because it can't layout immediately
+    if (
+        IsNewArchitecture &&
+        useAverageSize !== undefined &&
+        sizeKnown === undefined &&
+        !getEstimatedItemSize &&
+        !scrollingTo
+    ) {
         // TODO: Hook this up to actual item type later once we have item types
         size = useAverageSize;
     }
