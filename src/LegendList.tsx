@@ -14,7 +14,6 @@ import {
     type LayoutChangeEvent,
     type LayoutRectangle,
     type NativeScrollEvent,
-    type NativeSyntheticEvent,
     Platform,
     RefreshControl,
     type ScrollView,
@@ -36,6 +35,7 @@ import { getId } from "./getId";
 import { getRenderedItem } from "./getRenderedItem";
 import { handleLayout } from "./handleLayout";
 import { extractPadding, warnDevOnce } from "./helpers";
+import { onScroll } from "./onScroll";
 import { requestAdjust } from "./requestAdjust";
 import { scrollTo } from "./scrollTo";
 import { scrollToIndex } from "./scrollToIndex";
@@ -398,65 +398,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, []);
 
-    const handleScroll = useCallback(
-        (event: {
-            nativeEvent: NativeScrollEvent;
-        }) => {
-            if (event.nativeEvent?.contentSize?.height === 0 && event.nativeEvent.contentSize?.width === 0) {
-                return;
-            }
-
-            const newScroll = event.nativeEvent.contentOffset[horizontal ? "x" : "y"];
-
-            // Ignore scroll events that are too close to the previous scroll position
-            // after adjusting for MVCP
-            const ignoreScrollFromMVCP = state.ignoreScrollFromMVCP;
-            if (ignoreScrollFromMVCP && !state.scrollingTo) {
-                const { lt, gt } = ignoreScrollFromMVCP;
-                if ((lt && newScroll < lt) || (gt && newScroll > gt)) {
-                    return;
-                }
-            }
-
-            state.scrollPending = newScroll;
-
-            updateScroll(newScroll);
-
-            state.props.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
-        },
-        [],
-    );
-
-    const updateScroll = useCallback((newScroll: number) => {
-        const scrollingTo = state.scrollingTo;
-
-        state.hasScrolled = true;
-        state.lastBatchingAction = Date.now();
-        const currentTime = performance.now();
-
-        // Don't add to the history if it's initial scroll event otherwise invalid velocity will be calculated
-        // Don't add to the history if we are scrolling to an offset
-        if (scrollingTo === undefined && !(state.scrollHistory.length === 0 && newScroll === state.scroll)) {
-            // Update scroll history
-            state.scrollHistory.push({ scroll: newScroll, time: currentTime });
-        }
-
-        // Keep only last 5 entries
-        if (state.scrollHistory.length > 5) {
-            state.scrollHistory.shift();
-        }
-
-        // Update current scroll state
-        state.scrollPrev = state.scroll;
-        state.scrollPrevTime = state.scrollTime;
-        state.scroll = newScroll;
-        state.scrollTime = currentTime;
-        // Use velocity to predict scroll position
-        calculateItemsInView(ctx, state);
-        checkAtBottom(ctx, state);
-        checkAtTop(state);
-    }, []);
-
     useImperativeHandle(
         forwardedRef,
         () => {
@@ -552,6 +493,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             updateItemSize: (itemKey: string, sizeObj: { width: number; height: number }) =>
                 updateItemSize(ctx, state, itemKey, sizeObj),
             getRenderedItem: (key: string) => getRenderedItem(ctx, state, key),
+            onScroll: (event: { nativeEvent: NativeScrollEvent }) => onScroll(ctx, state, event),
         }),
         [],
     );
@@ -566,7 +508,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 initialContentOffset={initialContentOffset}
                 getRenderedItem={fns.getRenderedItem}
                 updateItemSize={fns.updateItemSize}
-                handleScroll={handleScroll}
+                onScroll={fns.onScroll}
                 onMomentumScrollEnd={(event) => {
                     requestAnimationFrame(() => {
                         finishScrollTo(refState.current);
