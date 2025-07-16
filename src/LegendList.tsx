@@ -27,12 +27,14 @@ import { calculateItemsInView } from "./calculateItemsInView";
 import { calculateOffsetForIndex } from "./calculateOffsetForIndex";
 import { checkAtBottom } from "./checkAtBottom";
 import { checkAtTop } from "./checkAtTop";
-import { ENABLE_DEBUG_VIEW, IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
+import { ENABLE_DEBUG_VIEW, IsNewArchitecture } from "./constants";
 import { createColumnWrapperStyle } from "./createColumnWrapperStyle";
+import { doInitialAllocateContainers } from "./doInitialAllocateContainers";
 import { doMaintainScrollAtEnd } from "./doMaintainScrollAtEnd";
 import { finishScrollTo } from "./finishScrollTo";
 import { getId } from "./getId";
 import { getRenderedItem } from "./getRenderedItem";
+import { handleLayout } from "./handleLayout";
 import { extractPadding, warnDevOnce } from "./helpers";
 import { requestAdjust } from "./requestAdjust";
 import { scrollTo } from "./scrollTo";
@@ -47,7 +49,6 @@ import type {
     ScrollState,
 } from "./types";
 import { typedForwardRef } from "./types";
-import { updateAlignItemsPaddingTop } from "./updateAlignItemsPaddingTop";
 import { updateAllPositions } from "./updateAllPositions";
 import { updateItemSize } from "./updateItemSize";
 import { useCombinedRef } from "./useCombinedRef";
@@ -223,6 +224,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         initialScroll,
         scrollBuffer,
         viewabilityConfigCallbackPairs: undefined,
+        numColumns: numColumnsProp,
+        initialContainerPoolRatio,
+        stylePaddingTop: stylePaddingTopState,
     };
 
     state.refScroller = refScroller;
@@ -315,7 +319,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
 
                 if (size) {
-                    handleLayout(measured);
+                    handleLayoutCallback(measured);
                 }
             }
         }
@@ -342,7 +346,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     }, []);
 
     useLayoutEffect(() => {
-        const didAllocateContainers = doInitialAllocateContainers();
+        const didAllocateContainers = doInitialAllocateContainersCallback();
         if (!didAllocateContainers) {
             checkResetContainers(/*isFirst*/ isFirst);
         }
@@ -359,38 +363,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         stylePaddingBottomState,
     ]);
 
-    const doInitialAllocateContainers = () => {
-        // Allocate containers
-        const { scrollLength } = state;
-        const data = state.props.data;
-        if (scrollLength > 0 && data.length > 0 && !peek$(ctx, "numContainers")) {
-            const averageItemSize = getEstimatedItemSize ? getEstimatedItemSize(0, data[0]) : estimatedItemSize;
-            const Extra = 1.5; // TODO make it a prop, experiment with whether it's faster with more containers
-            const numContainers = Math.ceil(
-                ((scrollLength + scrollBuffer * 2) / averageItemSize) * numColumnsProp * Extra,
-            );
-
-            for (let i = 0; i < numContainers; i++) {
-                set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                set$(ctx, `containerColumn${i}`, -1);
-            }
-
-            set$(ctx, "numContainers", numContainers);
-            set$(ctx, "numContainersPooled", numContainers * initialContainerPoolRatio);
-
-            if (!IsNewArchitecture) {
-                if (initialScroll) {
-                    requestAnimationFrame(() => {
-                        // immediate render causes issues with initial index position
-                        calculateItemsInView(ctx, state);
-                    });
-                } else {
-                    calculateItemsInView(ctx, state);
-                }
-            }
-
-            return true;
-        }
+    const doInitialAllocateContainersCallback = () => {
+        return doInitialAllocateContainers(ctx, state);
     };
 
     useEffect(() => {
@@ -407,58 +381,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     if (!IsNewArchitecture) {
         // Needs to use the initial estimated size on old arch, new arch will come within the useLayoutEffect
         useInit(() => {
-            doInitialAllocateContainers();
+            doInitialAllocateContainersCallback();
         });
     }
 
-    const handleLayout = useCallback((size: { width: number; height: number }) => {
-        const scrollLength = size[horizontal ? "width" : "height"];
-        const otherAxisSize = size[horizontal ? "height" : "width"];
-
-        const didChange = scrollLength !== state.scrollLength;
-        const prevOtherAxisSize = state.otherAxisSize;
-        state.scrollLength = scrollLength;
-        state.otherAxisSize = otherAxisSize;
-        state.lastBatchingAction = Date.now();
-        state.scrollForNextCalculateItemsInView = undefined;
-
-        doInitialAllocateContainers();
-
-        if (didChange) {
-            calculateItemsInView(ctx, state, { doMVCP: true });
-        }
-        if (didChange || otherAxisSize !== prevOtherAxisSize) {
-            set$(ctx, "scrollSize", { width: size.width, height: size.height });
-        }
-
-        doMaintainScrollAtEnd(ctx, state, false);
-        updateAlignItemsPaddingTop(ctx, state);
-        checkAtBottom(ctx, state);
-        checkAtTop(state);
-
-        if (refState.current) {
-            // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis
-            // from the item height. 10 is just a magic number to account for border/outline or rounding errors.
-            refState.current.needsOtherAxisSize = otherAxisSize - (stylePaddingTopState || 0) < 10;
-        }
-
-        if (__DEV__ && scrollLength === 0) {
-            warnDevOnce(
-                "height0",
-                `List ${
-                    horizontal ? "width" : "height"
-                } is 0. You may need to set a style or \`flex: \` for the list, because children are absolutely positioned.`,
-            );
-        }
-
-        calculateItemsInView(ctx, state, { doMVCP: true });
-
-        setCanRender(true);
+    const handleLayoutCallback = useCallback((size: { width: number; height: number }) => {
+        handleLayout(ctx, state, size, setCanRender);
     }, []);
 
     const onLayout = useCallback((event: LayoutChangeEvent) => {
         const layout = event.nativeEvent.layout;
-        handleLayout(layout);
+        handleLayoutCallback(layout);
 
         if (onLayoutProp) {
             onLayoutProp(event);
