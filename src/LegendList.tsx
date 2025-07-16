@@ -190,6 +190,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             props: {} as any,
             refScroller: undefined as any,
             loadStartTime: Date.now(),
+            initialScroll,
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);

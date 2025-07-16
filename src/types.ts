@@ -331,6 +331,7 @@ export interface InternalState {
     >;
     refScroller: React.RefObject<ScrollView>;
     loadStartTime: number;
+    initialScroll: ScrollIndexWithOffsetPosition | undefined;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
