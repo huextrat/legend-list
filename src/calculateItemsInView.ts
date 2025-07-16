@@ -241,6 +241,7 @@ export function calculateItemsInView(
         }
     }
 
+    // Place newly added items into containers
     if (startBuffered !== null && endBuffered !== null) {
         let numContainers = prevNumContainers;
         const needNewContainers: number[] = [];
@@ -290,51 +291,51 @@ export function calculateItemsInView(
                 }
             }
         }
+    }
 
-        // Update top positions of all containers
-        for (let i = 0; i < numContainers; i++) {
-            const itemKey = peek$(ctx, `containerItemKey${i}`);
+    // Update top positions of all containers
+    for (let i = 0; i < numContainers; i++) {
+        const itemKey = peek$(ctx, `containerItemKey${i}`);
 
-            // If it was
-            if (pendingRemoval.includes(i)) {
-                // Update cache when removing item
-                if (itemKey) {
-                    containerItemKeys!.delete(itemKey);
-                }
+        // If it was
+        if (pendingRemoval.includes(i)) {
+            // Update cache when removing item
+            if (itemKey) {
+                containerItemKeys!.delete(itemKey);
+            }
 
-                set$(ctx, `containerItemKey${i}`, undefined);
-                set$(ctx, `containerItemData${i}`, undefined);
-                set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                set$(ctx, `containerColumn${i}`, -1);
-            } else {
-                const itemIndex = indexByKey.get(itemKey)!;
-                const item = data[itemIndex];
-                if (item !== undefined) {
-                    const id = idCache.get(itemIndex) ?? getId(state, itemIndex);
-                    const position = positions.get(id);
+            set$(ctx, `containerItemKey${i}`, undefined);
+            set$(ctx, `containerItemData${i}`, undefined);
+            set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
+            set$(ctx, `containerColumn${i}`, -1);
+        } else {
+            const itemIndex = indexByKey.get(itemKey)!;
+            const item = data[itemIndex];
+            if (item !== undefined) {
+                const id = idCache.get(itemIndex) ?? getId(state, itemIndex);
+                const position = positions.get(id);
 
-                    if (position === undefined) {
-                        // This item may have been in view before data changed and positions were reset
-                        // so we need to set it to out of view
-                        set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
-                    } else {
-                        const pos = positions.get(id)!;
-                        const column = columns.get(id) || 1;
+                if (position === undefined) {
+                    // This item may have been in view before data changed and positions were reset
+                    // so we need to set it to out of view
+                    set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
+                } else {
+                    const pos = positions.get(id)!;
+                    const column = columns.get(id) || 1;
 
-                        const prevPos = peek$(ctx, `containerPosition${i}`);
-                        const prevColumn = peek$(ctx, `containerColumn${i}`);
-                        const prevData = peek$(ctx, `containerItemData${i}`);
+                    const prevPos = peek$(ctx, `containerPosition${i}`);
+                    const prevColumn = peek$(ctx, `containerColumn${i}`);
+                    const prevData = peek$(ctx, `containerItemData${i}`);
 
-                        if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
-                            set$(ctx, `containerPosition${i}`, pos);
-                        }
-                        if (column >= 0 && column !== prevColumn) {
-                            set$(ctx, `containerColumn${i}`, column);
-                        }
+                    if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
+                        set$(ctx, `containerPosition${i}`, pos);
+                    }
+                    if (column >= 0 && column !== prevColumn) {
+                        set$(ctx, `containerColumn${i}`, column);
+                    }
 
-                        if (prevData !== item) {
-                            set$(ctx, `containerItemData${i}`, data[itemIndex]);
-                        }
+                    if (prevData !== item) {
+                        set$(ctx, `containerItemData${i}`, data[itemIndex]);
                     }
                 }
             }
