@@ -319,7 +319,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
 
                 if (size) {
-                    handleLayoutCallback(measured);
+                    handleLayout(ctx, state, measured, setCanRender);
                 }
             }
         }
@@ -385,13 +385,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         });
     }
 
-    const handleLayoutCallback = useCallback((size: { width: number; height: number }) => {
-        handleLayout(ctx, state, size, setCanRender);
-    }, []);
-
     const onLayout = useCallback((event: LayoutChangeEvent) => {
         const layout = event.nativeEvent.layout;
-        handleLayoutCallback(layout);
+        handleLayout(ctx, state, layout, setCanRender);
 
         if (onLayoutProp) {
             onLayoutProp(event);
