@@ -36,7 +36,7 @@ interface ListComponentProps<ItemT>
     refScrollView: React.Ref<ScrollView>;
     getRenderedItem: GetRenderedItem;
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
-    handleScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+    onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
     onLayout: (event: LayoutChangeEvent) => void;
     onLayoutHeader: (rect: LayoutRectangle, fromLayoutEffect: boolean) => void;
     maintainVisibleContentPosition: boolean;
@@ -92,7 +92,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     ItemSeparatorComponent,
     alignItemsAtEnd,
     waitForInitialLayout,
-    handleScroll,
+    onScroll,
     onLayout,
     ListHeaderComponent,
     ListHeaderComponentStyle,
@@ -144,7 +144,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                       }
                     : {},
             ]}
-            onScroll={handleScroll}
+            onScroll={onScroll}
             onLayout={onLayout}
             horizontal={horizontal}
             contentOffset={

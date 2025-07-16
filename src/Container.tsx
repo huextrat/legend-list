@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 import { ContextContainer, type ContextContainerType } from "./ContextContainer";
 import { LeanView } from "./LeanView";
+import { Separator } from "./Separator";
 import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "./constants";
 import { isNullOrUndefined } from "./helpers";
 import { useArr$, useStateContext } from "./state";
@@ -27,13 +28,12 @@ export const Container = <ItemT,>({
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
 
-    const [column = 0, data, itemKey, position = POSITION_OUT_OF_VIEW, numColumns, lastItemKeys, extraData] = useArr$([
+    const [column = 0, data, itemKey, position = POSITION_OUT_OF_VIEW, numColumns, extraData] = useArr$([
         `containerColumn${id}`,
         `containerItemData${id}`,
         `containerItemKey${id}`,
         `containerPosition${id}`,
         "numColumns",
-        "lastItemKeys",
         "extraData",
     ]);
 
@@ -43,7 +43,6 @@ export const Container = <ItemT,>({
 
     const otherAxisPos: DimensionValue | undefined = numColumns > 1 ? `${((column - 1) / numColumns) * 100}%` : 0;
     const otherAxisSize: DimensionValue | undefined = numColumns > 1 ? `${(1 / numColumns) * 100}%` : undefined;
-    const isALastItem = lastItemKeys.includes(itemKey);
     let didLayout = false;
 
     let paddingStyles: ViewStyle | undefined;
@@ -54,12 +53,12 @@ export const Container = <ItemT,>({
         // Create padding styles for both horizontal and vertical layouts with multiple columns
         if (horizontal) {
             paddingStyles = {
-                paddingRight: !isALastItem ? columnGap || gap || undefined : undefined,
+                paddingRight: columnGap || gap || undefined,
                 paddingVertical: numColumns > 1 ? (rowGap || gap || 0) / 2 : undefined,
             };
         } else {
             paddingStyles = {
-                paddingBottom: !isALastItem ? rowGap || gap || undefined : undefined,
+                paddingBottom: rowGap || gap || undefined,
                 paddingHorizontal: numColumns > 1 ? (columnGap || gap || 0) / 2 : undefined,
             };
         }
@@ -136,7 +135,7 @@ export const Container = <ItemT,>({
                     }
                 }
             }
-        }, [itemKey, layoutRenderCount, isALastItem]);
+        }, [itemKey, layoutRenderCount]);
     } else {
         // Since old architecture cannot use unstable_getBoundingClientRect it needs to ensure that
         // all containers updateItemSize even if the container did not resize.
@@ -164,8 +163,12 @@ export const Container = <ItemT,>({
         <LeanView style={style} onLayout={onLayout} ref={ref} key={recycleItems ? undefined : itemKey}>
             <ContextContainer.Provider value={contextValue}>
                 {renderedItem}
-                {renderedItemInfo && ItemSeparatorComponent && !isALastItem && (
-                    <ItemSeparatorComponent leadingItem={renderedItemInfo.item} />
+                {renderedItemInfo && ItemSeparatorComponent && (
+                    <Separator
+                        itemKey={itemKey}
+                        ItemSeparatorComponent={ItemSeparatorComponent}
+                        leadingItem={renderedItemInfo.item}
+                    />
                 )}
             </ContextContainer.Provider>
         </LeanView>

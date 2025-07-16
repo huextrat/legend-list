@@ -23,10 +23,6 @@ export function isNullOrUndefined(value: unknown) {
     return value === null || value === undefined;
 }
 
-export function comparatorByDistance(a: { distance: number }, b: { distance: number }) {
-    return b.distance - a.distance;
-}
-
 export function comparatorDefault(a: number, b: number) {
     return a - b;
 }

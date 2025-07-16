@@ -1,0 +1,17 @@
+import { getId } from "./getId";
+import type { InternalState } from "./types";
+
+export function checkAllSizesKnown(state: InternalState) {
+    const { startBuffered, endBuffered, sizesKnown } = state;
+    if (endBuffered !== null) {
+        // If waiting for initial layout and all items in view have a known size then
+        // initial layout is complete
+        let areAllKnown = true;
+        for (let i = startBuffered!; areAllKnown && i <= endBuffered!; i++) {
+            const key = getId(state, i)!;
+            areAllKnown &&= sizesKnown.has(key);
+        }
+        return areAllKnown;
+    }
+    return false;
+}

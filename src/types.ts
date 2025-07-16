@@ -283,7 +283,6 @@ export interface InternalState {
     isEndReached: boolean;
     isAtEnd: boolean;
     isAtStart: boolean;
-    data: readonly any[];
     hasScrolled?: boolean;
     scrollLength: number;
     startBuffered: number;
@@ -308,9 +307,6 @@ export interface InternalState {
     indexByKey: Map<string, number>;
     idCache: Map<number, string>;
     viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs | undefined;
-    renderItem:
-        | ((props: LegendListRenderItemProps<any>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<any>>;
     scrollHistory: Array<{ scroll: number; time: number }>;
     startReachedBlockedByTimer: boolean;
     endReachedBlockedByTimer: boolean;
@@ -333,8 +329,45 @@ export interface InternalState {
             avg: number;
         }
     >;
-    onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-    stylePaddingBottom?: number;
+    refScroller: React.RefObject<ScrollView>;
+    loadStartTime: number;
+    props: {
+        alignItemsAtEnd: boolean;
+        data: readonly any[];
+        estimatedItemSize: number | undefined;
+        getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
+        horizontal: boolean;
+        keyExtractor: ((item: any, index: number) => string) | undefined;
+        maintainScrollAtEnd: boolean;
+        maintainScrollAtEndThreshold: number | undefined;
+        maintainVisibleContentPosition: boolean;
+        onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
+        onEndReachedThreshold: number | null | undefined;
+        onItemSizeChanged:
+            | ((info: {
+                  size: number;
+                  previous: number;
+                  index: number;
+                  itemKey: string;
+                  itemData: any;
+              }) => void)
+            | undefined;
+        onLoad: ((info: { elapsedTimeInMs: number }) => void) | undefined;
+        onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
+        onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
+        onStartReachedThreshold: number | null | undefined;
+        suggestEstimatedItemSize: boolean;
+        stylePaddingBottom: number | undefined;
+        renderItem:
+            | ((props: LegendListRenderItemProps<any>) => ReactNode)
+            | React.ComponentType<LegendListRenderItemProps<any>>;
+        initialScroll: { index: number; viewOffset?: number; viewPosition?: number } | undefined;
+        scrollBuffer: number;
+        viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs | undefined;
+        numColumns: number;
+        initialContainerPoolRatio: number;
+        stylePaddingTop: number | undefined;
+    };
 }
 
 export interface ViewableRange<T> {
