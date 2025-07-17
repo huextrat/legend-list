@@ -1,13 +1,15 @@
 import { type ComponentProps, type ReactNode, forwardRef, memo } from "react";
 import type {
+    Animated,
     NativeScrollEvent,
     NativeSyntheticEvent,
     ScrollResponderMixin,
+    ScrollView,
     ScrollViewComponent,
     ScrollViewProps,
+    StyleProp,
+    ViewStyle,
 } from "react-native";
-import type { ScrollView, StyleProp, ViewStyle } from "react-native";
-import type Animated from "react-native-reanimated";
 import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 
 export type LegendListPropsBase<
@@ -132,7 +134,7 @@ export type LegendListPropsBase<
      * If true, auto-scrolls to end when new items are added.
      * @default false
      */
-    maintainScrollAtEnd?: boolean;
+    maintainScrollAtEnd?: boolean | MaintainScrollAtEndOptions;
 
     /**
      * Distance threshold in percentage of screen size to trigger maintainScrollAtEnd.
@@ -261,6 +263,12 @@ export type LegendListPropsBase<
     onLoad?: (info: { elapsedTimeInMs: number }) => void;
 };
 
+export interface MaintainScrollAtEndOptions {
+    onLayout?: boolean;
+    onItemLayout?: boolean;
+    onDataChange?: boolean;
+}
+
 export interface ColumnWrapperStyle {
     rowGap?: number;
     gap?: number;
@@ -339,7 +347,7 @@ export interface InternalState {
         getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
         horizontal: boolean;
         keyExtractor: ((item: any, index: number) => string) | undefined;
-        maintainScrollAtEnd: boolean;
+        maintainScrollAtEnd: boolean | MaintainScrollAtEndOptions;
         maintainScrollAtEndThreshold: number | undefined;
         maintainVisibleContentPosition: boolean;
         onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;

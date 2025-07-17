@@ -45,6 +45,7 @@ import type {
     InternalState,
     LegendListProps,
     LegendListRef,
+    MaintainScrollAtEndOptions,
     ScrollIndexWithOffsetPosition,
     ScrollState,
 } from "./types";
@@ -240,7 +241,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             if (!isFirst) {
                 calculateItemsInView(ctx, state, { dataChanged: true, doMVCP: true });
 
-                const didMaintainScrollAtEnd = doMaintainScrollAtEnd(ctx, state, false);
+                const shouldMaintainScrollAtEnd =
+                    maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onDataChange;
+
+                const didMaintainScrollAtEnd = shouldMaintainScrollAtEnd && doMaintainScrollAtEnd(ctx, state, false);
 
                 // Reset the endReached flag if new data has been added and we didn't
                 // just maintain the scroll at end

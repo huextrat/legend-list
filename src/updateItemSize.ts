@@ -5,7 +5,7 @@ import { doMaintainScrollAtEnd } from "./doMaintainScrollAtEnd";
 import { getItemSize } from "./getItemSize";
 import { requestAdjust } from "./requestAdjust";
 import { type StateContext, peek$, set$ } from "./state";
-import type { InternalState } from "./types";
+import type { InternalState, MaintainScrollAtEndOptions } from "./types";
 
 export function updateItemSizes(
     ctx: StateContext,
@@ -13,7 +13,14 @@ export function updateItemSizes(
     itemUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[],
 ) {
     const {
-        props: { horizontal, maintainVisibleContentPosition, suggestEstimatedItemSize, onItemSizeChanged, data },
+        props: {
+            horizontal,
+            maintainVisibleContentPosition,
+            suggestEstimatedItemSize,
+            onItemSizeChanged,
+            data,
+            maintainScrollAtEnd,
+        },
     } = state;
 
     if (!data) return;
@@ -112,7 +119,9 @@ export function updateItemSizes(
             calculateItemsInView(ctx, state, { doMVCP: true });
         }
         if (shouldMaintainScrollAtEnd) {
-            doMaintainScrollAtEnd(ctx, state, false);
+            if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onItemLayout) {
+                doMaintainScrollAtEnd(ctx, state, false);
+            }
         }
     }
 }

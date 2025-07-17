@@ -5,7 +5,7 @@ import { doInitialAllocateContainers } from "./doInitialAllocateContainers";
 import { doMaintainScrollAtEnd } from "./doMaintainScrollAtEnd";
 import { warnDevOnce } from "./helpers";
 import { type StateContext, set$ } from "./state";
-import type { InternalState } from "./types";
+import type { InternalState, MaintainScrollAtEndOptions } from "./types";
 import { updateAlignItemsPaddingTop } from "./updateAlignItemsPaddingTop";
 
 export function handleLayout(
@@ -14,6 +14,8 @@ export function handleLayout(
     size: { width: number; height: number },
     setCanRender: (canRender: boolean) => void,
 ) {
+    const { maintainScrollAtEnd } = state.props;
+
     const scrollLength = size[state.props.horizontal ? "width" : "height"];
     const otherAxisSize = size[state.props.horizontal ? "height" : "width"];
 
@@ -33,7 +35,9 @@ export function handleLayout(
         set$(ctx, "scrollSize", { width: size.width, height: size.height });
     }
 
-    doMaintainScrollAtEnd(ctx, state, false);
+    if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onLayout) {
+        doMaintainScrollAtEnd(ctx, state, false);
+    }
     updateAlignItemsPaddingTop(ctx, state);
     checkAtBottom(ctx, state);
     checkAtTop(state);
