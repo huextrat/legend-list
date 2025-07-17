@@ -1,3 +1,4 @@
+import type { LayoutRectangle } from "react-native";
 import { calculateItemsInView } from "./calculateItemsInView";
 import { checkAtBottom } from "./checkAtBottom";
 import { checkAtTop } from "./checkAtTop";
@@ -11,13 +12,21 @@ import { updateAlignItemsPaddingTop } from "./updateAlignItemsPaddingTop";
 export function handleLayout(
     ctx: StateContext,
     state: InternalState,
-    size: { width: number; height: number },
+    layout: LayoutRectangle,
     setCanRender: (canRender: boolean) => void,
 ) {
     const { maintainScrollAtEnd } = state.props;
 
-    const scrollLength = size[state.props.horizontal ? "width" : "height"];
-    const otherAxisSize = size[state.props.horizontal ? "height" : "width"];
+    const scrollLength = layout[state.props.horizontal ? "width" : "height"];
+    const otherAxisSize = layout[state.props.horizontal ? "height" : "width"];
+
+    const needsCalculate =
+        !state.lastLayout ||
+        scrollLength > state.scrollLength ||
+        state.lastLayout.x !== layout.x ||
+        state.lastLayout.y !== layout.y;
+
+    state.lastLayout = layout;
 
     const didChange = scrollLength !== state.scrollLength;
     const prevOtherAxisSize = state.otherAxisSize;
@@ -28,11 +37,11 @@ export function handleLayout(
 
     doInitialAllocateContainers(ctx, state);
 
-    if (didChange) {
+    if (needsCalculate) {
         calculateItemsInView(ctx, state, { doMVCP: true });
     }
     if (didChange || otherAxisSize !== prevOtherAxisSize) {
-        set$(ctx, "scrollSize", { width: size.width, height: size.height });
+        set$(ctx, "scrollSize", { width: layout.width, height: layout.height });
     }
 
     if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onLayout) {
@@ -56,8 +65,6 @@ export function handleLayout(
             } is 0. You may need to set a style or \`flex: \` for the list, because children are absolutely positioned.`,
         );
     }
-
-    calculateItemsInView(ctx, state, { doMVCP: true });
 
     setCanRender(true);
 }

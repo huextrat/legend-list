@@ -192,6 +192,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             refScroller: undefined as any,
             loadStartTime: Date.now(),
             initialScroll,
+            lastLayout: undefined,
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);

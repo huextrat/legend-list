@@ -1,6 +1,7 @@
 import { type ComponentProps, type ReactNode, forwardRef, memo } from "react";
 import type {
     Animated,
+    LayoutRectangle,
     NativeScrollEvent,
     NativeSyntheticEvent,
     ScrollResponderMixin,
@@ -340,6 +341,7 @@ export interface InternalState {
     refScroller: React.RefObject<ScrollView>;
     loadStartTime: number;
     initialScroll: ScrollIndexWithOffsetPosition | undefined;
+    lastLayout: LayoutRectangle | undefined;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
