@@ -1,3 +1,4 @@
+import type { LayoutRectangle } from "react-native";
 import { calculateItemsInView } from "./calculateItemsInView";
 import { checkAllSizesKnown } from "./checkAllSizesKnown";
 import { IsNewArchitecture } from "./constants";
@@ -148,12 +149,13 @@ export function updateItemSize(
                 changes.push({ itemKey, sizeObj });
             } else if (!sizesKnown.has(containerItemKey) && containerItemKey !== undefined) {
                 const containerRef = ctx.viewRefs.get(i);
-                if (containerRef) {
-                    const measured: { width: number; height: number } = (
-                        containerRef.current as any
-                    )?.unstable_getBoundingClientRect?.();
+                if (containerRef?.current) {
+                    let measured: LayoutRectangle;
+                    containerRef.current.measure((x, y, width, height) => {
+                        measured = { x, y, width, height };
+                    });
 
-                    if (measured) {
+                    if (measured!) {
                         changes.push({ itemKey: containerItemKey, sizeObj: measured });
                     }
                 }

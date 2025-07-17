@@ -18,6 +18,7 @@ import {
     RefreshControl,
     type ScrollView,
     StyleSheet,
+    type View,
 } from "react-native";
 import { DebugView } from "./DebugView";
 import { ListComponent } from "./ListComponent";
@@ -319,10 +320,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     useLayoutEffect(() => {
         if (IsNewArchitecture) {
-            const measured: { width: number; height: number } = (
-                refScroller.current as any
-            )?.unstable_getBoundingClientRect?.();
-            if (measured) {
+            let measured: LayoutRectangle;
+            (refScroller.current as unknown as View).measure((x, y, width, height) => {
+                measured = { x, y, width, height };
+            });
+            if (measured!) {
                 const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
 
                 if (size) {
