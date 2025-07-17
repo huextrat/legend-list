@@ -11,11 +11,16 @@ import type {
     StyleProp,
     ViewStyle,
 } from "react-native";
+import type Reanimated from "react-native-reanimated";
+
 import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
 
 export type LegendListPropsBase<
     ItemT,
-    TScrollView extends ComponentProps<typeof ScrollView> | ComponentProps<typeof Animated.ScrollView>,
+    TScrollView extends
+        | ComponentProps<typeof ScrollView>
+        | ComponentProps<typeof Animated.ScrollView>
+        | ComponentProps<typeof Reanimated.ScrollView>,
 > = Omit<
     TScrollView,
     | "contentOffset"
