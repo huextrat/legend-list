@@ -3,8 +3,8 @@ import { RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LegendList, type LegendListRef } from "@legendapp/list";
-import { type Item, renderItem } from "@/app/cards-renderItem";
-import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
+import { type Item, renderItem } from "~/app/cards-renderItem";
+import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
 
 let last = performance.now();
 

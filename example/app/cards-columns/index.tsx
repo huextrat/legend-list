@@ -1,6 +1,6 @@
 import { LogBox, Platform, StyleSheet } from "react-native";
 
-import Cards from "@/app/(tabs)/cards";
+import Cards from "~/app/(tabs)/cards";
 
 LogBox.ignoreLogs(["Open debugger"]);
 

@@ -4,9 +4,9 @@ import { type LayoutChangeEvent, Platform, Pressable, StyleSheet, useColorScheme
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LegendList } from "@legendapp/list";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { ThemedText } from "~/components/ThemedText";
+import { ThemedView } from "~/components/ThemedView";
 
 // @ts-expect-error nativeFabricUIManager is not defined in the global object types
 export const IsNewArchitecture = global.nativeFabricUIManager != null;

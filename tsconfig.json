@@ -1,37 +1,44 @@
 {
     "compilerOptions": {
-        "outDir": "dist",
-        "target": "es2018",
-        "module": "ES2015",
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
+        "declaration": true,
+        "declarationMap": false,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "isolatedModules": true,
+        "jsx": "preserve",
         "lib": [
             "dom",
             "dom.iterable",
             "esnext"
         ],
-        "skipLibCheck": true,
-        "strict": true,
-        "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
-        "incremental": true,
-        "tsBuildInfoFile": "./tsconfig.tsbuildinfo", // Specify the build info file
-        "esModuleInterop": true,
+        "module": "ES2015",
         "moduleResolution": "node",
-        "isolatedModules": true,
-        "jsx": "preserve",
-        "stripInternal": true,
-        "baseUrl": ".",
-        "rootDirs": [
-            "./src",
-        ],
-        "declaration": true,
-        "declarationMap": false,
-        "sourceMap": true,
+        "noEmit": true,
+        "outDir": "dist",
         "paths": {
-            "react": [
-                "node_modules/react"
+            "@/*": [
+                "src/*"
             ],
-            "react-native": [
-                "node_modules/react-native"
+            "@/components/*": [
+                "src/components/*"
+            ],
+            "@/core/*": [
+                "src/core/*"
+            ],
+            "@/hooks/*": [
+                "src/hooks/*"
+            ],
+            "@/integrations/*": [
+                "src/integrations/*"
+            ],
+            "@/state/*": [
+                "src/state/*"
+            ],
+            "@/utils/*": [
+                "src/utils/*"
             ],
             "@legendapp/list": [
                 "src/index"
@@ -42,39 +49,32 @@
             "@legendapp/list/reanimated": [
                 "src/integrations/reanimated"
             ],
-            "@/*": [
-                "src/*"
+            "react": [
+                "node_modules/react"
             ],
-            "@/components/*": [
-                "src/components/*"
-            ],
-            "@/state/*": [
-                "src/state/*"
-            ],
-            "@/core/*": [
-                "src/core/*"
-            ],
-            "@/integrations/*": [
-                "src/integrations/*"
-            ],
-            "@/hooks/*": [
-                "src/hooks/*"
-            ],
-            "@/utils/*": [
-                "src/utils/*"
+            "react-native": [
+                "node_modules/react-native"
             ]
         },
         "resolveJsonModule": true,
-        "noEmit": true
+        "rootDirs": [
+            "./src"
+        ],
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "stripInternal": true,
+        "target": "es2018",
+        "tsBuildInfoFile": "./tsconfig.tsbuildinfo" // Specify the build info file
     },
-    "include": [
-        "**/*.ts",
-        "**/*.tsx"
-    ],
     "exclude": [
         "node_modules",
         "dist",
         "types.d.ts",
         "src/types"
     ],
+    "include": [
+        "**/*.ts",
+        "**/*.tsx"
+    ]
 }

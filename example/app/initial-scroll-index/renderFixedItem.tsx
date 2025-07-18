@@ -3,7 +3,7 @@ import { Image, Platform, Pressable, StyleSheet, Text, UIManager, View } from "r
 import { RectButton } from "react-native-gesture-handler";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { loremSentences, randomNames } from "@/app/cards-renderItem";
+import { loremSentences, randomNames } from "~/app/cards-renderItem";
 
 export interface Item {
     id: string;

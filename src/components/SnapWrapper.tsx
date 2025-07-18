@@ -9,7 +9,5 @@ export interface SnapWrapperProps extends ScrollViewProps {
 export function SnapWrapper({ ScrollComponent, ...props }: SnapWrapperProps) {
     const [snapToOffsets] = useArr$(["snapToOffsets"]);
 
-    console.log("snapToOffsets", snapToOffsets);
-
     return <ScrollComponent {...props} snapToOffsets={snapToOffsets} />;
 }

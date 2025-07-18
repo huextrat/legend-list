@@ -3,8 +3,8 @@ import { Button, Platform, StatusBar, StyleSheet, Text, View } from "react-nativ
 import { TextInput } from "react-native-gesture-handler";
 
 import { LegendList, type LegendListRef } from "@legendapp/list";
-import { type Item, renderItem } from "@/app/cards-renderItem";
-import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
+import { type Item, renderItem } from "~/app/cards-renderItem";
+import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
 
 interface CardsProps {
     numColumns?: number;

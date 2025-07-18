@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { configureReanimatedLogger, ReanimatedLogLevel } from "react-native-reanimated";
 import { enableFreeze } from "react-native-screens";
 
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "~/hooks/useColorScheme";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 enableFreeze(); // freeze inactive tabs in the tabbar, to improve benchmarking accuracy

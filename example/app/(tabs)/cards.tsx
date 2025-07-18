@@ -2,9 +2,9 @@ import { useRef, useState } from "react";
 import { LogBox, Platform, StyleSheet, View } from "react-native";
 
 import { LegendList, type LegendListRef } from "@legendapp/list";
-import { type Item, ItemCard } from "@/app/cards-renderItem";
-import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
-import { useScrollTest } from "@/constants/useScrollTest";
+import { type Item, ItemCard } from "~/app/cards-renderItem";
+import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
+import { useScrollTest } from "~/constants/useScrollTest";
 
 LogBox.ignoreLogs(["Open debugger"]);
 

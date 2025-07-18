@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { LegendList, type LegendListRef } from "@legendapp/list";
-import { renderItem } from "@/app/cards-renderItem";
-import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
+import { renderItem } from "~/app/cards-renderItem";
+import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
 import { CardsDataProvider, useCardData } from "./filter-data-provider";
 
 interface CardsProps {

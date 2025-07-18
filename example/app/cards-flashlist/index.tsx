@@ -1,10 +1,10 @@
 import { Fragment, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 
-import renderItem from "@/app/cards-renderItem";
-import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH, RECYCLE_ITEMS } from "@/constants/constants";
-import { useScrollTest } from "@/constants/useScrollTest";
 import { FlashList, type ListRenderItemInfo } from "@shopify/flash-list";
+import renderItem from "~/app/cards-renderItem";
+import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH, RECYCLE_ITEMS } from "~/constants/constants";
+import { useScrollTest } from "~/constants/useScrollTest";
 
 export default function HomeScreen() {
     const data = Array.from({ length: 1000 }, (_, i) => ({ id: i.toString() }));
