@@ -11,7 +11,7 @@ const external = [
 ];
 
 export default defineConfig({
-    entry: ["src/index.ts", "src/animated.tsx", "src/reanimated.tsx", "src/keyboard-controller.tsx"],
+    entry: ["src/index.ts", "src/integrations/animated.tsx", "src/integrations/reanimated.tsx", "src/integrations/keyboard-controller.tsx"],
     format: ["cjs", "esm"],
     external,
     dts: true,

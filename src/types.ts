@@ -13,7 +13,7 @@ import type {
 } from "react-native";
 import type Reanimated from "react-native-reanimated";
 
-import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
+import type { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
 
 export type LegendListPropsBase<
     ItemT,

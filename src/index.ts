@@ -1,5 +1,5 @@
-export { LegendList } from "./LegendList";
-export { LazyLegendList, type LazyLegendListProps } from "./LazyLegendList";
+export { LegendList } from "@/components/LegendList";
+export { LazyLegendList, type LazyLegendListProps } from "@/components/LazyLegendList";
 export {
     useIsLastItem,
     useListScrollSize,
@@ -7,5 +7,5 @@ export {
     useRecyclingState,
     useViewability,
     useViewabilityAmount,
-} from "./ContextContainer";
-export type * from "./types";
+} from "@/state/ContextContainer";
+export type * from "@/types";

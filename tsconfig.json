@@ -37,11 +37,32 @@
                 "src/index"
             ],
             "@legendapp/list/animated": [
-                "src/animated"
+                "src/integrations/animated"
             ],
             "@legendapp/list/reanimated": [
-                "src/reanimated"
+                "src/integrations/reanimated"
             ],
+            "@/*": [
+                "src/*"
+            ],
+            "@/components/*": [
+                "src/components/*"
+            ],
+            "@/state/*": [
+                "src/state/*"
+            ],
+            "@/core/*": [
+                "src/core/*"
+            ],
+            "@/integrations/*": [
+                "src/integrations/*"
+            ],
+            "@/hooks/*": [
+                "src/hooks/*"
+            ],
+            "@/utils/*": [
+                "src/utils/*"
+            ]
         },
         "resolveJsonModule": true,
         "noEmit": true
