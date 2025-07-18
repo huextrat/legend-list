@@ -39,6 +39,7 @@ export type ListenerType =
     | "debugRawScroll"
     | "debugComputedScroll"
     | "otherAxisSize"
+    | "snapToOffsets"
     | "scrollSize";
 
 export type ListenerTypeValueMap = {
@@ -59,6 +60,7 @@ export type ListenerTypeValueMap = {
     debugRawScroll: number;
     debugComputedScroll: number;
     otherAxisSize: number;
+    snapToOffsets: number[];
     scrollSize: { width: number; height: number };
 } & {
     [K in ListenerType as K extends `containerItemKey${number}` ? K : never]: string;

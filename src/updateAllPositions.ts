@@ -4,10 +4,20 @@ import { getScrollVelocity } from "./getScrollVelocity";
 import { roundSize } from "./helpers";
 import { type StateContext, peek$ } from "./state";
 import type { InternalState } from "./types";
+import { updateSnapToOffsets } from "./updateSnapToOffsets";
 import { updateTotalSize } from "./updateTotalSize";
 
 export function updateAllPositions(ctx: StateContext, state: InternalState, dataChanged?: boolean) {
-    const { averageSizes, columns, indexByKey, positions, firstFullyOnScreenIndex, idCache, sizesKnown } = state;
+    const {
+        averageSizes,
+        columns,
+        indexByKey,
+        positions,
+        firstFullyOnScreenIndex,
+        idCache,
+        sizesKnown,
+        props: { snapToIndices },
+    } = state;
     const data = state.props.data;
     const numColumns = peek$(ctx, "numColumns");
     const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
@@ -127,4 +137,8 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     }
 
     updateTotalSize(ctx, state);
+
+    if (snapToIndices) {
+        updateSnapToOffsets(ctx, state);
+    }
 }

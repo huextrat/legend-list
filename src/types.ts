@@ -267,6 +267,8 @@ export type LegendListPropsBase<
     waitForInitialLayout?: boolean;
 
     onLoad?: (info: { elapsedTimeInMs: number }) => void;
+
+    snapToIndices?: number[];
 };
 
 export interface MaintainScrollAtEndOptions {
@@ -383,6 +385,7 @@ export interface InternalState {
         numColumns: number;
         initialContainerPoolRatio: number;
         stylePaddingTop: number | undefined;
+        snapToIndices: number[] | undefined;
     };
 }
 

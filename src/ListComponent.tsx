@@ -14,6 +14,7 @@ import {
 import { Containers } from "./Containers";
 import { ScrollAdjust } from "./ScrollAdjust";
 import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
+import { SnapWrapper } from "./SnapWrapper";
 import { ENABLE_DEVMODE } from "./constants";
 import { set$, useStateContext } from "./state";
 import { type GetRenderedItem, type LegendListProps, typedMemo } from "./types";
@@ -44,6 +45,7 @@ interface ListComponentProps<ItemT>
     style: ViewStyle;
     canRender: boolean;
     scrollAdjustHandler: ScrollAdjustHandler;
+    snapToIndices: number[] | undefined;
 }
 
 const getComponent = (Component: React.ComponentType<any> | React.ReactElement) => {
@@ -106,6 +108,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     renderScrollComponent,
     scrollAdjustHandler,
     onLayoutHeader,
+    snapToIndices,
     ...rest
 }: ListComponentProps<ItemT>) {
     const ctx = useStateContext();
@@ -129,9 +132,12 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
         }
     }, [canRender]);
 
+    const SnapOrScroll = snapToIndices ? SnapWrapper : ScrollComponent;
+
     return (
-        <ScrollComponent
+        <SnapOrScroll
             {...rest}
+            ScrollComponent={snapToIndices ? ScrollComponent : (undefined as any)}
             style={style}
             maintainVisibleContentPosition={
                 maintainVisibleContentPosition && !ListEmptyComponent ? { minIndexForVisible: 0 } : undefined
@@ -186,6 +192,6 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                     {getComponent(ListFooterComponent)}
                 </View>
             )}
-        </ScrollComponent>
+        </SnapOrScroll>
     );
 });

@@ -53,6 +53,7 @@ import type {
 import { typedForwardRef } from "./types";
 import { updateAllPositions } from "./updateAllPositions";
 import { updateItemSize } from "./updateItemSize";
+import { updateSnapToOffsets } from "./updateSnapToOffsets";
 import { useCombinedRef } from "./useCombinedRef";
 import { useInit } from "./useInit";
 import { setupViewability } from "./viewability";
@@ -114,6 +115,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         initialContainerPoolRatio = 2,
         viewabilityConfig,
         viewabilityConfigCallbackPairs,
+        snapToIndices,
         onViewableItemsChanged,
         onStartReached,
         onEndReached,
@@ -231,6 +233,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         numColumns: numColumnsProp,
         initialContainerPoolRatio,
         stylePaddingTop: stylePaddingTopState,
+        snapToIndices,
     };
 
     state.refScroller = refScroller;
@@ -354,6 +357,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, []);
 
+    useLayoutEffect(() => {
+        if (snapToIndices) {
+            updateSnapToOffsets(ctx, state);
+        }
+    }, [snapToIndices]);
     useLayoutEffect(() => {
         const didAllocateContainers = doInitialAllocateContainersCallback();
         if (!didAllocateContainers) {
@@ -551,6 +559,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 contentContainerStyle={contentContainerStyle}
                 scrollAdjustHandler={refState.current?.scrollAdjustHandler}
                 onLayoutHeader={onLayoutHeader}
+                snapToIndices={snapToIndices}
             />
             {__DEV__ && ENABLE_DEBUG_VIEW && <DebugView state={refState.current!} />}
         </>
