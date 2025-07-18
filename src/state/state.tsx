@@ -88,17 +88,17 @@ const ContextState = React.createContext<StateContext | null>(null);
 
 export function StateProvider({ children }: { children: React.ReactNode }) {
     const [value] = React.useState<StateContext>(() => ({
+        columnWrapperStyle: undefined,
         listeners: new Map(),
+        mapViewabilityAmountCallbacks: new Map<number, ViewabilityAmountCallback>(),
+        mapViewabilityAmountValues: new Map<number, ViewAmountToken>(),
+        mapViewabilityCallbacks: new Map<string, ViewabilityCallback>(),
+        mapViewabilityValues: new Map<string, ViewToken>(),
         values: new Map<ListenerType, any>([
             ["alignItemsPaddingTop", 0],
             ["stylePaddingTop", 0],
             ["headerSize", 0],
         ]),
-        mapViewabilityCallbacks: new Map<string, ViewabilityCallback>(),
-        mapViewabilityValues: new Map<string, ViewToken>(),
-        mapViewabilityAmountCallbacks: new Map<number, ViewabilityAmountCallback>(),
-        mapViewabilityAmountValues: new Map<number, ViewAmountToken>(),
-        columnWrapperStyle: undefined,
         viewRefs: new Map<number, React.RefObject<View>>(),
     }));
     return <ContextState.Provider value={value}>{children}</ContextState.Provider>;
@@ -113,17 +113,6 @@ function createSelectorFunctionsArr(ctx: StateContext, signalNames: ListenerType
     let lastSignalValues: any[] = [];
 
     return {
-        subscribe: (cb: (value: any) => void) => {
-            const listeners: (() => void)[] = [];
-            for (const signalName of signalNames) {
-                listeners.push(listen$(ctx, signalName, cb));
-            }
-            return () => {
-                for (const listener of listeners) {
-                    listener();
-                }
-            };
-        },
         get: () => {
             const currentValues: any[] = [];
             let hasChanged = false;
@@ -147,6 +136,17 @@ function createSelectorFunctionsArr(ctx: StateContext, signalNames: ListenerType
             }
 
             return lastValues;
+        },
+        subscribe: (cb: (value: any) => void) => {
+            const listeners: (() => void)[] = [];
+            for (const signalName of signalNames) {
+                listeners.push(listen$(ctx, signalName, cb));
+            }
+            return () => {
+                for (const listener of listeners) {
+                    listener();
+                }
+            };
         },
     };
 }

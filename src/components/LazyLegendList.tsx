@@ -37,6 +37,6 @@ export const LazyLegendList = typedForwardRef(function LazyLegendList<
 
     return (
         // @ts-expect-error TODO: Fix this type
-        <LegendListComponent {...rest} data={data} renderItem={renderItem} ref={forwardedRef} />
+        <LegendListComponent {...rest} data={data} ref={forwardedRef} renderItem={renderItem} />
     );
 });

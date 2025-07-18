@@ -57,8 +57,8 @@ export const LegendList = typedForwardRef(function LegendList<
         <LegendListComponent
             {...rest}
             contentContainerStyle={contentContainerStyle}
-            scrollIndicatorInsets={scrollIndicatorInsets}
             ref={forwardedRef}
+            scrollIndicatorInsets={scrollIndicatorInsets}
         />
     );
 });

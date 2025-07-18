@@ -6,8 +6,8 @@ import { LegendList, type LegendListRenderItemProps } from "@legendapp/list";
 
 const fakeData = Array.from({ length: 100 }, (_, index) => ({
     id: index,
-    title: `Item ${index + 1}`,
     score: 0,
+    title: `Item ${index + 1}`,
 }));
 
 type Item = (typeof fakeData)[number];
@@ -41,19 +41,19 @@ const Item = ({ item }: { item: Item }) => {
     return (
         <View
             style={{
-                height: 100,
                 backgroundColor: "#fefefe",
+                borderRadius: 16,
+                height: 100,
                 justifyContent: "center",
                 paddingHorizontal: 24,
-                borderRadius: 16,
             }}
         >
             <Text style={{ fontSize: 24, fontWeight: "bold" }}>{`${item.title} - Score:${item.score}`}</Text>
             <Button
-                title="Increment"
                 onPress={() => {
                     increment(item.id);
                 }}
+                title="Increment"
             />
         </View>
     );
@@ -65,13 +65,13 @@ export const List = () => {
     const { data } = useData();
     const renderItem = ({ item }: LegendListRenderItemProps<Item>) => <Item item={item} />;
     return (
-        <View style={{ flex: 1, paddingHorizontal: 16, marginTop: 70 }}>
+        <View style={{ flex: 1, marginTop: 70, paddingHorizontal: 16 }}>
             <LegendList
                 data={data}
                 estimatedItemSize={116}
                 ItemSeparatorComponent={ItemSeparatorComponent}
-                renderItem={renderItem}
                 keyExtractor={(item) => String(item.id)}
+                renderItem={renderItem}
             />
         </View>
     );
@@ -86,20 +86,20 @@ export default function HomeScreen() {
 }
 
 const _styles = StyleSheet.create({
-    titleContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
+    reactLogo: {
+        bottom: 0,
+        height: 178,
+        left: 0,
+        position: "absolute",
+        width: 290,
     },
     stepContainer: {
         gap: 8,
         marginBottom: 8,
     },
-    reactLogo: {
-        height: 178,
-        width: 290,
-        bottom: 0,
-        left: 0,
-        position: "absolute",
+    titleContainer: {
+        alignItems: "center",
+        flexDirection: "row",
+        gap: 8,
     },
 });

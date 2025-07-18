@@ -39,7 +39,7 @@ export function useSyncLayoutState<T extends View = View>({
 
     const { onLayout, ref } = useSyncLayout<T>({ onChange });
 
-    return { value, onLayout, ref };
+    return { onLayout, ref, value };
 }
 
 export function useSyncLayout<T extends View = View>({
@@ -59,7 +59,7 @@ export function useSyncLayout<T extends View = View>({
     useLayoutEffect(() => {
         if (ref.current) {
             ref.current.measure((x, y, width, height) => {
-                onChange({ x, y, width, height }, true);
+                onChange({ height, width, x, y }, true);
             });
         }
     }, []);

@@ -73,12 +73,12 @@ const PaddingDevMode = () => {
             <Animated.View style={{ paddingTop: animPaddingTop }} />
             <Animated.View
                 style={{
-                    position: "absolute",
-                    top: 0,
+                    backgroundColor: "green",
                     height: animPaddingTop,
                     left: 0,
+                    position: "absolute",
                     right: 0,
-                    backgroundColor: "green",
+                    top: 0,
                 }}
             />
         </>
@@ -138,11 +138,6 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     return (
         <SnapOrScroll
             {...rest}
-            ScrollComponent={snapToIndices ? ScrollComponent : (undefined as any)}
-            style={style}
-            maintainVisibleContentPosition={
-                maintainVisibleContentPosition && !ListEmptyComponent ? { minIndexForVisible: 0 } : undefined
-            }
             contentContainerStyle={[
                 contentContainerStyle,
                 horizontal
@@ -151,9 +146,6 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                       }
                     : {},
             ]}
-            onScroll={onScroll}
-            onLayout={onLayout}
-            horizontal={horizontal}
             contentOffset={
                 initialContentOffset
                     ? horizontal
@@ -161,12 +153,20 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                         : { x: 0, y: initialContentOffset }
                     : undefined
             }
+            horizontal={horizontal}
+            maintainVisibleContentPosition={
+                maintainVisibleContentPosition && !ListEmptyComponent ? { minIndexForVisible: 0 } : undefined
+            }
+            onLayout={onLayout}
+            onScroll={onScroll}
             ref={refScrollView as any}
+            ScrollComponent={snapToIndices ? ScrollComponent : (undefined as any)}
+            style={style}
         >
             {maintainVisibleContentPosition && <ScrollAdjust />}
             {ENABLE_DEVMODE ? <PaddingDevMode /> : <Padding />}
             {ListHeaderComponent && (
-                <View style={ListHeaderComponentStyle} onLayout={onLayoutHeaderSync} ref={refHeader}>
+                <View onLayout={onLayoutHeaderSync} ref={refHeader} style={ListHeaderComponentStyle}>
                     {getComponent(ListHeaderComponent)}
                 </View>
             )}
@@ -174,21 +174,21 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
 
             {canRender && (
                 <Containers
-                    horizontal={horizontal!}
-                    recycleItems={recycleItems!}
-                    waitForInitialLayout={waitForInitialLayout}
                     getRenderedItem={getRenderedItem}
+                    horizontal={horizontal!}
                     ItemSeparatorComponent={ItemSeparatorComponent}
+                    recycleItems={recycleItems!}
                     updateItemSize={updateItemSize}
+                    waitForInitialLayout={waitForInitialLayout}
                 />
             )}
             {ListFooterComponent && (
                 <View
-                    style={ListFooterComponentStyle}
                     onLayout={(event) => {
                         const size = event.nativeEvent.layout[horizontal ? "width" : "height"];
                         set$(ctx, "footerSize", size);
                     }}
+                    style={ListFooterComponentStyle}
                 >
                     {getComponent(ListFooterComponent)}
                 </View>

@@ -208,13 +208,13 @@ export function calculateItemsInView(
     }
 
     Object.assign(state, {
+        endBuffered,
+        endNoBuffer,
+        firstFullyOnScreenIndex,
+        idsInView,
         startBuffered,
         startBufferedId,
         startNoBuffer,
-        endBuffered,
-        endNoBuffer,
-        idsInView,
-        firstFullyOnScreenIndex,
     });
 
     // Precompute the scroll that will be needed for the range to change
@@ -223,8 +223,8 @@ export function calculateItemsInView(
         state.scrollForNextCalculateItemsInView =
             nextTop !== undefined && nextBottom !== undefined
                 ? {
-                      top: nextTop,
                       bottom: nextBottom,
+                      top: nextTop,
                   }
                 : undefined;
     }

@@ -27,16 +27,16 @@ const AIChat = () => {
             setMessages([
                 {
                     id: String(idCounter++),
-                    text: "Hey, can you help me understand how React Native virtualization works?",
                     sender: "user",
+                    text: "Hey, can you help me understand how React Native virtualization works?",
                     timeStamp: Date.now(),
                 },
                 {
                     id: String(idCounter++),
-                    text: "",
-                    sender: "system",
-                    timeStamp: Date.now(),
                     isPlaceholder: true,
+                    sender: "system",
+                    text: "",
+                    timeStamp: Date.now(),
                 },
             ]);
         }, 1000);
@@ -48,8 +48,8 @@ const AIChat = () => {
                     msg.isPlaceholder
                         ? {
                               id: String(idCounter++),
+                              isPlaceholder: false,
                               sender: "system",
-                              timeStamp: Date.now(),
                               text: `React Native virtualization is a performance optimization technique that's crucial for handling large lists efficiently. Here's how it works:
 
 1. **Rendering Only Visible Items**: Instead of rendering all items in a list at once, virtualization only renders the items that are currently visible on screen, plus a small buffer of items just outside the visible area.
@@ -69,7 +69,7 @@ The key benefits are:
 - Reduced time to interactive
 
 This makes it possible to scroll through thousands of items without performance degradation, which is essential for modern mobile apps dealing with large datasets like social media feeds, chat histories, or product catalogs.`,
-                              isPlaceholder: false,
+                              timeStamp: Date.now(),
                           }
                         : msg,
                 ),
@@ -83,21 +83,21 @@ This makes it possible to scroll through thousands of items without performance 
     }, []);
 
     return (
-        <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <SafeAreaView edges={["bottom"]} style={styles.container}>
             <KeyboardAvoidingView
-                style={styles.container}
                 behavior="padding"
-                keyboardVerticalOffset={headerHeight}
                 contentContainerStyle={{ flex: 1 }}
+                keyboardVerticalOffset={headerHeight}
+                style={styles.container}
             >
                 <LegendList
-                    data={messages}
-                    contentContainerStyle={styles.contentContainer}
-                    keyExtractor={(item) => item.id}
-                    estimatedItemSize={60}
-                    maintainVisibleContentPosition
-                    maintainScrollAtEnd
                     alignItemsAtEnd
+                    contentContainerStyle={styles.contentContainer}
+                    data={messages}
+                    estimatedItemSize={60}
+                    keyExtractor={(item) => item.id}
+                    maintainScrollAtEnd
+                    maintainVisibleContentPosition
                     renderItem={({ item }) => (
                         <>
                             {item.isPlaceholder ? (
@@ -154,83 +154,83 @@ This makes it possible to scroll through thousands of items without performance 
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         backgroundColor: "#fff",
+        flex: 1,
     },
     contentContainer: {
         paddingHorizontal: 16,
     },
+    dot: {
+        backgroundColor: "#007AFF",
+        borderRadius: 4,
+        height: 8,
+        marginHorizontal: 2,
+        width: 8,
+    },
+    dot1: {
+        animationDelay: "0s",
+        animationDuration: "1.4s",
+        animationIterationCount: "infinite",
+        animationName: "typing",
+    },
+    dot2: {
+        animationDelay: "0.2s",
+        animationDuration: "1.4s",
+        animationIterationCount: "infinite",
+        animationName: "typing",
+    },
+    dot3: {
+        animationDelay: "0.4s",
+        animationDuration: "1.4s",
+        animationIterationCount: "infinite",
+        animationName: "typing",
+    },
     messageContainer: {
-        padding: 16,
         borderRadius: 16,
         marginVertical: 4,
+        padding: 16,
     },
     messageText: {
         fontSize: 16,
         lineHeight: 22,
     },
-    userMessageText: {
-        color: "white",
+    placeholderContainer: {
+        backgroundColor: "#f8f9fa",
+        borderColor: "#e9ecef",
+        borderWidth: 1,
+    },
+    placeholderText: {
+        color: "#666",
+        fontSize: 14,
+        fontStyle: "italic",
     },
     systemMessageContainer: {},
-    userMessageContainer: {
-        backgroundColor: "#007AFF",
-    },
     systemStyle: {
-        maxWidth: "85%",
         alignSelf: "flex-start",
-    },
-    userStyle: {
-        maxWidth: "75%",
-        alignSelf: "flex-end",
-        alignItems: "flex-end",
+        maxWidth: "85%",
     },
     timeStamp: {
         marginVertical: 5,
     },
     timeStampText: {
-        fontSize: 12,
         color: "#888",
-    },
-    placeholderContainer: {
-        backgroundColor: "#f8f9fa",
-        borderWidth: 1,
-        borderColor: "#e9ecef",
+        fontSize: 12,
     },
     typingIndicator: {
-        flexDirection: "row",
         alignItems: "center",
+        flexDirection: "row",
         marginBottom: 12,
     },
-    dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+    userMessageContainer: {
         backgroundColor: "#007AFF",
-        marginHorizontal: 2,
     },
-    dot1: {
-        animationName: "typing",
-        animationDuration: "1.4s",
-        animationIterationCount: "infinite",
-        animationDelay: "0s",
+    userMessageText: {
+        color: "white",
     },
-    dot2: {
-        animationName: "typing",
-        animationDuration: "1.4s",
-        animationIterationCount: "infinite",
-        animationDelay: "0.2s",
-    },
-    dot3: {
-        animationName: "typing",
-        animationDuration: "1.4s",
-        animationIterationCount: "infinite",
-        animationDelay: "0.4s",
-    },
-    placeholderText: {
-        fontSize: 14,
-        color: "#666",
-        fontStyle: "italic",
+    userStyle: {
+        alignItems: "flex-end",
+        alignSelf: "flex-end",
+        maxWidth: "75%",
     },
 });
 

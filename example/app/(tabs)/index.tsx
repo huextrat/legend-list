@@ -142,7 +142,7 @@ const ListItem = ({ title, url, index }: ListElement) => {
     const theme = useColorScheme() ?? "light";
 
     return (
-        <Link href={url} asChild>
+        <Link asChild href={url}>
             <Pressable>
                 <ThemedView
                     style={[
@@ -167,13 +167,11 @@ const ListElements = () => {
     return (
         <SafeAreaView style={styles.container}>
             <LegendList
-                estimatedItemSize={60}
                 data={data}
-                renderItem={({ item, index }) => <ListItem {...item} index={index} />}
+                estimatedItemSize={60}
                 keyExtractor={(item) => item.id.toString()}
-                onItemSizeChanged={(info) => {
-                    console.log("item size changed", info);
-                }}
+                ListFooterComponent={<View />}
+                ListFooterComponentStyle={{ height: Platform.OS === "ios" ? height : 0 }}
                 ListHeaderComponent={
                     <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
                         <ThemedText style={{ fontWeight: "bold" }}>
@@ -181,9 +179,11 @@ const ListElements = () => {
                         </ThemedText>
                     </View>
                 }
-                ListFooterComponent={<View />}
-                ListFooterComponentStyle={{ height: Platform.OS === "ios" ? height : 0 }}
+                onItemSizeChanged={(info) => {
+                    console.log("item size changed", info);
+                }}
                 onLayout={onLayout}
+                renderItem={({ item, index }) => <ListItem {...item} index={index} />}
             />
         </SafeAreaView>
     );
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     item: {
-        padding: 16,
-        height: 60,
         borderBottomWidth: 1,
-        width: "100%",
         flexDirection: "row",
+        height: 60,
         justifyContent: "space-between",
+        padding: 16,
+        width: "100%",
     },
 });
 

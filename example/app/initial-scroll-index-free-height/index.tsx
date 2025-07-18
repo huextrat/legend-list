@@ -21,51 +21,51 @@ export default function IntialScrollIndexFreeHeight() {
     const { bottom } = useSafeAreaInsets();
 
     return (
-        <View style={[StyleSheet.absoluteFill, styles.outerContainer]} key="legendlist">
+        <View key="legendlist" style={[StyleSheet.absoluteFill, styles.outerContainer]}>
             <LegendList
-                ref={listRef}
-                initialScrollIndex={50}
-                style={[StyleSheet.absoluteFill, styles.scrollContainer]}
                 contentContainerStyle={styles.listContainer}
                 data={data}
-                renderItem={renderItem}
-                keyExtractor={(item) => `id${item.id}`}
-                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 drawDistance={DRAW_DISTANCE}
-                maintainVisibleContentPosition
-                recycleItems={true}
-                //ListHeaderComponent={<View style={{ height: top }} />}
+                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
+                initialScrollIndex={50}
+                keyExtractor={(item) => `id${item.id}`}
                 ListFooterComponent={<View style={{ height: bottom }} />}
+                maintainVisibleContentPosition
                 numColumns={1}
+                recycleItems={true}
+                ref={listRef}
+                //ListHeaderComponent={<View style={{ height: top }} />}
+                renderItem={renderItem}
+                style={[StyleSheet.absoluteFill, styles.scrollContainer]}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    listHeader: {
-        alignSelf: "center",
-        height: 100,
-        width: 100,
-        backgroundColor: "#456AAA",
-        borderRadius: 12,
-        marginHorizontal: 8,
-        marginVertical: 8,
+    listContainer: {
+        marginHorizontal: "auto",
+        maxWidth: "100%",
+        width: "100%",
     },
     listEmpty: {
-        flex: 1,
-        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#6789AB",
+        flex: 1,
+        justifyContent: "center",
         paddingVertical: 16,
+    },
+    listHeader: {
+        alignSelf: "center",
+        backgroundColor: "#456AAA",
+        borderRadius: 12,
+        height: 100,
+        marginHorizontal: 8,
+        marginVertical: 8,
+        width: 100,
     },
     outerContainer: {
         backgroundColor: "#456",
     },
     scrollContainer: {},
-    listContainer: {
-        width: "100%",
-        maxWidth: "100%",
-        marginHorizontal: "auto",
-    },
 });

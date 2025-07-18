@@ -42,7 +42,7 @@ export function handleLayout(
         calculateItemsInView(ctx, state, { doMVCP: true });
     }
     if (didChange || otherAxisSize !== prevOtherAxisSize) {
-        set$(ctx, "scrollSize", { width: layout.width, height: layout.height });
+        set$(ctx, "scrollSize", { height: layout.height, width: layout.width });
     }
 
     if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onLayout) {

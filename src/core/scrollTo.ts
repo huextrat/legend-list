@@ -26,9 +26,9 @@ export function scrollTo(
     state.scrollPending = offset;
     // Do the scroll
     refScroller.current?.scrollTo({
+        animated: !!animated,
         x: horizontal ? offset : 0,
         y: horizontal ? 0 : offset,
-        animated: !!animated,
     });
 
     if (!animated) {

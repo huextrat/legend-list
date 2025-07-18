@@ -68,18 +68,18 @@ export const Container = <ItemT,>({
     const style: StyleProp<ViewStyle> = horizontal
         ? {
               flexDirection: ItemSeparatorComponent ? "row" : undefined,
-              position: "absolute",
-              top: otherAxisPos,
               height: otherAxisSize,
               left: position,
+              position: "absolute",
+              top: otherAxisPos,
               ...(paddingStyles || {}),
           }
         : {
-              position: "absolute",
               left: otherAxisPos,
+              position: "absolute",
               right: numColumns > 1 ? null : 0,
-              width: otherAxisSize,
               top: position,
+              width: otherAxisSize,
               ...(paddingStyles || {}),
           };
 
@@ -95,7 +95,7 @@ export const Container = <ItemT,>({
 
     const contextValue = useMemo<ContextContainerType>(() => {
         ctx.viewRefs.set(id, ref);
-        return { containerId: id, itemKey, index: index!, value: data, triggerLayout };
+        return { containerId: id, index: index!, itemKey, triggerLayout, value: data };
     }, [id, itemKey, index, data]);
 
     const onLayout = (event: LayoutChangeEvent) => {
@@ -105,7 +105,7 @@ export const Container = <ItemT,>({
             const size = layout[horizontal ? "width" : "height"];
 
             const doUpdate = () => {
-                refLastSize.current = { width: layout.width, height: layout.height };
+                refLastSize.current = { height: layout.height, width: layout.width };
                 updateItemSize(itemKey, layout);
             };
 
@@ -115,7 +115,7 @@ export const Container = <ItemT,>({
                 // On old architecture, the size can be 0 sometimes, maybe when not fully rendered?
                 // So we need to make sure it's actually rendered and measure it to make sure it's actually 0.
                 ref.current?.measure?.((_x, _y, width, height) => {
-                    layout = { width, height };
+                    layout = { height, width };
                     doUpdate();
                 });
             }
@@ -161,13 +161,13 @@ export const Container = <ItemT,>({
     // is not rendered when style changes, only the style prop.
     // This is a big perf boost to do less work rendering.
     return (
-        <LeanView style={style} onLayout={onLayout} ref={ref} key={recycleItems ? undefined : itemKey}>
+        <LeanView key={recycleItems ? undefined : itemKey} onLayout={onLayout} ref={ref} style={style}>
             <ContextContainer.Provider value={contextValue}>
                 {renderedItem}
                 {renderedItemInfo && ItemSeparatorComponent && (
                     <Separator
-                        itemKey={itemKey}
                         ItemSeparatorComponent={ItemSeparatorComponent}
+                        itemKey={itemKey}
                         leadingItem={renderedItemInfo.item}
                     />
                 )}

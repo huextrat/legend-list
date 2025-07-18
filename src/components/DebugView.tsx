@@ -7,7 +7,7 @@ import type { InternalState } from "@/types";
 
 const DebugRow = ({ children }: React.PropsWithChildren) => {
     return (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>{children}</View>
+        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>{children}</View>
     );
 };
 
@@ -33,18 +33,18 @@ export const DebugView = React.memo(function DebugView({ state }: { state: Inter
 
     return (
         <View
+            pointerEvents="none"
             style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                paddingLeft: 4,
-                paddingBottom: 4,
                 // height: 100,
                 backgroundColor: "#FFFFFFCC",
-                padding: 4,
                 borderRadius: 4,
+                padding: 4,
+                paddingBottom: 4,
+                paddingLeft: 4,
+                position: "absolute",
+                right: 0,
+                top: 0,
             }}
-            pointerEvents="none"
         >
             <DebugRow>
                 <Text>TotalSize:</Text>

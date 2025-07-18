@@ -42,22 +42,22 @@ export const Containers = typedMemo(function Containers<ItemT>({
     for (let i = 0; i < numContainers; i++) {
         containers.push(
             <Container
+                getRenderedItem={getRenderedItem}
+                horizontal={horizontal}
+                ItemSeparatorComponent={ItemSeparatorComponent}
                 id={i}
                 key={i}
                 recycleItems={recycleItems}
-                horizontal={horizontal}
-                getRenderedItem={getRenderedItem}
-                updateItemSize={updateItemSize}
                 // specifying inline separator makes Containers rerender on each data change
                 // should we do memo of ItemSeparatorComponent?
-                ItemSeparatorComponent={ItemSeparatorComponent}
+                updateItemSize={updateItemSize}
             />,
         );
     }
 
     const style: StyleProp<ViewStyle> = horizontal
-        ? { width: animSize, opacity: animOpacity, minHeight: otherAxisSize }
-        : { height: animSize, opacity: animOpacity, minWidth: otherAxisSize };
+        ? { minHeight: otherAxisSize, opacity: animOpacity, width: animSize }
+        : { height: animSize, minWidth: otherAxisSize, opacity: animOpacity };
 
     if (columnWrapperStyle && numColumns > 1) {
         // Extract gap properties from columnWrapperStyle if available

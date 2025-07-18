@@ -29,10 +29,10 @@ const LegendListForwardedRef = React.forwardRef(function LegendListForwardedRef<
 
     return (
         <LegendList
-            refScrollView={ref}
             ref={(r) => {
                 refLegendList(r);
             }}
+            refScrollView={ref}
             {...rest}
         />
     );
@@ -58,7 +58,7 @@ const AnimatedLegendList = React.forwardRef(function AnimatedLegendList<ItemT>(
 
     const combinedRef = useCombinedRef(refLegendList, ref);
 
-    return <AnimatedLegendListComponent refLegendList={combinedRef} ref={refScrollView} {...rest} />;
+    return <AnimatedLegendListComponent ref={refScrollView} refLegendList={combinedRef} {...rest} />;
 }) as AnimatedLegendListDefinition;
 
 export { AnimatedLegendList, type AnimatedLegendListProps };

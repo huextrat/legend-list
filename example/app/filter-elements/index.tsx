@@ -20,44 +20,44 @@ function FilteredCards({ numColumns = 1 }: CardsProps) {
 
     useEffect(() => {
         navigation.setOptions({
-            title: "Filter",
             headerRight: () => (
                 <Button
-                    title={`${mvcp ? "✓" : ""}MVCP`}
+                    color={mvcp ? "#00e" : "black"}
                     onPress={() => {
                         setMvcp((prev) => !prev);
                         setKey((prev) => prev + 1);
                     }}
-                    color={mvcp ? "#00e" : "black"}
+                    title={`${mvcp ? "✓" : ""}MVCP`}
                 />
             ),
+            title: "Filter",
         });
     }, [mvcp]);
 
     return (
-        <View style={[StyleSheet.absoluteFill, styles.outerContainer]} key="legendlist">
+        <View key="legendlist" style={[StyleSheet.absoluteFill, styles.outerContainer]}>
             <FilterInput />
             <View style={{ flexGrow: 1 }}>
                 <LegendList
-                    key={key} // LegendList react weird on the changing of maintainVisibleContentPosition on the fly, make sure to remount the list
-                    ref={listRef}
-                    style={[StyleSheet.absoluteFill, styles.scrollContainer]}
-                    contentContainerStyle={styles.listContainer}
+                    contentContainerStyle={styles.listContainer} // LegendList react weird on the changing of maintainVisibleContentPosition on the fly, make sure to remount the list
                     data={data}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => `id${item.id}`}
-                    estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                     drawDistance={DRAW_DISTANCE}
-                    maintainVisibleContentPosition={mvcp}
-                    recycleItems={true}
-                    numColumns={numColumns}
-                    ListFooterComponent={<View />}
-                    ListFooterComponentStyle={styles.listHeader}
+                    estimatedItemSize={ESTIMATED_ITEM_LENGTH}
+                    key={key}
+                    keyExtractor={(item) => `id${item.id}`}
                     ListEmptyComponent={
                         <View style={styles.listEmpty}>
                             <Text style={{ color: "white" }}>Empty</Text>
                         </View>
                     }
+                    ListFooterComponent={<View />}
+                    ListFooterComponentStyle={styles.listHeader}
+                    maintainVisibleContentPosition={mvcp}
+                    numColumns={numColumns}
+                    recycleItems={true}
+                    ref={listRef}
+                    renderItem={renderItem}
+                    style={[StyleSheet.absoluteFill, styles.scrollContainer]}
                 />
             </View>
         </View>
@@ -82,38 +82,38 @@ const FilterInput = () => {
     const { filter, setFilter } = useCardData();
     return (
         <TextInput
-            placeholder="Filter"
-            style={{ backgroundColor: "white", padding: 8, margin: 8, height: 40 }}
-            value={filter}
-            onChangeText={setFilter}
             keyboardType="numeric"
+            onChangeText={setFilter}
+            placeholder="Filter"
+            style={{ backgroundColor: "white", height: 40, margin: 8, padding: 8 }}
+            value={filter}
         />
     );
 };
 
 const styles = StyleSheet.create({
+    listContainer: {
+        marginHorizontal: "auto",
+        maxWidth: "100%",
+        width: 400,
+    },
+    listEmpty: {
+        alignItems: "center",
+        backgroundColor: "#6789AB",
+        flex: 1,
+        justifyContent: "center",
+        paddingVertical: 16,
+    },
     listHeader: {
         alignSelf: "center",
-        width: "100%",
         backgroundColor: "#456AAA",
         borderRadius: 12,
         marginHorizontal: 8,
         marginVertical: 8,
-    },
-    listEmpty: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#6789AB",
-        paddingVertical: 16,
+        width: "100%",
     },
     outerContainer: {
         backgroundColor: "#456",
     },
     scrollContainer: {},
-    listContainer: {
-        width: 400,
-        maxWidth: "100%",
-        marginHorizontal: "auto",
-    },
 });

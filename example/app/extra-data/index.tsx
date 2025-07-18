@@ -46,9 +46,9 @@ const App = () => {
 
         return (
             <Item
+                backgroundColor={backgroundColor}
                 item={item}
                 onPress={() => setSelectedId(item.id)}
-                backgroundColor={backgroundColor}
                 textColor={color}
             />
         );
@@ -59,10 +59,10 @@ const App = () => {
             <SafeAreaView style={styles.container}>
                 <LegendList
                     data={DATA}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    extraData={selectedId}
                     estimatedItemSize={100}
+                    extraData={selectedId}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
                 />
             </SafeAreaView>
         </SafeAreaProvider>
@@ -77,9 +77,9 @@ const styles = StyleSheet.create({
         marginTop: StatusBar.currentHeight || 0,
     },
     item: {
-        padding: 20,
-        marginVertical: 8,
         marginHorizontal: 16,
+        marginVertical: 8,
+        padding: 20,
     },
     title: {
         fontSize: 32,

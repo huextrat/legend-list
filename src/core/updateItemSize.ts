@@ -77,11 +77,11 @@ export function updateItemSizes(
 
             // Call onItemSizeChanged callback
             onItemSizeChanged?.({
-                size,
-                previous: size - diff,
                 index,
-                itemKey,
                 itemData: state.props.data[index],
+                itemKey,
+                previous: size - diff,
+                size,
             });
         }
     }
@@ -153,7 +153,7 @@ export function updateItemSize(
                 if (containerRef?.current) {
                     let measured: LayoutRectangle;
                     containerRef.current.measure((x, y, width, height) => {
-                        measured = { x, y, width, height };
+                        measured = { height, width, x, y };
                     });
 
                     if (measured!) {
@@ -191,7 +191,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
     const itemType = "";
     let averages = averageSizes[itemType];
     if (!averages) {
-        averages = averageSizes[itemType] = { num: 0, avg: 0 };
+        averages = averageSizes[itemType] = { avg: 0, num: 0 };
     }
     averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
     averages.num++;

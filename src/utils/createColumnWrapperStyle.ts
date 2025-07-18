@@ -9,8 +9,8 @@ export function createColumnWrapperStyle(contentContainerStyle: ViewStyle): Colu
         contentContainerStyle.columnGap = undefined;
         contentContainerStyle.rowGap = undefined;
         return {
-            gap: gap as number,
             columnGap: columnGap as number,
+            gap: gap as number,
             rowGap: rowGap as number,
         };
     }

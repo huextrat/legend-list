@@ -12,9 +12,9 @@ type Country = {
 
 const DATA: Country[] = Object.entries(countries)
     .map(([code, country]) => ({
+        flag: getEmojiFlag(code as TCountryCode),
         id: code,
         name: country.name,
-        flag: getEmojiFlag(code as TCountryCode),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -24,7 +24,7 @@ export default function LazyList() {
 
     return (
         <View style={styles.container}>
-            <LazyLegendList ref={listRef} maintainVisibleContentPosition recycleItems>
+            <LazyLegendList maintainVisibleContentPosition recycleItems ref={listRef}>
                 <View style={styles.heading}>
                     <Text style={styles.headingText}>Countries lazy scrollview</Text>
                 </View>
@@ -56,24 +56,45 @@ export default function LazyList() {
 
 const styles = StyleSheet.create({
     container: {
+        backgroundColor: "#f5f5f5",
         flex: 1,
         marginTop: StatusBar.currentHeight || 0,
-        backgroundColor: "#f5f5f5",
+    },
+    contentContainer: {
+        flex: 1,
+        justifyContent: "center",
+    },
+    countryCode: {
+        color: "#666",
+        fontSize: 14,
+        fontWeight: "400",
+    },
+    flag: {
+        fontSize: 28,
+    },
+    flagContainer: {
+        alignItems: "center",
+        backgroundColor: "#f8f9fa",
+        borderRadius: 20,
+        height: 40,
+        justifyContent: "center",
+        marginRight: 16,
+        width: 40,
     },
     heading: {
-        paddingVertical: 8,
         paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     headingText: {
         fontWeight: "bold",
     },
     item: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#fff",
         borderRadius: 12,
+        flexDirection: "row",
+        paddingHorizontal: 16,
+        paddingVertical: 6,
         //     shadowColor: "#000",
         //     shadowOffset: {
         //         width: 0,
@@ -83,42 +104,21 @@ const styles = StyleSheet.create({
         //     shadowRadius: 3,
         //     elevation: 3,
     },
+    pressedItem: {
+        // backgroundColor: "#f0f0f0",
+    },
     selectedItem: {
         // backgroundColor: "#e3f2fd",
         // borderColor: "#1976d2",
         // borderWidth: 1,
     },
-    pressedItem: {
-        // backgroundColor: "#f0f0f0",
-    },
-    flagContainer: {
-        marginRight: 16,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#f8f9fa",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    flag: {
-        fontSize: 28,
-    },
-    contentContainer: {
-        flex: 1,
-        justifyContent: "center",
-    },
-    title: {
-        fontSize: 16,
-        color: "#333",
-        fontWeight: "500",
-    },
     selectedText: {
         color: "#1976d2",
         fontWeight: "600",
     },
-    countryCode: {
-        fontSize: 14,
-        color: "#666",
-        fontWeight: "400",
+    title: {
+        color: "#333",
+        fontSize: 16,
+        fontWeight: "500",
     },
 });

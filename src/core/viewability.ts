@@ -33,12 +33,12 @@ export function setupViewability(
         viewabilityConfigCallbackPairs = [
             ...(viewabilityConfigCallbackPairs! || []),
             {
+                onViewableItemsChanged,
                 viewabilityConfig:
                     viewabilityConfig ||
                     ({
                         viewAreaCoveragePercentThreshold: 0,
                     } as any),
-                onViewableItemsChanged,
             },
         ];
     }
@@ -46,11 +46,11 @@ export function setupViewability(
     if (viewabilityConfigCallbackPairs) {
         for (const pair of viewabilityConfigCallbackPairs) {
             mapViewabilityConfigCallbackPairs.set(pair.viewabilityConfig.id!, {
-                viewableItems: [],
-                start: -1,
                 end: -1,
-                previousStart: -1,
                 previousEnd: -1,
+                previousStart: -1,
+                start: -1,
+                viewableItems: [],
             });
         }
     }
@@ -143,11 +143,11 @@ function updateViewableItemsWithConfig(
             const containerId = findContainerId(ctx, key);
             if (isViewable(state, ctx, viewabilityConfig, containerId, key, scrollSize, item, i)) {
                 const viewToken: ViewToken = {
-                    item,
-                    key,
+                    containerId,
                     index: i,
                     isViewable: true,
-                    containerId,
+                    item,
+                    key,
                 };
                 viewableItems.push(viewToken);
                 if (!previousViewableItems?.find((v) => v.key === viewToken.key)) {
@@ -158,9 +158,9 @@ function updateViewableItemsWithConfig(
     }
 
     Object.assign(viewabilityState, {
-        viewableItems,
-        previousStart: start,
         previousEnd: end,
+        previousStart: start,
+        viewableItems,
     });
 
     if (changed.length > 0) {
@@ -172,7 +172,7 @@ function updateViewableItemsWithConfig(
         }
 
         if (onViewableItemsChanged) {
-            onViewableItemsChanged({ viewableItems, changed });
+            onViewableItemsChanged({ changed, viewableItems });
         }
     }
 
@@ -213,16 +213,16 @@ function computeViewability(
     const isViewable = percent >= viewablePercentThreshold!;
 
     const value: ViewAmountToken = {
+        containerId,
         index,
         isViewable,
         item,
         key,
-        percentVisible,
         percentOfScroller,
-        sizeVisible,
-        size,
+        percentVisible,
         scrollSize,
-        containerId,
+        size,
+        sizeVisible,
     };
 
     if (JSON.stringify(value) !== JSON.stringify(ctx.mapViewabilityAmountValues.get(containerId))) {

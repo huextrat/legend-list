@@ -1,22 +1,5 @@
 {
     "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
-    "vcs": {
-        "enabled": false,
-        "clientKind": "git",
-        "useIgnoreFile": false
-    },
-    "files": {
-        "ignoreUnknown": false,
-        "includes": ["**"]
-    },
-    "formatter": {
-        "enabled": true,
-        "formatWithErrors": false,
-        "indentStyle": "space",
-        "indentWidth": 4,
-        "lineEnding": "lf",
-        "lineWidth": 120
-    },
     "assist": {
         "actions": {
             "source": {
@@ -30,32 +13,51 @@
                             "@/**"
                         ]
                     }
-                }
+                },
+                "useSortedAttributes": "on",
+                "useSortedKeys": "on"
             }
+        }
+    },
+    "files": {
+        "ignoreUnknown": false,
+        "includes": ["**"]
+    },
+    "formatter": {
+        "enabled": true,
+        "formatWithErrors": false,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineEnding": "lf",
+        "lineWidth": 120
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "double"
         }
     },
     "linter": {
         "enabled": true,
         "rules": {
+            "correctness": {
+                "noUnusedImports": "warn",
+                "useExhaustiveDependencies": "off",
+                "useHookAtTopLevel": "off"
+            },
             "recommended": true,
             "style": {
                 "noNonNullAssertion": "off"
             },
             "suspicious": {
                 "noArrayIndexKey": "off",
-                "noExplicitAny": "off",
-                "noConfusingVoidType": "off"
-            },
-            "correctness": {
-                "noUnusedImports": "warn",
-                "useExhaustiveDependencies": "off",
-                "useHookAtTopLevel": "off"
+                "noConfusingVoidType": "off",
+                "noExplicitAny": "off"
             }
         }
     },
-    "javascript": {
-        "formatter": {
-            "quoteStyle": "double"
-        }
+    "vcs": {
+        "clientKind": "git",
+        "enabled": false,
+        "useIgnoreFile": false
     }
 }

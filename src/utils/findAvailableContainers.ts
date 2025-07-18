@@ -42,9 +42,9 @@ export function findAvailableContainers(
 
         const index = state.indexByKey.get(key)!;
         if (index < startBuffered) {
-            availableContainers.push({ index: u, distance: startBuffered - index });
+            availableContainers.push({ distance: startBuffered - index, index: u });
         } else if (index > endBuffered) {
-            availableContainers.push({ index: u, distance: index - endBuffered });
+            availableContainers.push({ distance: index - endBuffered, index: u });
         }
     }
 
@@ -79,9 +79,9 @@ export function findAvailableContainers(
                     {
                         debugInfo: {
                             numContainers,
+                            numContainersPooled: peek$(ctx, "numContainersPooled"),
                             numNeeded,
                             stillNeeded,
-                            numContainersPooled: peek$(ctx, "numContainersPooled"),
                         },
                     },
                 );

@@ -14,11 +14,11 @@ export function ScrollAdjust() {
     return (
         <View
             style={{
-                position: "absolute",
                 height: 0,
-                width: 0,
-                top: horizontal ? 0 : scrollOffset,
                 left: horizontal ? scrollOffset : 0,
+                position: "absolute",
+                top: horizontal ? 0 : scrollOffset,
+                width: 0,
             }}
         />
     );

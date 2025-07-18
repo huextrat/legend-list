@@ -25,8 +25,8 @@ export default function Cards({ numColumns = 1 }: CardsProps) {
     if (DO_SCROLL_TEST) {
         useScrollTest((offset) => {
             listRef.current?.scrollToOffset({
-                offset: offset,
                 animated: true,
+                offset: offset,
             });
         });
     }
@@ -34,49 +34,49 @@ export default function Cards({ numColumns = 1 }: CardsProps) {
     // Note that if benchmarking against other cards implementations
     // it should use the same props
     return (
-        <View style={[StyleSheet.absoluteFill, styles.outerContainer]} key="legendlist">
+        <View key="legendlist" style={[StyleSheet.absoluteFill, styles.outerContainer]}>
             <LegendList
-                ref={listRef}
                 data={data}
-                renderItem={ItemCard}
-                numColumns={numColumns}
-                keyExtractor={(item) => item.id}
-                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 drawDistance={DRAW_DISTANCE}
-                recycleItems={true}
+                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
+                extraData={{ recycleState: true }}
+                keyExtractor={(item) => item.id}
                 ListHeaderComponent={<View />}
                 ListHeaderComponentStyle={styles.listHeader}
-                extraData={{ recycleState: true }}
+                numColumns={numColumns}
+                recycleItems={true}
+                ref={listRef}
+                renderItem={ItemCard}
             />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    listHeader: {
-        alignSelf: "center",
-        height: 100,
-        width: 100,
-        backgroundColor: "#456AAA",
-        borderRadius: 12,
-        marginHorizontal: 8,
-        marginVertical: 8,
+    listContainer: {
+        marginHorizontal: "auto",
+        maxWidth: "100%",
+        width: 400,
     },
     listEmpty: {
-        flex: 1,
-        justifyContent: "center",
         alignItems: "center",
         backgroundColor: "#6789AB",
+        flex: 1,
+        justifyContent: "center",
         paddingVertical: 16,
+    },
+    listHeader: {
+        alignSelf: "center",
+        backgroundColor: "#456AAA",
+        borderRadius: 12,
+        height: 100,
+        marginHorizontal: 8,
+        marginVertical: 8,
+        width: 100,
     },
     outerContainer: {
         backgroundColor: "#456",
         bottom: Platform.OS === "ios" ? 82 : 0,
     },
     scrollContainer: {},
-    listContainer: {
-        width: 400,
-        maxWidth: "100%",
-        marginHorizontal: "auto",
-    },
 });

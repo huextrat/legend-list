@@ -25,10 +25,10 @@ export function scrollToIndex(
     state.scrollForNextCalculateItemsInView = undefined;
 
     scrollTo(state, {
-        offset: firstIndexScrollPostion,
         animated,
         index,
-        viewPosition: viewPosition ?? 0,
+        offset: firstIndexScrollPostion,
         viewOffset,
+        viewPosition: viewPosition ?? 0,
     });
 }

@@ -150,53 +150,53 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     if (!refState.current) {
         const initialScrollLength = (estimatedListSize ??
-            (IsNewArchitecture ? { width: 0, height: 0 } : Dimensions.get("window")))[horizontal ? "width" : "height"];
+            (IsNewArchitecture ? { height: 0, width: 0 } : Dimensions.get("window")))[horizontal ? "width" : "height"];
 
         refState.current = {
-            sizes: new Map(),
-            positions: new Map(),
+            averageSizes: {},
             columns: new Map(),
-            pendingAdjust: 0,
-            isStartReached: false,
-            isEndReached: false,
-            isAtEnd: false,
-            isAtStart: false,
-            scrollLength: initialScrollLength,
-            startBuffered: -1,
-            startNoBuffer: -1,
+            containerItemKeys: new Set(),
+            enableScrollForNextCalculateItemsInView: true,
             endBuffered: -1,
             endNoBuffer: -1,
+            endReachedBlockedByTimer: false,
             firstFullyOnScreenIndex: -1,
-            scroll: 0,
-            totalSize: 0,
-            timeouts: new Set(),
-            viewabilityConfigCallbackPairs: undefined as never,
-            scrollAdjustHandler: new ScrollAdjustHandler(ctx),
+            idCache: new Map(),
+            idsInView: [],
+            indexByKey: new Map(),
+            initialScroll,
+            isAtEnd: false,
+            isAtStart: false,
+            isEndReached: false,
+            isStartReached: false,
+            lastBatchingAction: Date.now(),
+            lastLayout: undefined,
+            loadStartTime: Date.now(),
+            minIndexSizeChanged: 0,
             nativeMarginTop: 0,
+            pendingAdjust: 0,
+            positions: new Map(),
+            props: {} as any,
+            queuedCalculateItemsInView: 0,
+            refScroller: undefined as any,
+            scroll: 0,
+            scrollAdjustHandler: new ScrollAdjustHandler(ctx),
+            scrollForNextCalculateItemsInView: undefined,
+            scrollHistory: [],
+            scrollLength: initialScrollLength,
+            scrollPending: 0,
             scrollPrev: 0,
             scrollPrevTime: 0,
             scrollTime: 0,
-            scrollPending: 0,
-            indexByKey: new Map(),
-            scrollHistory: [],
+            sizes: new Map(),
             sizesKnown: new Map(),
-            timeoutSizeMessage: 0,
+            startBuffered: -1,
+            startNoBuffer: -1,
             startReachedBlockedByTimer: false,
-            endReachedBlockedByTimer: false,
-            scrollForNextCalculateItemsInView: undefined,
-            enableScrollForNextCalculateItemsInView: true,
-            minIndexSizeChanged: 0,
-            queuedCalculateItemsInView: 0,
-            lastBatchingAction: Date.now(),
-            averageSizes: {},
-            idsInView: [],
-            containerItemKeys: new Set(),
-            idCache: new Map(),
-            props: {} as any,
-            refScroller: undefined as any,
-            loadStartTime: Date.now(),
-            initialScroll,
-            lastLayout: undefined,
+            timeoutSizeMessage: 0,
+            timeouts: new Set(),
+            totalSize: 0,
+            viewabilityConfigCallbackPairs: undefined as never,
         };
 
         set$(ctx, "maintainVisibleContentPosition", maintainVisibleContentPosition);
@@ -212,29 +212,29 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         alignItemsAtEnd,
         data: dataProp,
         estimatedItemSize,
+        getEstimatedItemSize,
+        horizontal: !!horizontal,
+        initialContainerPoolRatio,
+        initialScroll,
+        keyExtractor,
         maintainScrollAtEnd,
         maintainScrollAtEndThreshold,
-        onEndReachedThreshold,
-        onStartReachedThreshold,
-        stylePaddingBottom: stylePaddingBottomState,
-        horizontal: !!horizontal,
         maintainVisibleContentPosition,
-        onItemSizeChanged,
-        suggestEstimatedItemSize: !!suggestEstimatedItemSize,
-        keyExtractor,
-        onScroll: onScrollProp,
-        getEstimatedItemSize,
-        onStartReached,
-        onEndReached,
-        onLoad,
-        renderItem: renderItem!,
-        initialScroll,
-        scrollBuffer,
-        viewabilityConfigCallbackPairs: undefined,
         numColumns: numColumnsProp,
-        initialContainerPoolRatio,
-        stylePaddingTop: stylePaddingTopState,
+        onEndReached,
+        onEndReachedThreshold,
+        onItemSizeChanged,
+        onLoad,
+        onScroll: onScrollProp,
+        onStartReached,
+        onStartReachedThreshold,
+        renderItem: renderItem!,
+        scrollBuffer,
         snapToIndices,
+        stylePaddingBottom: stylePaddingBottomState,
+        stylePaddingTop: stylePaddingTopState,
+        suggestEstimatedItemSize: !!suggestEstimatedItemSize,
+        viewabilityConfigCallbackPairs: undefined,
     };
 
     state.refScroller = refScroller;
@@ -302,7 +302,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
 
         if (initialContentOffset > 0) {
-            scrollTo(state, { offset: initialContentOffset, animated: false, index: initialScrollIndex });
+            scrollTo(state, { animated: false, index: initialScrollIndex, offset: initialContentOffset });
         }
 
         return initialContentOffset;
@@ -326,7 +326,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (IsNewArchitecture) {
             let measured: LayoutRectangle;
             (refScroller.current as unknown as View).measure((x, y, width, height) => {
-                measured = { x, y, width, height };
+                measured = { height, width, x, y };
             });
             if (measured!) {
                 const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
@@ -387,9 +387,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     useEffect(() => {
         const viewability = setupViewability({
+            onViewableItemsChanged,
             viewabilityConfig,
             viewabilityConfigCallbackPairs,
-            onViewableItemsChanged,
         });
         state.viewabilityConfigCallbackPairs = viewability;
         state.props.viewabilityConfigCallbackPairs = viewability;
@@ -422,8 +422,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const viewPosition = index < startNoBuffer ? 0 : 1;
                     scrollToIndex(ctx, state, {
                         ...rest,
-                        viewPosition,
                         index,
+                        viewPosition,
                     });
                 }
             }
@@ -445,10 +445,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                           positions: state.positions,
                           scroll: state.scroll,
                           scrollLength: state.scrollLength,
+                          sizeAtIndex: (index: number) => state.sizesKnown.get(getId(state, index))!,
+                          sizes: state.sizesKnown,
                           start: state.startNoBuffer,
                           startBuffered: state.startBuffered,
-                          sizes: state.sizesKnown,
-                          sizeAtIndex: (index: number) => state.sizesKnown.get(getId(state, index))!,
                       }
                     : ({} as ScrollState);
             },
@@ -460,15 +460,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     scrollIndexIntoView({ index, ...props });
                 }
             },
-            scrollToIndex: (params) => scrollToIndex(ctx, state, params),
-            scrollToItem: ({ item, ...props }) => {
-                const data = refState.current!.props.data;
-                const index = data.indexOf(item);
-                if (index !== -1) {
-                    scrollToIndex(ctx, state, { index, ...props });
-                }
-            },
-            scrollToOffset: (params) => scrollTo(state, params),
             scrollToEnd: (options) => {
                 const data = refState.current!.props.data;
                 const stylePaddingBottom = refState.current!.props.stylePaddingBottom;
@@ -478,12 +469,21 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const footerSize = peek$(ctx, "footerSize") || 0;
                     scrollToIndex(ctx, state, {
                         index,
-                        viewPosition: 1,
                         viewOffset: -paddingBottom - footerSize,
+                        viewPosition: 1,
                         ...options,
                     });
                 }
             },
+            scrollToIndex: (params) => scrollToIndex(ctx, state, params),
+            scrollToItem: ({ item, ...props }) => {
+                const data = refState.current!.props.data;
+                const index = data.indexOf(item);
+                if (index !== -1) {
+                    scrollToIndex(ctx, state, { index, ...props });
+                }
+            },
+            scrollToOffset: (params) => scrollTo(state, params),
             setVisibleContentAnchorOffset: (value: number | ((value: number) => number)) => {
                 const val = typeof value === "function" ? value(peek$(ctx, "scrollAdjustUserOffset") || 0) : value;
                 set$(ctx, "scrollAdjustUserOffset", val);
@@ -494,17 +494,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     if (Platform.OS === "web") {
         useEffect(() => {
             if (initialContentOffset) {
-                scrollTo(state, { offset: initialContentOffset, animated: false });
+                scrollTo(state, { animated: false, offset: initialContentOffset });
             }
         }, []);
     }
 
     const fns = useMemo(
         () => ({
-            updateItemSize: (itemKey: string, sizeObj: { width: number; height: number }) =>
-                updateItemSize(ctx, state, itemKey, sizeObj),
             getRenderedItem: (key: string) => getRenderedItem(ctx, state, key),
             onScroll: (event: { nativeEvent: NativeScrollEvent }) => onScroll(ctx, state, event),
+            updateItemSize: (itemKey: string, sizeObj: { width: number; height: number }) =>
+                updateItemSize(ctx, state, itemKey, sizeObj),
         }),
         [],
     );
@@ -513,13 +513,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         <>
             <ListComponent
                 {...rest}
+                alignItemsAtEnd={alignItemsAtEnd}
                 canRender={canRender}
-                horizontal={horizontal!}
-                refScrollView={combinedRef}
-                initialContentOffset={initialContentOffset}
+                contentContainerStyle={contentContainerStyle}
                 getRenderedItem={fns.getRenderedItem}
-                updateItemSize={fns.updateItemSize}
-                onScroll={fns.onScroll}
+                horizontal={horizontal!}
+                initialContentOffset={initialContentOffset}
+                ListEmptyComponent={dataProp.length === 0 ? ListEmptyComponent : undefined}
+                ListHeaderComponent={ListHeaderComponent}
+                maintainVisibleContentPosition={maintainVisibleContentPosition}
+                onLayout={onLayout}
+                onLayoutHeader={onLayoutHeader}
                 onMomentumScrollEnd={(event) => {
                     requestAnimationFrame(() => {
                         finishScrollTo(refState.current);
@@ -529,14 +533,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         onMomentumScrollEnd(event);
                     }
                 }}
-                onLayout={onLayout}
+                onScroll={fns.onScroll}
                 recycleItems={recycleItems}
-                alignItemsAtEnd={alignItemsAtEnd}
-                ListEmptyComponent={dataProp.length === 0 ? ListEmptyComponent : undefined}
-                ListHeaderComponent={ListHeaderComponent}
-                maintainVisibleContentPosition={maintainVisibleContentPosition}
-                scrollEventThrottle={Platform.OS === "web" ? 16 : undefined}
-                waitForInitialLayout={waitForInitialLayout}
                 refreshControl={
                     refreshControl
                         ? stylePaddingTopState > 0
@@ -547,17 +545,19 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             : refreshControl
                         : onRefresh && (
                               <RefreshControl
-                                  refreshing={!!refreshing}
                                   onRefresh={onRefresh}
                                   progressViewOffset={(progressViewOffset || 0) + stylePaddingTopState}
+                                  refreshing={!!refreshing}
                               />
                           )
                 }
-                style={style}
-                contentContainerStyle={contentContainerStyle}
+                refScrollView={combinedRef}
                 scrollAdjustHandler={refState.current?.scrollAdjustHandler}
-                onLayoutHeader={onLayoutHeader}
+                scrollEventThrottle={Platform.OS === "web" ? 16 : undefined}
                 snapToIndices={snapToIndices}
+                style={style}
+                updateItemSize={fns.updateItemSize}
+                waitForInitialLayout={waitForInitialLayout}
             />
             {__DEV__ && ENABLE_DEBUG_VIEW && <DebugView state={refState.current!} />}
         </>

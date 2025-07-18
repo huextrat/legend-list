@@ -23,9 +23,9 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
 
     if (renderItem) {
         const itemProps = {
-            item: data[index],
-            index,
             extraData: peek$(ctx, "extraData"),
+            index,
+            item: data[index],
         };
 
         renderedItem = React.createElement(renderItem, itemProps);
