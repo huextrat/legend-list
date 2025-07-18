@@ -1,10 +1,9 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { Image, Platform, Pressable, StyleSheet, Text, UIManager, View } from "react-native";
+import { RectButton } from "react-native-gesture-handler";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
-import { Image, Platform, Pressable, StyleSheet, Text, UIManager, View } from "react-native";
-
 import { loremSentences, randomNames } from "@/app/cards-renderItem";
-import { RectButton } from "react-native-gesture-handler";
 
 export interface Item {
     id: string;

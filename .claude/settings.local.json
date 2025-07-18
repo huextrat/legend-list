@@ -4,7 +4,11 @@
       "Bash(bun run:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:biomejs.dev)",
+      "Bash(bun add:*)",
+      "Bash(bunx biome migrate:*)",
+      "Bash(bunx biome:*)"
     ],
     "deny": []
   }

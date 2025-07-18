@@ -4,7 +4,7 @@ import { calculateOffsetWithOffsetPosition } from "@/core/calculateOffsetWithOff
 import { prepareMVCP } from "@/core/prepareMVCP";
 import { updateAllPositions } from "@/core/updateAllPositions";
 import { updateViewableItems } from "@/core/viewability";
-import { type StateContext, peek$, set$ } from "@/state/state";
+import { peek$, type StateContext, set$ } from "@/state/state";
 import type { InternalState } from "@/types";
 import { checkAllSizesKnown } from "@/utils/checkAllSizesKnown";
 import { findAvailableContainers } from "@/utils/findAvailableContainers";

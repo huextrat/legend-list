@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode, forwardRef, memo } from "react";
+import { type ComponentProps, forwardRef, memo, type ReactNode } from "react";
 import type {
     Animated,
     LayoutRectangle,
@@ -362,13 +362,7 @@ export interface InternalState {
         onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
         onEndReachedThreshold: number | null | undefined;
         onItemSizeChanged:
-            | ((info: {
-                  size: number;
-                  previous: number;
-                  index: number;
-                  itemKey: string;
-                  itemData: any;
-              }) => void)
+            | ((info: { size: number; previous: number; index: number; itemKey: string; itemData: any }) => void)
             | undefined;
         onLoad: ((info: { elapsedTimeInMs: number }) => void) | undefined;
         onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
@@ -450,10 +444,7 @@ export type LegendListRef = {
      * @param params.animated - If true, animates the scroll. Default: true.
      * @param params.index - The index to scroll to.
      */
-    scrollIndexIntoView(params: {
-        animated?: boolean | undefined;
-        index: number;
-    }): void;
+    scrollIndexIntoView(params: { animated?: boolean | undefined; index: number }): void;
 
     /**
      * Scrolls a specific index into view.
@@ -461,10 +452,7 @@ export type LegendListRef = {
      * @param params.animated - If true, animates the scroll. Default: true.
      * @param params.item - The item to scroll to.
      */
-    scrollItemIntoView(params: {
-        animated?: boolean | undefined;
-        item: any;
-    }): void;
+    scrollItemIntoView(params: { animated?: boolean | undefined; item: any }): void;
 
     /**
      * Scrolls to the end of the list.

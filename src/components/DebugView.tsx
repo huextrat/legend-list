@@ -1,8 +1,9 @@
-import { getContentSize, useArr$, useStateContext } from "@/state/state";
-import type { InternalState } from "@/types";
 import * as React from "react";
 import { useEffect, useReducer } from "react";
 import { Text, View } from "react-native";
+
+import { getContentSize, useArr$, useStateContext } from "@/state/state";
+import type { InternalState } from "@/types";
 
 const DebugRow = ({ children }: React.PropsWithChildren) => {
     return (
@@ -13,7 +14,7 @@ const DebugRow = ({ children }: React.PropsWithChildren) => {
 export const DebugView = React.memo(function DebugView({ state }: { state: InternalState }) {
     const ctx = useStateContext();
 
-    const [totalSize = 0, scrollAdjust = 0, rawScroll = 0, scroll = 0, numContainers = 0, numContainersPooled = 0] =
+    const [totalSize = 0, scrollAdjust = 0, rawScroll = 0, scroll = 0, _numContainers = 0, _numContainersPooled = 0] =
         useArr$([
             "totalSize",
             "scrollAdjust",

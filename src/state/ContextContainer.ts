@@ -1,17 +1,18 @@
-import { useInit } from "@/hooks/useInit";
-import { useArr$, useSelector$, useStateContext } from "@/state/state";
-import type { LegendListRecyclingState, ViewabilityAmountCallback, ViewabilityCallback } from "@/types";
-import { isFunction } from "@/utils/helpers";
 import {
+    createContext,
     type Dispatch,
     type SetStateAction,
-    createContext,
     useCallback,
     useContext,
     useEffect,
     useRef,
     useState,
 } from "react";
+
+import { useInit } from "@/hooks/useInit";
+import { useArr$, useSelector$, useStateContext } from "@/state/state";
+import type { LegendListRecyclingState, ViewabilityAmountCallback, ViewabilityCallback } from "@/types";
+import { isFunction } from "@/utils/helpers";
 
 export interface ContextContainerType {
     containerId: number;
@@ -75,7 +76,7 @@ export function useRecyclingEffect(effect: (info: LegendListRecyclingState<unkno
     });
 
     useEffect(() => {
-        let ret: void | (() => void) = undefined;
+        let ret: void | (() => void);
         // Only run effect if there's a previous value
         if (prevValues.current.prevIndex !== undefined && prevValues.current.prevItem !== undefined) {
             ret = effect({

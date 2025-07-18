@@ -1,6 +1,7 @@
-import { LegendList } from "@legendapp/list";
 import { useCallback, useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+
+import { LegendList } from "@legendapp/list";
 
 // Dummy data: 50 items
 const DATA = Array.from({ length: 70 }, (_, i) => ({ label: `Item ${i}`, height: ((i * 7919) % 100) + 10 }));

@@ -1,7 +1,8 @@
-import { LazyLegendList, type LegendListRef } from "@legendapp/list";
-import { type TCountryCode, countries, getEmojiFlag } from "countries-list";
 import { useRef, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+
+import { LazyLegendList, type LegendListRef } from "@legendapp/list";
+import { countries, getEmojiFlag, type TCountryCode } from "countries-list";
 
 type Country = {
     id: string;

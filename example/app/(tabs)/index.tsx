@@ -1,11 +1,12 @@
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { LegendList } from "@legendapp/list";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Link, type LinkProps } from "expo-router";
 import { useCallback } from "react";
-import { type LayoutChangeEvent, Platform, Pressable, StyleSheet, View, useColorScheme } from "react-native";
+import { type LayoutChangeEvent, Platform, Pressable, StyleSheet, useColorScheme, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { LegendList } from "@legendapp/list";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 // @ts-expect-error nativeFabricUIManager is not defined in the global object types
 export const IsNewArchitecture = global.nativeFabricUIManager != null;

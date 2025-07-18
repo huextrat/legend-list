@@ -1,8 +1,9 @@
-import { FlashList } from "@shopify/flash-list";
-import { type TCountryCode, countries, getEmojiFlag } from "countries-list";
 import { useMemo, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+
+import { FlashList } from "@shopify/flash-list";
+import { countries, getEmojiFlag, type TCountryCode } from "countries-list";
 
 export const unstable_settings = {
     initialRouteName: "index",

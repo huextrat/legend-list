@@ -1,12 +1,13 @@
+import type { LayoutRectangle } from "react-native";
+
 import { IsNewArchitecture } from "@/constants";
 import { calculateItemsInView } from "@/core/calculateItemsInView";
 import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
-import { type StateContext, peek$, set$ } from "@/state/state";
+import { peek$, type StateContext, set$ } from "@/state/state";
 import type { InternalState, MaintainScrollAtEndOptions } from "@/types";
 import { checkAllSizesKnown } from "@/utils/checkAllSizesKnown";
 import { getItemSize } from "@/utils/getItemSize";
 import { requestAdjust } from "@/utils/requestAdjust";
-import type { LayoutRectangle } from "react-native";
 
 export function updateItemSizes(
     ctx: StateContext,

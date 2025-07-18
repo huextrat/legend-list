@@ -1,4 +1,4 @@
-import { type StateContext, peek$ } from "@/state/state";
+import { peek$, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 
 export function requestAdjust(ctx: StateContext, state: InternalState, positionDiff: number) {

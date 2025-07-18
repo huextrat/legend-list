@@ -1,7 +1,8 @@
-import { LegendList, type LegendListRef } from "@legendapp/list";
 import { useNavigation } from "expo-router";
 import { useLayoutEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+
+import { LegendList, type LegendListRef } from "@legendapp/list";
 import { type Item, renderItem } from "./renderFixedItem";
 
 const ITEM_HEIGHT = 400;
@@ -10,13 +11,7 @@ const ESTIMATED_ITEM_LENGTH = 200;
 
 type RenderItem = Item & { type: "separator" | "item" };
 
-const RenderMultiItem = ({
-    item,
-    index,
-}: {
-    item: RenderItem;
-    index: number;
-}) => {
+const RenderMultiItem = ({ item, index }: { item: RenderItem; index: number }) => {
     if (item.type === "separator") {
         return (
             <View
@@ -37,7 +32,7 @@ const RenderMultiItem = ({
 export default function ScrollIndexDemo() {
     const scrollViewRef = useRef<LegendListRef>(null);
 
-    const [data, setData] = useState<RenderItem[]>(
+    const [data, _setData] = useState<RenderItem[]>(
         () =>
             Array.from({ length: 500 }, (_, i) => ({
                 id: i.toString(),
@@ -61,7 +56,7 @@ export default function ScrollIndexDemo() {
                 data={data}
                 renderItem={RenderMultiItem}
                 keyExtractor={(item) => item.id}
-                getEstimatedItemSize={(i, item) => (data[i].type === "separator" ? 52 : 400)}
+                getEstimatedItemSize={(i, _item) => (data[i].type === "separator" ? 52 : 400)}
                 estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 drawDistance={1000}
                 recycleItems={true}

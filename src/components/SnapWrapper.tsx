@@ -1,5 +1,6 @@
-import { useArr$ } from "@/state/state";
 import type { ScrollView, ScrollViewProps } from "react-native";
+
+import { useArr$ } from "@/state/state";
 
 export interface SnapWrapperProps extends ScrollViewProps {
     ScrollComponent: typeof ScrollView | React.ForwardRefExoticComponent<React.RefAttributes<unknown>>;

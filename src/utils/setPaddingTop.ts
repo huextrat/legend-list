@@ -1,4 +1,4 @@
-import { type StateContext, peek$, set$ } from "@/state/state";
+import { peek$, type StateContext, set$ } from "@/state/state";
 
 export function setPaddingTop(
     ctx: StateContext,

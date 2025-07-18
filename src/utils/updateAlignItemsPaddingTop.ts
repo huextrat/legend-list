@@ -1,4 +1,4 @@
-import { type StateContext, getContentSize } from "@/state/state";
+import { getContentSize, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 import { setPaddingTop } from "@/utils/setPaddingTop";
 

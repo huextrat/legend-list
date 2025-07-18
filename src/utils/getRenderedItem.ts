@@ -1,6 +1,7 @@
-import { type StateContext, peek$ } from "@/state/state";
-import type { InternalState } from "@/types";
 import React from "react";
+
+import { peek$, type StateContext } from "@/state/state";
+import type { InternalState } from "@/types";
 
 export function getRenderedItem(ctx: StateContext, state: InternalState, key: string) {
     if (!state) {

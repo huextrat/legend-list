@@ -1,5 +1,5 @@
 import { updateTotalSize } from "@/core/updateTotalSize";
-import { type StateContext, peek$ } from "@/state/state";
+import { peek$, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 import { getId } from "@/utils/getId";
 import { getItemSize } from "@/utils/getItemSize";

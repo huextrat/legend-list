@@ -1,8 +1,9 @@
-import { LegendList } from "@legendapp/list";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { Fragment, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { LegendList } from "@legendapp/list";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 type Message = {
     id: string;
@@ -107,7 +108,7 @@ const ChatResizeOuter = () => {
     const headerHeight = Platform.OS === "ios" ? useHeaderHeight() : 80;
     const [buttonHeight, setButtonHeight] = useState(40);
 
-    const sendMessage = () => {
+    const _sendMessage = () => {
         const text = inputText || "Empty message";
         if (text.trim()) {
             setMessages((messages) => [

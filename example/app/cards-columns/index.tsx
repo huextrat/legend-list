@@ -1,5 +1,6 @@
-import Cards from "@/app/(tabs)/cards";
 import { LogBox, Platform, StyleSheet } from "react-native";
+
+import Cards from "@/app/(tabs)/cards";
 
 LogBox.ignoreLogs(["Open debugger"]);
 
@@ -7,7 +8,7 @@ export default function CardsColumns() {
     return <Cards numColumns={2} />;
 }
 
-const styles = StyleSheet.create({
+const _styles = StyleSheet.create({
     listHeader: {
         alignSelf: "center",
         height: 100,

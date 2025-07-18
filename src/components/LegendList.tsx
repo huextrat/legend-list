@@ -1,40 +1,3 @@
-import { DebugView } from "@/components/DebugView";
-import { ListComponent } from "@/components/ListComponent";
-import { ENABLE_DEBUG_VIEW, IsNewArchitecture } from "@/constants";
-import { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
-import { calculateItemsInView } from "@/core/calculateItemsInView";
-import { calculateOffsetForIndex } from "@/core/calculateOffsetForIndex";
-import { doInitialAllocateContainers } from "@/core/doInitialAllocateContainers";
-import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
-import { finishScrollTo } from "@/core/finishScrollTo";
-import { handleLayout } from "@/core/handleLayout";
-import { onScroll } from "@/core/onScroll";
-import { scrollTo } from "@/core/scrollTo";
-import { scrollToIndex } from "@/core/scrollToIndex";
-import { updateAllPositions } from "@/core/updateAllPositions";
-import { updateItemSize } from "@/core/updateItemSize";
-import { setupViewability } from "@/core/viewability";
-import { useCombinedRef } from "@/hooks/useCombinedRef";
-import { useInit } from "@/hooks/useInit";
-import { StateProvider, peek$, set$, useStateContext } from "@/state/state";
-import type {
-    InternalState,
-    LegendListProps,
-    LegendListRef,
-    MaintainScrollAtEndOptions,
-    ScrollIndexWithOffsetPosition,
-    ScrollState,
-} from "@/types";
-import { typedForwardRef } from "@/types";
-import { checkAtBottom } from "@/utils/checkAtBottom";
-import { checkAtTop } from "@/utils/checkAtTop";
-import { createColumnWrapperStyle } from "@/utils/createColumnWrapperStyle";
-import { getId } from "@/utils/getId";
-import { getRenderedItem } from "@/utils/getRenderedItem";
-import { extractPadding, warnDevOnce } from "@/utils/helpers";
-import { requestAdjust } from "@/utils/requestAdjust";
-import { setPaddingTop } from "@/utils/setPaddingTop";
-import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 import * as React from "react";
 import {
     type ForwardedRef,
@@ -57,6 +20,44 @@ import {
     StyleSheet,
     type View,
 } from "react-native";
+
+import { DebugView } from "@/components/DebugView";
+import { ListComponent } from "@/components/ListComponent";
+import { ENABLE_DEBUG_VIEW, IsNewArchitecture } from "@/constants";
+import { calculateItemsInView } from "@/core/calculateItemsInView";
+import { calculateOffsetForIndex } from "@/core/calculateOffsetForIndex";
+import { doInitialAllocateContainers } from "@/core/doInitialAllocateContainers";
+import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
+import { finishScrollTo } from "@/core/finishScrollTo";
+import { handleLayout } from "@/core/handleLayout";
+import { onScroll } from "@/core/onScroll";
+import { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
+import { scrollTo } from "@/core/scrollTo";
+import { scrollToIndex } from "@/core/scrollToIndex";
+import { updateAllPositions } from "@/core/updateAllPositions";
+import { updateItemSize } from "@/core/updateItemSize";
+import { setupViewability } from "@/core/viewability";
+import { useCombinedRef } from "@/hooks/useCombinedRef";
+import { useInit } from "@/hooks/useInit";
+import { peek$, StateProvider, set$, useStateContext } from "@/state/state";
+import type {
+    InternalState,
+    LegendListProps,
+    LegendListRef,
+    MaintainScrollAtEndOptions,
+    ScrollIndexWithOffsetPosition,
+    ScrollState,
+} from "@/types";
+import { typedForwardRef } from "@/types";
+import { checkAtBottom } from "@/utils/checkAtBottom";
+import { checkAtTop } from "@/utils/checkAtTop";
+import { createColumnWrapperStyle } from "@/utils/createColumnWrapperStyle";
+import { getId } from "@/utils/getId";
+import { getRenderedItem } from "@/utils/getRenderedItem";
+import { extractPadding, warnDevOnce } from "@/utils/helpers";
+import { requestAdjust } from "@/utils/requestAdjust";
+import { setPaddingTop } from "@/utils/setPaddingTop";
+import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
 const DEFAULT_DRAW_DISTANCE = 250;
 const DEFAULT_ITEM_SIZE = 100;
@@ -411,88 +412,84 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, []);
 
-    useImperativeHandle(
-        forwardedRef,
-        () => {
-            const scrollIndexIntoView = (options: Parameters<LegendListRef["scrollIndexIntoView"]>[0]) => {
-                const state = refState.current;
-                if (state) {
-                    const { index, ...rest } = options;
-                    const { startNoBuffer, endNoBuffer } = state;
-                    if (index < startNoBuffer || index > endNoBuffer) {
-                        const viewPosition = index < startNoBuffer ? 0 : 1;
-                        scrollToIndex(ctx, state, {
-                            ...rest,
-                            viewPosition,
-                            index,
-                        });
-                    }
+    useImperativeHandle(forwardedRef, () => {
+        const scrollIndexIntoView = (options: Parameters<LegendListRef["scrollIndexIntoView"]>[0]) => {
+            const state = refState.current;
+            if (state) {
+                const { index, ...rest } = options;
+                const { startNoBuffer, endNoBuffer } = state;
+                if (index < startNoBuffer || index > endNoBuffer) {
+                    const viewPosition = index < startNoBuffer ? 0 : 1;
+                    scrollToIndex(ctx, state, {
+                        ...rest,
+                        viewPosition,
+                        index,
+                    });
                 }
-            };
-            return {
-                flashScrollIndicators: () => refScroller.current!.flashScrollIndicators(),
-                getNativeScrollRef: () => refScroller.current!,
-                getScrollableNode: () => refScroller.current!.getScrollableNode(),
-                getScrollResponder: () => refScroller.current!.getScrollResponder(),
-                getState: () => {
-                    const state = refState.current;
-                    return state
-                        ? {
-                              contentLength: state.totalSize,
-                              end: state.endNoBuffer,
-                              endBuffered: state.endBuffered,
-                              isAtEnd: state.isAtEnd,
-                              isAtStart: state.isAtStart,
-                              positions: state.positions,
-                              scroll: state.scroll,
-                              scrollLength: state.scrollLength,
-                              start: state.startNoBuffer,
-                              startBuffered: state.startBuffered,
-                              sizes: state.sizesKnown,
-                              sizeAtIndex: (index: number) => state.sizesKnown.get(getId(state, index))!,
-                          }
-                        : ({} as ScrollState);
-                },
-                scrollIndexIntoView,
-                scrollItemIntoView: ({ item, ...props }) => {
-                    const data = refState.current!.props.data;
-                    const index = data.indexOf(item);
-                    if (index !== -1) {
-                        scrollIndexIntoView({ index, ...props });
-                    }
-                },
-                scrollToIndex: (params) => scrollToIndex(ctx, state, params),
-                scrollToItem: ({ item, ...props }) => {
-                    const data = refState.current!.props.data;
-                    const index = data.indexOf(item);
-                    if (index !== -1) {
-                        scrollToIndex(ctx, state, { index, ...props });
-                    }
-                },
-                scrollToOffset: (params) => scrollTo(state, params),
-                scrollToEnd: (options) => {
-                    const data = refState.current!.props.data;
-                    const stylePaddingBottom = refState.current!.props.stylePaddingBottom;
-                    const index = data.length - 1;
-                    if (index !== -1) {
-                        const paddingBottom = stylePaddingBottom || 0;
-                        const footerSize = peek$(ctx, "footerSize") || 0;
-                        scrollToIndex(ctx, state, {
-                            index,
-                            viewPosition: 1,
-                            viewOffset: -paddingBottom - footerSize,
-                            ...options,
-                        });
-                    }
-                },
-                setVisibleContentAnchorOffset: (value: number | ((value: number) => number)) => {
-                    const val = typeof value === "function" ? value(peek$(ctx, "scrollAdjustUserOffset") || 0) : value;
-                    set$(ctx, "scrollAdjustUserOffset", val);
-                },
-            };
-        },
-        [],
-    );
+            }
+        };
+        return {
+            flashScrollIndicators: () => refScroller.current!.flashScrollIndicators(),
+            getNativeScrollRef: () => refScroller.current!,
+            getScrollableNode: () => refScroller.current!.getScrollableNode(),
+            getScrollResponder: () => refScroller.current!.getScrollResponder(),
+            getState: () => {
+                const state = refState.current;
+                return state
+                    ? {
+                          contentLength: state.totalSize,
+                          end: state.endNoBuffer,
+                          endBuffered: state.endBuffered,
+                          isAtEnd: state.isAtEnd,
+                          isAtStart: state.isAtStart,
+                          positions: state.positions,
+                          scroll: state.scroll,
+                          scrollLength: state.scrollLength,
+                          start: state.startNoBuffer,
+                          startBuffered: state.startBuffered,
+                          sizes: state.sizesKnown,
+                          sizeAtIndex: (index: number) => state.sizesKnown.get(getId(state, index))!,
+                      }
+                    : ({} as ScrollState);
+            },
+            scrollIndexIntoView,
+            scrollItemIntoView: ({ item, ...props }) => {
+                const data = refState.current!.props.data;
+                const index = data.indexOf(item);
+                if (index !== -1) {
+                    scrollIndexIntoView({ index, ...props });
+                }
+            },
+            scrollToIndex: (params) => scrollToIndex(ctx, state, params),
+            scrollToItem: ({ item, ...props }) => {
+                const data = refState.current!.props.data;
+                const index = data.indexOf(item);
+                if (index !== -1) {
+                    scrollToIndex(ctx, state, { index, ...props });
+                }
+            },
+            scrollToOffset: (params) => scrollTo(state, params),
+            scrollToEnd: (options) => {
+                const data = refState.current!.props.data;
+                const stylePaddingBottom = refState.current!.props.stylePaddingBottom;
+                const index = data.length - 1;
+                if (index !== -1) {
+                    const paddingBottom = stylePaddingBottom || 0;
+                    const footerSize = peek$(ctx, "footerSize") || 0;
+                    scrollToIndex(ctx, state, {
+                        index,
+                        viewPosition: 1,
+                        viewOffset: -paddingBottom - footerSize,
+                        ...options,
+                    });
+                }
+            },
+            setVisibleContentAnchorOffset: (value: number | ((value: number) => number)) => {
+                const val = typeof value === "function" ? value(peek$(ctx, "scrollAdjustUserOffset") || 0) : value;
+                set$(ctx, "scrollAdjustUserOffset", val);
+            },
+        };
+    }, []);
 
     if (Platform.OS === "web") {
         useEffect(() => {

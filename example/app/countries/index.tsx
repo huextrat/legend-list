@@ -1,8 +1,9 @@
-import { LegendList } from "@legendapp/list";
-import { type TCountryCode, countries, getEmojiFlag } from "countries-list";
 import { useMemo, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+
+import { LegendList } from "@legendapp/list";
+import { countries, getEmojiFlag, type TCountryCode } from "countries-list";
 
 export const unstable_settings = {
     initialRouteName: "index",
@@ -102,7 +103,7 @@ const App = () => {
     );
 };
 
-const Separator = () => <View style={{ height: 40, backgroundColor: "green" }} />;
+const _Separator = () => <View style={{ height: 40, backgroundColor: "green" }} />;
 
 export default App;
 

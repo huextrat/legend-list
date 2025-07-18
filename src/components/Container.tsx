@@ -1,3 +1,8 @@
+// biome-ignore lint/style/useImportType: Leaving this out makes it crash in some environments
+import * as React from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
+
 import { LeanView } from "@/components/LeanView";
 import { Separator } from "@/components/Separator";
 import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "@/constants";
@@ -5,10 +10,6 @@ import { ContextContainer, type ContextContainerType } from "@/state/ContextCont
 import { useArr$, useStateContext } from "@/state/state";
 import type { GetRenderedItem } from "@/types";
 import { isNullOrUndefined } from "@/utils/helpers";
-// biome-ignore lint/style/useImportType: Leaving this out makes it crash in some environments
-import * as React from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 
 export const Container = <ItemT,>({
     id,
@@ -113,7 +114,7 @@ export const Container = <ItemT,>({
             } else {
                 // On old architecture, the size can be 0 sometimes, maybe when not fully rendered?
                 // So we need to make sure it's actually rendered and measure it to make sure it's actually 0.
-                ref.current?.measure?.((x, y, width, height) => {
+                ref.current?.measure?.((_x, _y, width, height) => {
                     layout = { width, height };
                     doUpdate();
                 });

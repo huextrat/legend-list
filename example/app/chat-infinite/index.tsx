@@ -1,9 +1,10 @@
-import { LegendList } from "@legendapp/list";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useState } from "react";
 import { Button, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { LegendList } from "@legendapp/list";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 type MessageSide = "user" | "bot";
 type Message = {

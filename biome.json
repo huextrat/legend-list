@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
     "vcs": {
         "enabled": false,
         "clientKind": "git",
@@ -7,7 +7,7 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "ignore": []
+        "includes": ["**"]
     },
     "formatter": {
         "enabled": true,
@@ -17,8 +17,22 @@
         "lineEnding": "lf",
         "lineWidth": 120
     },
-    "organizeImports": {
-        "enabled": true
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": {
+                    "level": "on",
+                    "options": {
+                        "groups": [
+                            ["expo-*", "@expo/**", "react", "react*", "react*/**", "use-*/**"],
+                            ":BLANK_LINE:",
+                            "@legendapp/**",
+                            "@/**"
+                        ]
+                    }
+                }
+            }
+        }
     },
     "linter": {
         "enabled": true,
@@ -34,7 +48,8 @@
             },
             "correctness": {
                 "noUnusedImports": "warn",
-                "useExhaustiveDependencies": "off"
+                "useExhaustiveDependencies": "off",
+                "useHookAtTopLevel": "off"
             }
         }
     },

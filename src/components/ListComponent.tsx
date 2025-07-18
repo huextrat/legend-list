@@ -1,14 +1,5 @@
-import { Containers } from "@/components/Containers";
-import { ScrollAdjust } from "@/components/ScrollAdjust";
-import { SnapWrapper } from "@/components/SnapWrapper";
-import { ENABLE_DEVMODE } from "@/constants";
-import type { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
-import { useSyncLayout } from "@/hooks/useSyncLayout";
-import { useValue$ } from "@/hooks/useValue$";
-import { set$, useStateContext } from "@/state/state";
-import { type GetRenderedItem, type LegendListProps, typedMemo } from "@/types";
-import { useMemo } from "react";
 import * as React from "react";
+import { useMemo } from "react";
 import {
     Animated,
     type LayoutChangeEvent,
@@ -20,6 +11,16 @@ import {
     View,
     type ViewStyle,
 } from "react-native";
+
+import { Containers } from "@/components/Containers";
+import { ScrollAdjust } from "@/components/ScrollAdjust";
+import { SnapWrapper } from "@/components/SnapWrapper";
+import { ENABLE_DEVMODE } from "@/constants";
+import type { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
+import { useSyncLayout } from "@/hooks/useSyncLayout";
+import { useValue$ } from "@/hooks/useValue$";
+import { set$, useStateContext } from "@/state/state";
+import { type GetRenderedItem, type LegendListProps, typedMemo } from "@/types";
 
 interface ListComponentProps<ItemT>
     extends Omit<

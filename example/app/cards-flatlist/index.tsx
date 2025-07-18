@@ -1,5 +1,6 @@
-import renderItem from "@/app/cards-renderItem";
 import { FlatList, StyleSheet, View } from "react-native";
+
+import renderItem from "@/app/cards-renderItem";
 
 export default function CardsFlatList() {
     const data = Array.from({ length: 1000 }, (_, i) => ({ id: i.toString() }));

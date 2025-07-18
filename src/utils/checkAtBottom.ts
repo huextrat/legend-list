@@ -1,5 +1,5 @@
-import { getContentSize } from "@/state/state";
 import type { StateContext } from "@/state/state";
+import { getContentSize } from "@/state/state";
 import type { InternalState } from "@/types";
 import { checkThreshold } from "@/utils/checkThreshold";
 

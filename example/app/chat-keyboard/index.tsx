@@ -1,9 +1,10 @@
-import { LegendList } from "@legendapp/list/keyboard-controller";
-import { AnimatedLegendList } from "@legendapp/list/reanimated";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useState } from "react";
 import { Button, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardProvider } from "react-native-keyboard-controller";
+
+import { LegendList } from "@legendapp/list/keyboard-controller";
+import { AnimatedLegendList } from "@legendapp/list/reanimated";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 type Message = {
     id: string;

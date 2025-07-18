@@ -1,7 +1,8 @@
-import { useAnimatedValue } from "@/hooks/useAnimatedValue";
-import { listen$, peek$, useStateContext } from "@/state/state";
-import type { ListenerType } from "@/state/state";
 import { useMemo } from "react";
+
+import { useAnimatedValue } from "@/hooks/useAnimatedValue";
+import type { ListenerType } from "@/state/state";
+import { listen$, peek$, useStateContext } from "@/state/state";
 
 export function useValue$(
     key: ListenerType,
@@ -14,8 +15,8 @@ export function useValue$(
     const ctx = useStateContext();
     const animValue = useAnimatedValue((getValue ? getValue(peek$(ctx, key)) : peek$(ctx, key)) ?? 0);
     useMemo(() => {
-        let newValue: number | undefined = undefined;
-        let prevValue: number | undefined = undefined;
+        let newValue: number | undefined;
+        let prevValue: number | undefined;
         let didQueueTask = false;
         listen$(ctx, key, (v) => {
             newValue = getValue ? getValue(v) : v;

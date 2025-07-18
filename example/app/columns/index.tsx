@@ -1,7 +1,7 @@
-import { LegendList } from "@legendapp/list";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LogBox, StyleSheet, Text, View } from "react-native";
+
+import { LegendList } from "@legendapp/list";
 
 LogBox.ignoreLogs(["Open debugger"]);
 

@@ -1,7 +1,8 @@
-import { LegendList, type LegendListRenderItemProps } from "@legendapp/list";
 import type React from "react";
 import { createContext, useCallback, useContext, useState } from "react";
 import { Button, StyleSheet, Text, View } from "react-native";
+
+import { LegendList, type LegendListRenderItemProps } from "@legendapp/list";
 
 const fakeData = Array.from({ length: 100 }, (_, index) => ({
     id: index,
@@ -13,7 +14,7 @@ type Item = (typeof fakeData)[number];
 
 const DataContext = createContext({
     data: fakeData,
-    increment: (id: number) => {},
+    increment: (_id: number) => {},
 });
 
 export const DataProvider = ({ initialData, children }: { initialData: Item[]; children: React.ReactNode }) => {
@@ -84,7 +85,7 @@ export default function HomeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const _styles = StyleSheet.create({
     titleContainer: {
         flexDirection: "row",
         alignItems: "center",

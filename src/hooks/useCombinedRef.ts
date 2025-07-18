@@ -1,5 +1,6 @@
-import { isFunction } from "@/utils/helpers";
 import { useCallback } from "react";
+
+import { isFunction } from "@/utils/helpers";
 
 type RefItem<T> = ((element: T | null) => void) | React.MutableRefObject<T | null> | null | undefined;
 

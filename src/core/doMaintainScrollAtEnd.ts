@@ -1,5 +1,5 @@
-import { peek$ } from "@/state/state";
 import type { StateContext } from "@/state/state";
+import { peek$ } from "@/state/state";
 import type { InternalState } from "@/types";
 
 export function doMaintainScrollAtEnd(ctx: StateContext, state: InternalState, animated: boolean) {

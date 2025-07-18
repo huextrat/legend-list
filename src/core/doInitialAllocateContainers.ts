@@ -1,6 +1,6 @@
 import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "@/constants";
 import { calculateItemsInView } from "@/core/calculateItemsInView";
-import { type StateContext, peek$, set$ } from "@/state/state";
+import { peek$, type StateContext, set$ } from "@/state/state";
 import type { InternalState } from "@/types";
 
 export function doInitialAllocateContainers(ctx: StateContext, state: InternalState): boolean | undefined {

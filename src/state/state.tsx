@@ -1,13 +1,14 @@
-import type {
-    ColumnWrapperStyle,
-    ViewAmountToken,
-    ViewToken,
-    ViewabilityAmountCallback,
-    ViewabilityCallback,
-} from "@/types";
 import * as React from "react";
 import type { View } from "react-native";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
+
+import type {
+    ColumnWrapperStyle,
+    ViewAmountToken,
+    ViewabilityAmountCallback,
+    ViewabilityCallback,
+    ViewToken,
+} from "@/types";
 
 // This is an implementation of a simple state management system, inspired by Legend State.
 // It stores values and listeners in Maps, with peek$ and set$ functions to get and set values.

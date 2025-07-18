@@ -1,7 +1,8 @@
-import { useCombinedRef } from "@/hooks/useCombinedRef";
-import { LegendList, type LegendListProps, type LegendListPropsBase, type LegendListRef } from "@legendapp/list";
 import React, { type ComponentProps } from "react";
 import Animated from "react-native-reanimated";
+
+import { LegendList, type LegendListProps, type LegendListPropsBase, type LegendListRef } from "@legendapp/list";
+import { useCombinedRef } from "@/hooks/useCombinedRef";
 
 type KeysToOmit =
     | "getEstimatedItemSize"

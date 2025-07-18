@@ -8,7 +8,7 @@ export interface CardItem {
 
 const DataContext = createContext({
     data: [] as CardItem[],
-    setExpanded: (id: string, expanded: boolean) => {},
+    setExpanded: (_id: string, _expanded: boolean) => {},
     filter: "",
     setFilter: null as unknown as React.Dispatch<React.SetStateAction<string>>,
 });
@@ -16,7 +16,10 @@ const DataContext = createContext({
 export const CardsDataProvider = ({
     initialData,
     children,
-}: { initialData: CardItem[]; children: React.ReactNode }) => {
+}: {
+    initialData: CardItem[];
+    children: React.ReactNode;
+}) => {
     const [data, setData] = useState(initialData);
     const [filter, setFilter] = useState("");
 

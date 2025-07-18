@@ -1,9 +1,10 @@
-import { type Item, renderItem } from "@/app/cards-renderItem";
-import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
-import { LegendList, type LegendListRef } from "@legendapp/list";
 import { useRef, useState } from "react";
 import { Button, Platform, StatusBar, StyleSheet, Text, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
+
+import { LegendList, type LegendListRef } from "@legendapp/list";
+import { type Item, renderItem } from "@/app/cards-renderItem";
+import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "@/constants/constants";
 
 interface CardsProps {
     numColumns?: number;
@@ -12,7 +13,7 @@ interface CardsProps {
 export default function AccurateScrollToHuge({ numColumns = 1 }: CardsProps) {
     const listRef = useRef<LegendListRef>(null);
 
-    const [data, setData] = useState<Item[]>(
+    const [data, _setData] = useState<Item[]>(
         () =>
             Array.from({ length: 1000 }, (_, i) => ({
                 id: i.toString(),

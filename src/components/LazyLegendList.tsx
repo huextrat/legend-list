@@ -1,10 +1,11 @@
+import * as React from "react";
+import { type ForwardedRef, forwardRef } from "react";
+
+import type { AnimatedLegendList } from "@legendapp/list/animated";
+import type { AnimatedLegendList as ReanimatedLegendList } from "@legendapp/list/reanimated";
 import { LegendList as LegendListBase } from "@/components/LegendList";
 import type { LegendListProps, LegendListRef, LegendListRenderItemProps } from "@/types";
 import { isArray } from "@/utils/helpers";
-import type { AnimatedLegendList } from "@legendapp/list/animated";
-import type { AnimatedLegendList as ReanimatedLegendList } from "@legendapp/list/reanimated";
-import * as React from "react";
-import { type ForwardedRef, forwardRef } from "react";
 
 // biome-ignore lint/complexity/noBannedTypes: This is a workaround for the fact that forwardRef is not typed
 type TypedForwardRef = <T, P = {}>(

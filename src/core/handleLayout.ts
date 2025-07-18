@@ -1,3 +1,5 @@
+import type { LayoutRectangle } from "react-native";
+
 import { calculateItemsInView } from "@/core/calculateItemsInView";
 import { doInitialAllocateContainers } from "@/core/doInitialAllocateContainers";
 import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
@@ -7,7 +9,6 @@ import { checkAtBottom } from "@/utils/checkAtBottom";
 import { checkAtTop } from "@/utils/checkAtTop";
 import { warnDevOnce } from "@/utils/helpers";
 import { updateAlignItemsPaddingTop } from "@/utils/updateAlignItemsPaddingTop";
-import type { LayoutRectangle } from "react-native";
 
 export function handleLayout(
     ctx: StateContext,

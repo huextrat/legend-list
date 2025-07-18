@@ -1,9 +1,10 @@
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+
 import { calculateItemsInView } from "@/core/calculateItemsInView";
 import type { StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 import { checkAtBottom } from "@/utils/checkAtBottom";
 import { checkAtTop } from "@/utils/checkAtTop";
-import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 
 export function onScroll(
     ctx: StateContext,

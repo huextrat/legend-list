@@ -1,12 +1,12 @@
-import { type StateContext, peek$ } from "@/state/state";
+import { peek$, type StateContext } from "@/state/state";
 import type {
     InternalState,
     LegendListProps,
     ViewAmountToken,
-    ViewToken,
     ViewabilityConfig,
     ViewabilityConfigCallbackPair,
     ViewabilityConfigCallbackPairs,
+    ViewToken,
 } from "@/types";
 import { getId } from "@/utils/getId";
 

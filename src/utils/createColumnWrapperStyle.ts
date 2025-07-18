@@ -1,5 +1,6 @@
-import type { ColumnWrapperStyle } from "@/types";
 import type { ViewStyle } from "react-native";
+
+import type { ColumnWrapperStyle } from "@/types";
 
 export function createColumnWrapperStyle(contentContainerStyle: ViewStyle): ColumnWrapperStyle | undefined {
     const { gap, columnGap, rowGap } = contentContainerStyle;
