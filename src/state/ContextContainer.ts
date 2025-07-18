@@ -93,8 +93,8 @@ export function useRecyclingEffect(effect: (info: LegendListRecyclingState<unkno
             prevItem: value,
         };
 
-        return ret;
-    }, [index, value]);
+        return ret!;
+    }, [index, value, effect]);
 }
 
 export function useRecyclingState<ItemT>(valueOrFun: ((info: LegendListRecyclingState<ItemT>) => ItemT) | ItemT) {

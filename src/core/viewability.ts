@@ -66,6 +66,10 @@ export function updateViewableItems(
     start: number,
     end: number,
 ) {
+    const {
+        timeouts,
+        props: { data },
+    } = state;
     for (const viewabilityConfigCallbackPair of viewabilityConfigCallbackPairs) {
         const viewabilityState = mapViewabilityConfigCallbackPairs.get(
             viewabilityConfigCallbackPair.viewabilityConfig.id!,
@@ -74,12 +78,12 @@ export function updateViewableItems(
         viewabilityState.end = end;
         if (viewabilityConfigCallbackPair.viewabilityConfig.minimumViewTime) {
             const timer: any = setTimeout(() => {
-                state.timeouts.delete(timer);
-                updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
+                timeouts.delete(timer);
+                updateViewableItemsWithConfig(data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
             }, viewabilityConfigCallbackPair.viewabilityConfig.minimumViewTime);
-            state.timeouts.add(timer);
+            timeouts.add(timer);
         } else {
-            updateViewableItemsWithConfig(state.data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
+            updateViewableItemsWithConfig(data, viewabilityConfigCallbackPair, state, ctx, scrollSize);
         }
     }
 }
