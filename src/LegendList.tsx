@@ -443,6 +443,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                               endBuffered: state.endBuffered,
                               isAtEnd: state.isAtEnd,
                               isAtStart: state.isAtStart,
+                              positions: state.positions,
                               scroll: state.scroll,
                               scrollLength: state.scrollLength,
                               start: state.startNoBuffer,

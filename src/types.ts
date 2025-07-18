@@ -409,6 +409,7 @@ export type ScrollState = {
     endBuffered: number;
     isAtEnd: boolean;
     isAtStart: boolean;
+    positions: Map<string, number>;
     scroll: number;
     scrollLength: number;
     start: number;
