@@ -48,7 +48,8 @@ export function updateItemSizes(
             if (
                 state.scrollingTo?.viewPosition &&
                 maintainVisibleContentPosition &&
-                index === state.scrollingTo.index
+                index === state.scrollingTo.index &&
+                diff > 0
             ) {
                 requestAdjust(ctx, state, diff * state.scrollingTo.viewPosition);
             }
