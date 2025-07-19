@@ -10,7 +10,7 @@ export function findAvailableContainers(
     endBuffered: number,
     pendingRemoval: number[],
 ): number[] {
-    const numContainers = peek$(ctx, "numContainers") as number;
+    const numContainers = peek$(ctx, "numContainers");
 
     const result: number[] = [];
     const availableContainers: Array<{ index: number; distance: number }> = [];

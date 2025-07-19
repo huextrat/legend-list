@@ -98,6 +98,7 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
             ["alignItemsPaddingTop", 0],
             ["stylePaddingTop", 0],
             ["headerSize", 0],
+            ["numContainers", 0],
         ]),
         viewRefs: new Map<number, React.RefObject<View>>(),
     }));
