@@ -27,7 +27,9 @@ export function updateItemSizes(
 
     if (!data) return;
 
-    let needsRecalculate = false;
+    const containersDidLayout = peek$(ctx, "containersDidLayout");
+    // Need to calculate if haven't all laid out yet
+    let needsRecalculate = !containersDidLayout;
     let shouldMaintainScrollAtEnd = false;
     let minIndexSizeChanged: number | undefined;
     let maxOtherAxisSize = peek$(ctx, "otherAxisSize") || 0;
@@ -112,8 +114,6 @@ export function updateItemSizes(
         set$(ctx, "otherAxisSize", maxOtherAxisSize);
     }
 
-    const containersDidLayout = peek$(ctx, "containersDidLayout");
-
     if (containersDidLayout || checkAllSizesKnown(state)) {
         if (needsRecalculate) {
             state.scrollForNextCalculateItemsInView = undefined;
@@ -136,7 +136,7 @@ export function updateItemSize(
 ) {
     if (IsNewArchitecture) {
         const { sizesKnown } = state;
-        const numContainers = ctx.values.get("numContainers") as number;
+        const numContainers = peek$(ctx, "numContainers");
         const changes: { itemKey: string; sizeObj: { width: number; height: number } }[] = [];
 
         // Run through all containers and if we don't already have a known size then measure the item
