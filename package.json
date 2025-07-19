@@ -10,29 +10,6 @@
     "files": [
         "**"
     ],
-    "exports": {
-        "./package.json": "./package.json",
-        ".": {
-            "types": "./index.d.ts",
-            "import": "./index.mjs",
-            "require": "./index.js"
-        },
-        "./animated": {
-            "types": "./animated.d.ts",
-            "import": "./animated.mjs",
-            "require": "./animated.js"
-        },
-        "./reanimated": {
-            "types": "./reanimated.d.ts",
-            "import": "./reanimated.mjs",
-            "require": "./reanimated.js"
-        },
-        "./keyboard-controller": {
-            "types": "./keyboard-controller.d.ts",
-            "import": "./keyboard-controller.mjs",
-            "require": "./keyboard-controller.js"
-        }
-    },
     "engines": {
         "node": ">=16.6.0",
         "npm": ">=8.11.0"
