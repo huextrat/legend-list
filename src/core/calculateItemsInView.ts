@@ -32,7 +32,8 @@ export function calculateItemsInView(
         minIndexSizeChanged,
     } = state;
     const data = state.props.data;
-    if (!data || scrollLength === 0) {
+    const prevNumContainers = peek$(ctx, "numContainers");
+    if (!data || scrollLength === 0 || !prevNumContainers) {
         return;
     }
 
@@ -153,7 +154,6 @@ export function calculateItemsInView(
 
     // TODO PERF: Could cache this while looping through numContainers at the end of this function
     // This takes 0.03 ms in an example in the ios simulator
-    const prevNumContainers = ctx.values.get("numContainers") as number;
     let maxIndexRendered = 0;
     for (let i = 0; i < prevNumContainers; i++) {
         const key = peek$(ctx, `containerItemKey${i}`);
