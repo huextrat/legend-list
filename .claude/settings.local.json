@@ -8,7 +8,8 @@
       "WebFetch(domain:biomejs.dev)",
       "Bash(bun add:*)",
       "Bash(bunx biome migrate:*)",
-      "Bash(bunx biome:*)"
+      "Bash(bunx biome:*)",
+      "Bash(bun test:*)"
     ],
     "deny": []
   }
