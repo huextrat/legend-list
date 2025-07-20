@@ -175,15 +175,281 @@ This document outlines the comprehensive testing strategy for Legend List, a hig
 
 **Total Achievement**: Phase 1 has been **dramatically expanded** beyond the original scope, now covering the most critical functions in the entire virtualization system with **338 tests and 796 assertions**.
 
-## Phase 2: State Management Testing (Medium Priority)
+## Phase 2: Individual Function Testing (High Priority) 🎯 IN PROGRESS
 
-### 2.1 Core State Logic 📋 PLANNED
-**File**: `src/state/state.tsx`  
-**Focus**: Observable state management and reactivity
+### Overview
+Phase 2 focuses on testing the remaining 25+ untested files containing 50+ individual functions. This phase targets critical functions that support the core virtualization system, with emphasis on MVCP (maintainVisibleContentPosition), viewability tracking, and container management.
 
-### 2.2 Context Management 📋 PLANNED  
+### 2.1 Critical Core Functions (High Priority)
+
+#### 2.1.1 Viewability System ⚡ HIGH PRIORITY
+**File**: `src/core/viewability.ts`  
+**Tests**: `__tests__/core/viewability.test.ts`  
+**Status**: 📋 PLANNED
+
+**Functions to Test**:
+- `setupViewability()` - Viewability configuration setup
+- `updateViewableItems()` - Viewable items state management
+- `computeViewability()` - Core viewability calculations
+- `isViewable()` - Individual item viewability determination
+- `findContainerId()` - Container-item mapping
+- `maybeUpdateViewabilityCallback()` - Callback triggering logic
+
+**Coverage Requirements**:
+- ✅ Basic viewability detection (threshold crossing, timing requirements)
+- ✅ FlatList compatibility (viewabilityConfig, onViewableItemsChanged)
+- ✅ Performance optimization (batched updates, rapid scroll handling)
+- ✅ Edge cases (empty data, rapid data changes, scroll boundaries)
+- ✅ Integration with container recycling
+- ✅ **Complexity**: Very High - Core feature compatibility
+
+#### 2.1.2 MVCP Core Logic ⚡ HIGH PRIORITY
+**File**: `src/core/prepareMVCP.ts`  
+**Tests**: `__tests__/core/prepareMVCP.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `prepareMVCP(ctx: StateContext, state: InternalState)`
+
+**Coverage Requirements**:
+- ✅ Anchor element selection and tracking
+- ✅ Scroll adjustment calculations
+- ✅ Integration with scroll adjustment handler
+- ✅ Edge cases (no valid anchors, corrupted state)
+- ✅ Performance (rapid MVCP requests, large datasets)
+- ✅ **Complexity**: Complex - Critical for scroll position preservation
+
+#### 2.1.3 Scroll Adjustment Management ⚡ HIGH PRIORITY
+**File**: `src/core/ScrollAdjustHandler.ts`  
+**Tests**: `__tests__/core/ScrollAdjustHandler.test.ts`  
+**Status**: 📋 PLANNED
+
+**Class Methods**:
+- `constructor(ctx)` - Handler initialization
+- `requestAdjust(add: number)` - Queue scroll adjustments
+- `setMounted()` - Lifecycle management
+
+**Coverage Requirements**:
+- ✅ Adjustment queuing and batching
+- ✅ Mount/unmount state handling
+- ✅ Integration with scroll events
+- ✅ Edge cases (rapid adjustments, negative values)
+- ✅ **Complexity**: Medium - State coordination
+
+#### 2.1.4 Advanced Scroll Utilities ⚡ HIGH PRIORITY
+**File**: `src/utils/requestAdjust.ts`  
+**Tests**: `__tests__/utils/requestAdjust.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `requestAdjust(ctx: StateContext, state: InternalState, positionDiff: number)`
+
+**Coverage Requirements**:
+- ✅ Scroll position difference calculations
+- ✅ MVCP integration and triggering
+- ✅ Performance optimization (debouncing, batching)
+- ✅ Edge cases (zero diff, large adjustments, rapid calls)
+- ✅ **Complexity**: Complex - Core MVCP functionality
+
+### 2.2 Container Management Functions (High Priority)
+
+#### 2.2.1 Container Context System
 **File**: `src/state/ContextContainer.ts`  
-**Focus**: State container and provider logic
+**Tests**: `__tests__/state/ContextContainer.test.ts`  
+**Status**: 📋 PLANNED
+
+**Hooks to Test**:
+- `useViewability(callback, configId?)` - Viewability hook integration
+- `useViewabilityAmount(callback)` - Detailed viewability metrics
+- `useRecyclingEffect(effect)` - Container recycling lifecycle
+- `useRecyclingState(valueOrFun)` - State preservation in recycled containers
+- `useIsLastItem()` - Last item detection
+- `useListScrollSize()` - Scroll container dimensions
+
+**Coverage Requirements**:
+- ✅ Hook lifecycle management
+- ✅ Container recycling integration
+- ✅ State preservation across recycling
+- ✅ React Native integration patterns
+- ✅ **Complexity**: Complex - React hooks with recycling
+
+#### 2.2.2 Container Initialization
+**File**: `src/core/doInitialAllocateContainers.ts`  
+**Tests**: `__tests__/core/doInitialAllocateContainers.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `doInitialAllocateContainers(ctx: StateContext, state: InternalState)`
+
+**Coverage Requirements**:
+- ✅ Container pool size calculations
+- ✅ Initial allocation strategy
+- ✅ Performance with different pool sizes
+- ✅ Integration with container recycling
+- ✅ **Complexity**: Medium - Initialization logic
+
+### 2.3 Threshold and Boundary Detection (Medium Priority)
+
+#### 2.3.1 Bottom Detection Logic
+**File**: `src/utils/checkAtBottom.ts`  
+**Tests**: `__tests__/utils/checkAtBottom.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `checkAtBottom(ctx: StateContext, state: InternalState)`
+
+**Coverage Requirements**:
+- ✅ End-reached threshold detection
+- ✅ onEndReached callback triggering
+- ✅ Hysteresis and reset behavior
+- ✅ Integration with infinite scrolling
+- ✅ **Complexity**: Medium - Threshold logic
+
+#### 2.3.2 Top Detection Logic
+**File**: `src/utils/checkAtTop.ts`  
+**Tests**: `__tests__/utils/checkAtTop.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `checkAtTop(state: InternalState)`
+
+**Coverage Requirements**:
+- ✅ Start-reached threshold detection
+- ✅ onStartReached callback triggering
+- ✅ Bidirectional infinite scroll support
+- ✅ **Complexity**: Medium - Threshold logic
+
+### 2.4 Layout and Positioning Functions (Medium Priority)
+
+#### 2.4.1 Padding and Alignment
+**File**: `src/utils/setPaddingTop.ts`  
+**Tests**: `__tests__/utils/setPaddingTop.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `setPaddingTop(ctx: StateContext, options: {...})`
+
+**Coverage Requirements**:
+- ✅ Dynamic padding updates
+- ✅ Scroll position preservation
+- ✅ alignItemsAtEnd integration
+- ✅ **Complexity**: Medium - Layout coordination
+
+#### 2.4.2 Chat UI Support
+**File**: `src/core/doMaintainScrollAtEnd.ts`  
+**Tests**: `__tests__/core/doMaintainScrollAtEnd.test.ts`  
+**Status**: 📋 PLANNED
+
+**Function**: `doMaintainScrollAtEnd(ctx: StateContext, state: InternalState, animated: boolean)`
+
+**Coverage Requirements**:
+- ✅ Auto-scroll to end behavior
+- ✅ Animation parameter handling
+- ✅ Chat interface patterns
+- ✅ **Complexity**: Medium - Chat UI feature
+
+### 2.5 React Hooks Testing (Medium Priority)
+
+#### 2.5.1 Core Hooks
+**Files**: `src/hooks/useInit.ts`, `src/hooks/useCombinedRef.ts`, `src/hooks/useAnimatedValue.ts`  
+**Tests**: `__tests__/hooks/[filename].test.ts`  
+**Status**: 📋 PLANNED
+
+**Coverage Requirements**:
+- ✅ Hook lifecycle and behavior
+- ✅ React testing library integration
+- ✅ Ref forwarding patterns
+- ✅ **Complexity**: Simple to Medium
+
+#### 2.5.2 Advanced Animation Hooks
+**File**: `src/hooks/useValue$.ts`  
+**Tests**: `__tests__/hooks/useValue$.test.ts`  
+**Status**: 📋 PLANNED
+
+**Coverage Requirements**:
+- ✅ State-to-animation bridge
+- ✅ Observable integration
+- ✅ Animation value synchronization
+- ✅ **Complexity**: Complex - State bridge
+
+### 2.6 Utility Functions (Lower Priority)
+
+#### 2.6.1 Helper Functions
+**File**: `src/utils/helpers.ts`  
+**Tests**: `__tests__/utils/helpers.test.ts`  
+**Status**: 📋 PLANNED
+
+**Functions to Test** (8 functions):
+- `isFunction()`, `isArray()` - Type guards
+- `warnDevOnce()` - Development warnings
+- `roundSize()` - Pixel rounding
+- `isNullOrUndefined()` - Null checks
+- `comparatorDefault()` - Number comparison
+- `byIndex()` - Index extraction
+- `extractPadding()` - Style padding extraction
+
+**Coverage Requirements**:
+- ✅ Type safety and edge cases
+- ✅ Development mode behavior
+- ✅ Performance (type checking overhead)
+- ✅ **Complexity**: Simple to Medium
+
+### 2.7 State Management Testing (Medium Priority)
+
+#### 2.7.1 Core State Logic
+**File**: `src/state/state.tsx`  
+**Tests**: `__tests__/state/state.test.ts`  
+**Status**: 📋 PLANNED
+
+**Focus**: Observable state management and reactivity
+- ✅ StateProvider component behavior
+- ✅ State updates and subscriptions
+- ✅ Performance optimization patterns
+- ✅ **Complexity**: Complex - Core state system
+
+### 2.8 Integration Testing (Lower Priority)
+
+#### 2.8.1 Animation Integrations
+**Files**: `src/integrations/animated.tsx`, `src/integrations/reanimated.tsx`, `src/integrations/keyboard-controller.tsx`  
+**Tests**: `__tests__/integrations/[filename].test.ts`  
+**Status**: 📋 PLANNED
+
+**Coverage Requirements**:
+- ✅ External library integration
+- ✅ Ref forwarding behavior
+- ✅ Component composition patterns
+- ✅ **Complexity**: Medium to Complex
+
+## Phase 2 Testing Strategy
+
+### Testing Priorities (Updated)
+1. **🔴 Critical (Week 1)**: MVCP system, viewability, scroll adjustment
+2. **🟡 High (Week 2)**: Container management, threshold detection
+3. **🟢 Medium (Week 3)**: Layout functions, React hooks, state management
+4. **🔵 Lower (Week 4)**: Utilities, integrations
+
+### Coverage Standards for Phase 2
+- **Critical functions**: 100% line and branch coverage + catastrophic failure testing
+- **High priority**: 95% coverage + comprehensive edge case testing
+- **Medium priority**: 90% coverage + standard edge case testing  
+- **Lower priority**: 85% coverage + basic edge case testing
+
+### Testing Patterns (Established from Phase 1)
+- ✅ **Edge Cases**: Null/undefined, zero/negative values, extreme numbers
+- ✅ **Performance**: Large datasets (1K-10K items), rapid operations
+- ✅ **Error Handling**: Corrupted state, invalid parameters, memory pressure
+- ✅ **Integration**: Multi-function orchestration, state consistency
+- ✅ **React Patterns**: Hook lifecycle, component behavior, ref handling
+
+### Estimated Phase 2 Scope
+- **Files to Test**: 25+ files
+- **Individual Functions**: 50+ functions  
+- **Estimated Tests**: 400-500 tests
+- **Estimated Assertions**: 800-1000 assertions
+- **Completion Target**: 4 weeks
+
+## Phase 2 Success Criteria
+- [ ] All critical MVCP and viewability functions tested
+- [ ] Container management system fully covered
+- [ ] React hooks properly tested with testing library
+- [ ] State management system validated
+- [ ] Integration patterns established
+- [ ] Performance benchmarks for new functions
+- [ ] Documentation for React-specific testing patterns
 
 ## Phase 3: Component Testing (Medium Priority)
 
@@ -275,11 +541,16 @@ This document outlines the comprehensive testing strategy for Legend List, a hig
 ### Phase 1 Complete ✅
 **All critical core utilities have been thoroughly tested with 100% coverage of edge cases, performance scenarios, and error handling.**
 
-### Planned 📋
-- [ ] Additional core utilities
-- [ ] State management testing
-- [ ] Component integration testing
-- [ ] Performance benchmarking suite
+### Phase 2 In Progress 🎯
+- [ ] Critical MVCP and viewability system testing (Week 1)
+- [ ] Container management and threshold detection (Week 2)  
+- [ ] Layout functions and React hooks testing (Week 3)
+- [ ] State management and integration testing (Week 4)
+
+### Future Phases 📋
+- [ ] Component integration testing (Phase 3)
+- [ ] Performance benchmarking suite (Phase 4)
+- [ ] End-to-end workflow testing (Phase 5)
 
 ## Risk Assessment
 
@@ -305,5 +576,5 @@ This document outlines the comprehensive testing strategy for Legend List, a hig
 
 ---
 
-*Last Updated: 2025-01-19*  
-*Next Review: After core utilities Phase 1 completion*
+*Last Updated: 2025-01-20*  
+*Next Review: After Phase 2 Week 1 (MVCP/Viewability testing)*
