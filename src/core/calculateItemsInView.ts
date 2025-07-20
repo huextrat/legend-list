@@ -320,15 +320,14 @@ export function calculateItemsInView(
                     // so we need to set it to out of view
                     set$(ctx, `containerPosition${i}`, POSITION_OUT_OF_VIEW);
                 } else {
-                    const pos = positions.get(id)!;
                     const column = columns.get(id) || 1;
 
                     const prevPos = peek$(ctx, `containerPosition${i}`);
                     const prevColumn = peek$(ctx, `containerColumn${i}`);
                     const prevData = peek$(ctx, `containerItemData${i}`);
 
-                    if (!prevPos || (pos > POSITION_OUT_OF_VIEW && pos !== prevPos)) {
-                        set$(ctx, `containerPosition${i}`, pos);
+                    if (position > POSITION_OUT_OF_VIEW && position !== prevPos) {
+                        set$(ctx, `containerPosition${i}`, position);
                     }
                     if (column >= 0 && column !== prevColumn) {
                         set$(ctx, `containerColumn${i}`, column);
