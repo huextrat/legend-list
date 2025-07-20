@@ -1,6 +1,6 @@
 // biome-ignore lint/style/useImportType: Leaving this out makes it crash in some environments
 import * as React from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 
 import { LeanView } from "@/components/LeanView";
@@ -8,10 +8,10 @@ import { Separator } from "@/components/Separator";
 import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "@/constants";
 import { ContextContainer, type ContextContainerType } from "@/state/ContextContainer";
 import { useArr$, useStateContext } from "@/state/state";
-import type { GetRenderedItem } from "@/types";
+import { type GetRenderedItem, typedMemo } from "@/types";
 import { isNullOrUndefined } from "@/utils/helpers";
 
-export const Container = <ItemT,>({
+export const Container = typedMemo(function Container<ItemT>({
     id,
     recycleItems,
     horizontal,
@@ -25,7 +25,7 @@ export const Container = <ItemT,>({
     getRenderedItem: GetRenderedItem;
     updateItemSize: (itemKey: string, size: { width: number; height: number }) => void;
     ItemSeparatorComponent?: React.ComponentType<{ leadingItem: ItemT }>;
-}) => {
+}) {
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
 
@@ -89,13 +89,17 @@ export const Container = <ItemT,>({
     );
     const { index, renderedItem } = renderedItemInfo || {};
 
-    const triggerLayout = useCallback(() => {
-        forceLayoutRender((v) => v + 1);
-    }, []);
-
     const contextValue = useMemo<ContextContainerType>(() => {
         ctx.viewRefs.set(id, ref);
-        return { containerId: id, index: index!, itemKey, triggerLayout, value: data };
+        return {
+            containerId: id,
+            index: index!,
+            itemKey,
+            triggerLayout: () => {
+                forceLayoutRender((v) => v + 1);
+            },
+            value: data,
+        };
     }, [id, itemKey, index, data]);
 
     const onLayout = (event: LayoutChangeEvent) => {
@@ -174,4 +178,4 @@ export const Container = <ItemT,>({
             </ContextContainer.Provider>
         </LeanView>
     );
-};
+});
