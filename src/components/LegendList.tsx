@@ -289,7 +289,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // Only iOS seems to need the scroll compensation
         if (maintainVisibleContentPosition && paddingDiff && prevPaddingTop !== undefined && Platform.OS === "ios") {
             requestAdjust(ctx, state, paddingDiff);
-            calculateItemsInView(ctx, state, { doMVCP: true });
         }
     };
     if (isFirst) {
