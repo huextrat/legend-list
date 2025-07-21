@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
+
 import { calculateItemsInView } from "../../src/core/calculateItemsInView";
 import type { StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
@@ -8,15 +9,15 @@ import type { InternalState } from "../../src/types";
 function createMockContext(initialValues: Record<string, any> = {}): StateContext {
     const values = new Map(Object.entries(initialValues));
     const listeners = new Map();
-    
+
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -35,24 +36,38 @@ describe("calculateItemsInView", () => {
         });
 
         mockState = {
+            // Required by UpdateAllPositions
+            averageSizes: {},
             // Core calculateItemsInView properties
             columns: new Map(),
             containerItemKeys: new Set(),
             enableScrollForNextCalculateItemsInView: true,
+            // Required by Pick types from dependencies
+            endBuffered: null,
+            endNoBuffer: null,
+            endReachedBlockedByTimer: false,
+            firstFullyOnScreenIndex: undefined,
             idCache: new Map(),
+            idsInView: [],
             indexByKey: new Map(),
+            initialScroll: undefined,
+            isAtEnd: false,
+            isEndReached: false,
+            // Required by CheckAtBottom and SetDidLayout
+            loadStartTime: Date.now(),
+            maintainingScrollAtEnd: false,
             minIndexSizeChanged: undefined,
             positions: new Map(),
             props: {
                 data: [],
-                scrollBuffer: 100,
-                keyExtractor: (item: any, index: number) => `item_${index}`,
-                onLoad: undefined,
-                maintainVisibleContentPosition: false,
-                maintainScrollAtEndThreshold: 0.1,
-                onEndReachedThreshold: 0.1,
-                onEndReached: undefined,
                 initialScroll: undefined,
+                keyExtractor: (item: any, index: number) => `item_${index}`,
+                maintainScrollAtEndThreshold: 0.1,
+                maintainVisibleContentPosition: false,
+                onEndReached: undefined,
+                onEndReachedThreshold: 0.1,
+                onLoad: undefined,
+                scrollBuffer: 100,
                 snapToIndices: undefined,
                 viewabilityConfigCallbackPairs: undefined,
             },
@@ -60,28 +75,14 @@ describe("calculateItemsInView", () => {
             scroll: 0,
             scrollForNextCalculateItemsInView: null,
             scrollHistory: [],
+            // Required by PrepareMVCP
+            scrollingTo: undefined,
             scrollLength: 300,
             sizes: new Map(),
             sizesKnown: new Map(),
-            startBufferedId: null,
-            // Required by Pick types from dependencies
-            endBuffered: null,
-            endNoBuffer: null,
-            firstFullyOnScreenIndex: undefined,
-            idsInView: [],
             startBuffered: null,
+            startBufferedId: null,
             startNoBuffer: null,
-            // Required by UpdateAllPositions
-            averageSizes: {},
-            // Required by PrepareMVCP
-            scrollingTo: undefined,
-            // Required by CheckAtBottom and SetDidLayout  
-            loadStartTime: Date.now(),
-            initialScroll: undefined,
-            maintainingScrollAtEnd: false,
-            isAtEnd: false,
-            isEndReached: false,
-            endReachedBlockedByTimer: false,
         };
     });
 
@@ -451,7 +452,7 @@ describe("calculateItemsInView", () => {
 
             // All calculations should complete without errors
             expect(results.length).toBe(5);
-            expect(results.every(ids => Array.isArray(ids))).toBe(true);
+            expect(results.every((ids) => Array.isArray(ids))).toBe(true);
         });
     });
 });

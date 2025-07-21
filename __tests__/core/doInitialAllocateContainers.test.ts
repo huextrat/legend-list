@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
-import { doInitialAllocateContainers } from "../../src/core/doInitialAllocateContainers";
 import * as calculateItemsInViewModule from "../../src/core/calculateItemsInView";
+import { doInitialAllocateContainers } from "../../src/core/doInitialAllocateContainers";
 import type { StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
 
@@ -12,43 +12,28 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
 
 function createMockState(overrides: Partial<InternalState> = {}): InternalState {
     return {
-        scrollPending: 0,
         hasScrolled: false,
-        lastBatchingAction: 0,
-        scrollHistory: [],
-        scroll: 0,
-        scrollPrev: 0,
-        scrollTime: 0,
-        scrollPrevTime: 0,
-        scrollingTo: undefined,
+        idCache: new Map(),
+        idsInView: [],
         ignoreScrollFromMVCP: undefined,
         ignoreScrollFromMVCPTimeout: undefined,
-        scrollForNextCalculateItemsInView: undefined,
-        scrollLength: 500,
-        isScrolling: false,
-        sizes: new Map(),
-        positions: new Map(),
-        sizesCache: new Map(),
-        idCache: new Map(),
         indexByKey: new Map(),
-        idsInView: [],
-        timeouts: new Set(),
-        scrollAdjustHandler: {
-            requestAdjust: () => {},
-        },
+        isScrolling: false,
+        lastBatchingAction: 0,
+        positions: new Map(),
         props: {
             data: [
                 { id: 0, text: "Item 0" },
@@ -57,12 +42,27 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
                 { id: 3, text: "Item 3" },
                 { id: 4, text: "Item 4" },
             ],
-            keyExtractor: (item: any) => `item-${item.id}`,
             estimatedItemSize: 100,
+            initialContainerPoolRatio: 0.8,
+            keyExtractor: (item: any) => `item-${item.id}`,
             numColumns: 1,
             scrollBuffer: 50,
-            initialContainerPoolRatio: 0.8,
         },
+        scroll: 0,
+        scrollAdjustHandler: {
+            requestAdjust: () => {},
+        },
+        scrollForNextCalculateItemsInView: undefined,
+        scrollHistory: [],
+        scrollingTo: undefined,
+        scrollLength: 500,
+        scrollPending: 0,
+        scrollPrev: 0,
+        scrollPrevTime: 0,
+        scrollTime: 0,
+        sizes: new Map(),
+        sizesCache: new Map(),
+        timeouts: new Set(),
         ...overrides,
     } as InternalState;
 }
@@ -427,10 +427,10 @@ describe("doInitialAllocateContainers", () => {
 
         it("should properly initialize containers", () => {
             doInitialAllocateContainers(mockCtx, mockState);
-            
+
             const numContainers = mockCtx.values.get("numContainers");
             expect(numContainers).toBeGreaterThan(0);
-            
+
             // Verify all containers are properly initialized
             for (let i = 0; i < numContainers; i++) {
                 expect(mockCtx.values.get(`containerPosition${i}`)).toBe(-10000000);

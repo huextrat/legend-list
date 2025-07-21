@@ -21,9 +21,7 @@ describe("getScrollVelocity", () => {
         });
 
         it("should return 0 for single scroll entry", () => {
-            mockState.scrollHistory = [
-                { scroll: 100, time: Date.now() },
-            ];
+            mockState.scrollHistory = [{ scroll: 100, time: Date.now() }];
 
             const velocity = getScrollVelocity(mockState);
 
@@ -57,10 +55,10 @@ describe("getScrollVelocity", () => {
         it("should use oldest entry within time window", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 0, time: now - 500 },    // Oldest within 1000ms window
-                { scroll: 100, time: now - 300 },  // Will be ignored
-                { scroll: 150, time: now - 100 },  // Will be ignored
-                { scroll: 200, time: now },        // Newest
+                { scroll: 0, time: now - 500 }, // Oldest within 1000ms window
+                { scroll: 100, time: now - 300 }, // Will be ignored
+                { scroll: 150, time: now - 100 }, // Will be ignored
+                { scroll: 200, time: now }, // Newest
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -73,11 +71,11 @@ describe("getScrollVelocity", () => {
         it("should ignore entries before direction change", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 500, time: now - 400 },  // Old upward movement
-                { scroll: 400, time: now - 300 },  // Old upward movement
-                { scroll: 300, time: now - 200 },  // Direction change point
-                { scroll: 400, time: now - 100 },  // New downward movement
-                { scroll: 500, time: now },        // Current
+                { scroll: 500, time: now - 400 }, // Old upward movement
+                { scroll: 400, time: now - 300 }, // Old upward movement
+                { scroll: 300, time: now - 200 }, // Direction change point
+                { scroll: 400, time: now - 100 }, // New downward movement
+                { scroll: 500, time: now }, // Current
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -89,12 +87,12 @@ describe("getScrollVelocity", () => {
         it("should handle multiple direction changes", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 100, time: now - 500 },  // Down
-                { scroll: 200, time: now - 400 },  // Down
-                { scroll: 100, time: now - 300 },  // Up (change 1)
-                { scroll: 50, time: now - 200 },   // Up
-                { scroll: 150, time: now - 100 },  // Down (change 2)
-                { scroll: 250, time: now },        // Down
+                { scroll: 100, time: now - 500 }, // Down
+                { scroll: 200, time: now - 400 }, // Down
+                { scroll: 100, time: now - 300 }, // Up (change 1)
+                { scroll: 50, time: now - 200 }, // Up
+                { scroll: 150, time: now - 100 }, // Down (change 2)
+                { scroll: 250, time: now }, // Down
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -109,10 +107,10 @@ describe("getScrollVelocity", () => {
         it("should handle direction change from positive to negative", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 100, time: now - 300 },  // Up movement
-                { scroll: 200, time: now - 200 },  // Up movement
-                { scroll: 150, time: now - 100 },  // Down movement (direction change)
-                { scroll: 100, time: now },        // Down movement
+                { scroll: 100, time: now - 300 }, // Up movement
+                { scroll: 200, time: now - 200 }, // Up movement
+                { scroll: 150, time: now - 100 }, // Down movement (direction change)
+                { scroll: 100, time: now }, // Down movement
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -124,10 +122,10 @@ describe("getScrollVelocity", () => {
         it("should handle direction change from negative to positive", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 200, time: now - 300 },  // Down movement
-                { scroll: 150, time: now - 200 },  // Down movement  
-                { scroll: 170, time: now - 100 },  // Up movement (direction change)
-                { scroll: 200, time: now },        // Up movement
+                { scroll: 200, time: now - 300 }, // Down movement
+                { scroll: 150, time: now - 200 }, // Down movement
+                { scroll: 170, time: now - 100 }, // Up movement (direction change)
+                { scroll: 200, time: now }, // Up movement
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -141,9 +139,9 @@ describe("getScrollVelocity", () => {
         it("should ignore entries older than 1000ms", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 0, time: now - 1500 },   // Too old, should be ignored
-                { scroll: 100, time: now - 800 },  // Within window
-                { scroll: 200, time: now },        // Current
+                { scroll: 0, time: now - 1500 }, // Too old, should be ignored
+                { scroll: 100, time: now - 800 }, // Within window
+                { scroll: 200, time: now }, // Current
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -154,9 +152,9 @@ describe("getScrollVelocity", () => {
         it("should handle all entries being too old", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 0, time: now - 2000 },   // Too old
+                { scroll: 0, time: now - 2000 }, // Too old
                 { scroll: 100, time: now - 1500 }, // Too old
-                { scroll: 200, time: now },        // Current (no valid old entry)
+                { scroll: 200, time: now }, // Current (no valid old entry)
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -167,9 +165,9 @@ describe("getScrollVelocity", () => {
         it("should handle entries at exactly 1000ms boundary", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 0, time: now - 1000 },   // Exactly at boundary
-                { scroll: 100, time: now - 500 },  // Within window
-                { scroll: 200, time: now },        // Current
+                { scroll: 0, time: now - 1000 }, // Exactly at boundary
+                { scroll: 100, time: now - 500 }, // Within window
+                { scroll: 200, time: now }, // Current
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -305,10 +303,10 @@ describe("getScrollVelocity", () => {
             const now = Date.now();
             mockState.scrollHistory = [
                 { scroll: 0, time: now - 200 },
-                { scroll: 100, time: now - 150 },  // Fast
-                { scroll: 150, time: now - 100 },  // Slower
-                { scroll: 175, time: now - 50 },   // Slower
-                { scroll: 185, time: now },        // Very slow
+                { scroll: 100, time: now - 150 }, // Fast
+                { scroll: 150, time: now - 100 }, // Slower
+                { scroll: 175, time: now - 50 }, // Slower
+                { scroll: 185, time: now }, // Very slow
             ];
 
             const velocity = getScrollVelocity(mockState);
@@ -321,7 +319,7 @@ describe("getScrollVelocity", () => {
         it("should handle large scroll history efficiently", () => {
             const now = Date.now();
             const largeHistory = [];
-            
+
             // Create 1000 scroll entries
             for (let i = 0; i < 1000; i++) {
                 largeHistory.push({
@@ -329,7 +327,7 @@ describe("getScrollVelocity", () => {
                     time: now - (1000 - i),
                 });
             }
-            
+
             mockState.scrollHistory = largeHistory;
 
             const start = Date.now();
@@ -349,11 +347,11 @@ describe("getScrollVelocity", () => {
             ];
 
             const start = Date.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 getScrollVelocity(mockState);
             }
-            
+
             const duration = Date.now() - start;
             expect(duration).toBeLessThan(50); // Should handle rapid calls efficiently
         });
@@ -399,7 +397,7 @@ describe("getScrollVelocity", () => {
 
         it("should handle very old timestamps", () => {
             mockState.scrollHistory = [
-                { scroll: 0, time: 0 },     // Very old timestamp
+                { scroll: 0, time: 0 }, // Very old timestamp
                 { scroll: 100, time: Date.now() },
             ];
 

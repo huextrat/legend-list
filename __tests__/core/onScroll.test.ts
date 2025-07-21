@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -37,51 +37,51 @@ describe("onScroll", () => {
         });
 
         mockState = {
-            scrollPending: 0,
-            hasScrolled: false,
-            lastBatchingAction: 0,
-            scrollHistory: [],
-            scroll: 0,
-            scrollPrev: 0,
-            scrollTime: 0,
-            scrollPrevTime: 0,
-            scrollingTo: undefined,
-            ignoreScrollFromMVCP: undefined,
-            scrollLength: 500,
-            queuedInitialLayout: true,
-            maintainingScrollAtEnd: false,
-            isAtEnd: false,
-            isEndReached: false,
-            endReachedBlockedByTimer: false,
-            isAtStart: true,
-            isStartReached: false,
-            startReachedBlockedByTimer: false,
-            positions: new Map(),
-            indexByKey: new Map(),
-            idCache: new Map(),
-            sizesKnown: new Map(),
-            sizes: new Map(),
-            columns: new Map(),
             averageSizes: {},
+            columns: new Map(),
+            endReachedBlockedByTimer: false,
             firstFullyOnScreenIndex: undefined,
+            hasScrolled: false,
+            idCache: new Map(),
+            ignoreScrollFromMVCP: undefined,
+            indexByKey: new Map(),
+            isAtEnd: false,
+            isAtStart: true,
+            isEndReached: false,
+            isStartReached: false,
+            lastBatchingAction: 0,
+            maintainingScrollAtEnd: false,
+            positions: new Map(),
             props: {
-                horizontal: false,
-                onScroll: (event: any) => onScrollCalls.push(event),
-                onEndReached: undefined,
-                onStartReached: undefined,
-                onEndReachedThreshold: 0.2,
-                onStartReachedThreshold: 0.2,
-                maintainScrollAtEndThreshold: 0.1,
                 data: [],
                 estimatedItemSize: 100,
                 getEstimatedItemSize: undefined,
+                horizontal: false,
+                maintainScrollAtEndThreshold: 0.1,
+                onEndReached: undefined,
+                onEndReachedThreshold: 0.2,
+                onScroll: (event: any) => onScrollCalls.push(event),
+                onStartReached: undefined,
+                onStartReachedThreshold: 0.2,
             },
+            queuedInitialLayout: true,
+            scroll: 0,
+            scrollHistory: [],
+            scrollingTo: undefined,
+            scrollLength: 500,
+            scrollPending: 0,
+            scrollPrev: 0,
+            scrollPrevTime: 0,
+            scrollTime: 0,
+            sizes: new Map(),
+            sizesKnown: new Map(),
+            startReachedBlockedByTimer: false,
         } as InternalState;
 
         mockScrollEvent = {
             nativeEvent: {
                 contentOffset: { x: 0, y: 100 },
-                contentSize: { width: 400, height: 1000 },
+                contentSize: { height: 1000, width: 400 },
             },
         };
     });
@@ -115,9 +115,9 @@ describe("onScroll", () => {
 
         it("should update scroll timing", () => {
             const beforeTime = performance.now();
-            
+
             onScroll(mockCtx, mockState, mockScrollEvent);
-            
+
             const afterTime = performance.now();
 
             expect(mockState.scrollTime).toBeGreaterThanOrEqual(beforeTime);
@@ -136,7 +136,7 @@ describe("onScroll", () => {
         });
 
         it("should not add to history when scrolling to specific position", () => {
-            mockState.scrollingTo = { index: 5, offset: 200, animated: true };
+            mockState.scrollingTo = { animated: true, index: 5, offset: 200 };
 
             onScroll(mockCtx, mockState, mockScrollEvent);
 
@@ -165,8 +165,8 @@ describe("onScroll", () => {
 
         it("should maintain correct order in scroll history", () => {
             const scrollPositions = [100, 150, 200, 250];
-            
-            scrollPositions.forEach(position => {
+
+            scrollPositions.forEach((position) => {
                 mockScrollEvent.nativeEvent.contentOffset.y = position;
                 onScroll(mockCtx, mockState, mockScrollEvent);
             });
@@ -180,7 +180,7 @@ describe("onScroll", () => {
 
     describe("MVCP scroll ignore logic", () => {
         it("should ignore scroll events when position is less than ignore threshold", () => {
-            mockState.ignoreScrollFromMVCP = { lt: 150, gt: undefined };
+            mockState.ignoreScrollFromMVCP = { gt: undefined, lt: 150 };
             mockScrollEvent.nativeEvent.contentOffset.y = 100; // Less than 150
 
             onScroll(mockCtx, mockState, mockScrollEvent);
@@ -190,7 +190,7 @@ describe("onScroll", () => {
         });
 
         it("should ignore scroll events when position is greater than ignore threshold", () => {
-            mockState.ignoreScrollFromMVCP = { lt: undefined, gt: 200 };
+            mockState.ignoreScrollFromMVCP = { gt: 200, lt: undefined };
             mockScrollEvent.nativeEvent.contentOffset.y = 250; // Greater than 200
 
             onScroll(mockCtx, mockState, mockScrollEvent);
@@ -200,7 +200,7 @@ describe("onScroll", () => {
         });
 
         it("should process scroll events within MVCP ignore range", () => {
-            mockState.ignoreScrollFromMVCP = { lt: 50, gt: 200 };
+            mockState.ignoreScrollFromMVCP = { gt: 200, lt: 50 };
             mockScrollEvent.nativeEvent.contentOffset.y = 100; // Between 50 and 200
 
             onScroll(mockCtx, mockState, mockScrollEvent);
@@ -210,8 +210,8 @@ describe("onScroll", () => {
         });
 
         it("should ignore MVCP when scrollingTo is active", () => {
-            mockState.ignoreScrollFromMVCP = { lt: 150, gt: undefined };
-            mockState.scrollingTo = { index: 5, offset: 200, animated: true };
+            mockState.ignoreScrollFromMVCP = { gt: undefined, lt: 150 };
+            mockState.scrollingTo = { animated: true, index: 5, offset: 200 };
             mockScrollEvent.nativeEvent.contentOffset.y = 100; // Less than 150 but should be processed
 
             onScroll(mockCtx, mockState, mockScrollEvent);
@@ -220,14 +220,14 @@ describe("onScroll", () => {
         });
 
         it("should handle both lt and gt thresholds", () => {
-            mockState.ignoreScrollFromMVCP = { lt: 50, gt: 200 };
-            
+            mockState.ignoreScrollFromMVCP = { gt: 200, lt: 50 };
+
             // Test below lt threshold
             mockScrollEvent.nativeEvent.contentOffset.y = 30;
             onScroll(mockCtx, mockState, mockScrollEvent);
             expect(mockState.scroll).toBe(0);
 
-            // Test above gt threshold  
+            // Test above gt threshold
             mockScrollEvent.nativeEvent.contentOffset.y = 250;
             onScroll(mockCtx, mockState, mockScrollEvent);
             expect(mockState.scroll).toBe(0);
@@ -236,7 +236,7 @@ describe("onScroll", () => {
 
     describe("content size validation", () => {
         it("should ignore scroll events with zero content size", () => {
-            mockScrollEvent.nativeEvent.contentSize = { width: 0, height: 0 };
+            mockScrollEvent.nativeEvent.contentSize = { height: 0, width: 0 };
 
             onScroll(mockCtx, mockState, mockScrollEvent);
 
@@ -246,7 +246,7 @@ describe("onScroll", () => {
         });
 
         it("should process scroll events with valid content size", () => {
-            mockScrollEvent.nativeEvent.contentSize = { width: 400, height: 1000 };
+            mockScrollEvent.nativeEvent.contentSize = { height: 1000, width: 400 };
 
             onScroll(mockCtx, mockState, mockScrollEvent);
 
@@ -291,7 +291,7 @@ describe("onScroll", () => {
         it("should call onEndReached when appropriate", () => {
             const onEndReachedCalls: any[] = [];
             mockState.props.onEndReached = (event: any) => onEndReachedCalls.push(event);
-            
+
             // Scroll near the end
             mockScrollEvent.nativeEvent.contentOffset.y = 900; // Close to contentSize of 1000
 
@@ -304,11 +304,11 @@ describe("onScroll", () => {
         it("should call onStartReached when appropriate", () => {
             const onStartReachedCalls: any[] = [];
             mockState.props.onStartReached = (event: any) => onStartReachedCalls.push(event);
-            
+
             // Start with scroll position away from top
             mockState.scroll = 200;
             mockState.isAtStart = false;
-            
+
             // Scroll near the top
             mockScrollEvent.nativeEvent.contentOffset.y = 10;
 
@@ -370,12 +370,12 @@ describe("onScroll", () => {
     describe("performance considerations", () => {
         it("should handle rapid scroll events efficiently", () => {
             const start = Date.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 mockScrollEvent.nativeEvent.contentOffset.y = i;
                 onScroll(mockCtx, mockState, mockScrollEvent);
             }
-            
+
             const duration = Date.now() - start;
             expect(duration).toBeLessThan(500); // Should handle rapid events efficiently
             expect(mockState.scrollHistory.length).toBe(5); // Should maintain limit
@@ -383,11 +383,11 @@ describe("onScroll", () => {
 
         it("should update timing correctly for multiple events", () => {
             let lastTime = 0;
-            
+
             for (let i = 0; i < 10; i++) {
                 mockScrollEvent.nativeEvent.contentOffset.y = i * 50;
                 onScroll(mockCtx, mockState, mockScrollEvent);
-                
+
                 expect(mockState.scrollTime).toBeGreaterThan(lastTime);
                 lastTime = mockState.scrollTime;
             }
@@ -395,15 +395,15 @@ describe("onScroll", () => {
 
         it("should maintain memory efficiency with large scroll history", () => {
             const initialMemory = process.memoryUsage().heapUsed;
-            
+
             for (let i = 0; i < 10000; i++) {
                 mockScrollEvent.nativeEvent.contentOffset.y = i;
                 onScroll(mockCtx, mockState, mockScrollEvent);
             }
-            
+
             const finalMemory = process.memoryUsage().heapUsed;
             const memoryIncrease = finalMemory - initialMemory;
-            
+
             expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
             expect(mockState.scrollHistory.length).toBe(5); // Should maintain limit
         });
@@ -413,14 +413,14 @@ describe("onScroll", () => {
         it("should trigger calculateItemsInView", () => {
             // This is tested indirectly - function should complete without error
             onScroll(mockCtx, mockState, mockScrollEvent);
-            
+
             expect(mockState.scroll).toBe(100);
             expect(mockState.hasScrolled).toBe(true);
         });
 
         it("should trigger checkAtBottom and checkAtTop", () => {
             onScroll(mockCtx, mockState, mockScrollEvent);
-            
+
             // These functions update state flags
             expect(typeof mockState.isAtEnd).toBe("boolean");
             expect(typeof mockState.isAtStart).toBe("boolean");
@@ -467,17 +467,17 @@ describe("onScroll", () => {
 
         it("should update scrollPending before processing", () => {
             mockScrollEvent.nativeEvent.contentOffset.y = 300;
-            
+
             onScroll(mockCtx, mockState, mockScrollEvent);
-            
+
             expect(mockState.scrollPending).toBe(300);
             expect(mockState.scroll).toBe(300);
         });
 
         it("should handle rapid scroll direction changes", () => {
             const positions = [100, 200, 150, 180, 120];
-            
-            positions.forEach(position => {
+
+            positions.forEach((position) => {
                 mockScrollEvent.nativeEvent.contentOffset.y = position;
                 onScroll(mockCtx, mockState, mockScrollEvent);
             });

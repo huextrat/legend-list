@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -37,6 +37,14 @@ describe("updateItemSize functions", () => {
         });
 
         mockState = {
+            averageSizes: {},
+            columns: new Map(),
+            endBuffered: 4,
+            endReachedBlockedByTimer: false,
+            firstFullyOnScreenIndex: undefined,
+            hasScrolled: false,
+            idCache: new Map(),
+            ignoreScrollFromMVCP: undefined,
             indexByKey: new Map([
                 ["item_0", 0],
                 ["item_1", 1],
@@ -44,49 +52,18 @@ describe("updateItemSize functions", () => {
                 ["item_3", 3],
                 ["item_4", 4],
             ]),
-            sizesKnown: new Map(),
-            sizes: new Map(),
-            averageSizes: {},
-            startBuffered: 0,
-            endBuffered: 4,
-            needsOtherAxisSize: false,
-            minIndexSizeChanged: undefined,
-            timeoutSizeMessage: undefined,
-            scrollingTo: undefined,
-            scrollForNextCalculateItemsInView: undefined,
-            scrollAdjustHandler: {
-                requestAdjust: () => {}, // Mock scroll adjust handler
-            },
-            positions: new Map(),
-            idCache: new Map(),
-            columns: new Map(),
-            firstFullyOnScreenIndex: undefined,
-            scroll: 0,
-            scrollPending: 0,
-            hasScrolled: false,
-            scrollHistory: [],
-            scrollTime: 0,
-            scrollPrev: 0,
-            scrollPrevTime: 0,
-            ignoreScrollFromMVCP: undefined,
-            queuedInitialLayout: true,
-            maintainingScrollAtEnd: false,
             isAtEnd: false,
-            isEndReached: false,
-            endReachedBlockedByTimer: false,
             isAtStart: true,
+            isEndReached: false,
             isStartReached: false,
-            startReachedBlockedByTimer: false,
             lastBatchingAction: 0,
-            scrollLength: 600,
+            lastLayout: { height: 600, width: 400, x: 0, y: 0 },
+            maintainingScrollAtEnd: false,
+            minIndexSizeChanged: undefined,
+            needsOtherAxisSize: false,
             otherAxisSize: 400,
-            lastLayout: { x: 0, y: 0, width: 400, height: 600 },
+            positions: new Map(),
             props: {
-                horizontal: false,
-                maintainVisibleContentPosition: undefined,
-                suggestEstimatedItemSize: false,
-                onItemSizeChanged: (event: any) => onItemSizeChangedCalls.push(event),
-                maintainScrollAtEnd: false,
                 data: [
                     { id: "item1", name: "First" },
                     { id: "item2", name: "Second" },
@@ -96,14 +73,37 @@ describe("updateItemSize functions", () => {
                 ],
                 estimatedItemSize: 100,
                 getEstimatedItemSize: undefined,
+                horizontal: false,
+                maintainScrollAtEnd: false,
+                maintainVisibleContentPosition: undefined,
+                onItemSizeChanged: (event: any) => onItemSizeChangedCalls.push(event),
+                suggestEstimatedItemSize: false,
             },
+            queuedInitialLayout: true,
+            scroll: 0,
+            scrollAdjustHandler: {
+                requestAdjust: () => {}, // Mock scroll adjust handler
+            },
+            scrollForNextCalculateItemsInView: undefined,
+            scrollHistory: [],
+            scrollingTo: undefined,
+            scrollLength: 600,
+            scrollPending: 0,
+            scrollPrev: 0,
+            scrollPrevTime: 0,
+            scrollTime: 0,
+            sizes: new Map(),
+            sizesKnown: new Map(),
+            startBuffered: 0,
+            startReachedBlockedByTimer: false,
+            timeoutSizeMessage: undefined,
         } as InternalState;
     });
 
     describe("updateOneItemSize", () => {
         it("should update size for new item", () => {
-            const sizeObj = { width: 400, height: 150 };
-            
+            const sizeObj = { height: 150, width: 400 };
+
             const diff = updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(diff).toBe(50); // 150 - 100 (estimated size from getItemSize)
@@ -113,8 +113,8 @@ describe("updateItemSize functions", () => {
 
         it("should calculate size difference when updating existing item", () => {
             mockState.sizesKnown.set("item_0", 100);
-            const sizeObj = { width: 400, height: 120 };
-            
+            const sizeObj = { height: 120, width: 400 };
+
             const diff = updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(diff).toBe(20); // 120 - 100
@@ -123,8 +123,8 @@ describe("updateItemSize functions", () => {
 
         it("should return 0 when size change is minimal", () => {
             mockState.sizesKnown.set("item_0", 100);
-            const sizeObj = { width: 400, height: 100.05 }; // Very small change
-            
+            const sizeObj = { height: 100.05, width: 400 }; // Very small change
+
             const diff = updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(diff).toBe(0); // Change < 0.1 threshold
@@ -133,8 +133,8 @@ describe("updateItemSize functions", () => {
 
         it("should handle horizontal layout", () => {
             mockState.props.horizontal = true;
-            const sizeObj = { width: 250, height: 100 };
-            
+            const sizeObj = { height: 100, width: 250 };
+
             const diff = updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(diff).toBe(150); // 250 - 100 (estimated size)
@@ -142,8 +142,8 @@ describe("updateItemSize functions", () => {
         });
 
         it("should update average sizes", () => {
-            const sizeObj = { width: 400, height: 120 };
-            
+            const sizeObj = { height: 120, width: 400 };
+
             updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(mockState.averageSizes[""]).toEqual({
@@ -152,7 +152,7 @@ describe("updateItemSize functions", () => {
             });
 
             // Add another item
-            updateOneItemSize(mockState, "item_1", { width: 400, height: 180 });
+            updateOneItemSize(mockState, "item_1", { height: 180, width: 400 });
 
             expect(mockState.averageSizes[""]).toEqual({
                 avg: 150, // (120 + 180) / 2
@@ -161,8 +161,8 @@ describe("updateItemSize functions", () => {
         });
 
         it("should round sizes to quarter pixels", () => {
-            const sizeObj = { width: 400, height: 150.123456 };
-            
+            const sizeObj = { height: 150.123456, width: 400 };
+
             updateOneItemSize(mockState, "item_0", sizeObj);
 
             const expectedSize = Math.floor(150.123456 * 8) / 8; // Quarter pixel rounding
@@ -170,8 +170,8 @@ describe("updateItemSize functions", () => {
         });
 
         it("should handle zero and negative sizes", () => {
-            const sizeObj = { width: 400, height: 0 };
-            
+            const sizeObj = { height: 0, width: 400 };
+
             const diff = updateOneItemSize(mockState, "item_0", sizeObj);
 
             expect(diff).toBe(-100); // 0 - 100 (estimated size)
@@ -181,7 +181,7 @@ describe("updateItemSize functions", () => {
         it("should handle missing data gracefully", () => {
             mockState.props.data = null;
 
-            const diff = updateOneItemSize(mockState, "item_0", { width: 400, height: 150 });
+            const diff = updateOneItemSize(mockState, "item_0", { height: 150, width: 400 });
 
             expect(diff).toBe(0);
         });
@@ -190,9 +190,9 @@ describe("updateItemSize functions", () => {
     describe("updateItemSizes batch processing", () => {
         it("should process multiple item updates", () => {
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-                { itemKey: "item_1", sizeObj: { width: 400, height: 200 } },
-                { itemKey: "item_2", sizeObj: { width: 400, height: 100 } },
+                { itemKey: "item_0", sizeObj: { height: 150, width: 400 } },
+                { itemKey: "item_1", sizeObj: { height: 200, width: 400 } },
+                { itemKey: "item_2", sizeObj: { height: 100, width: 400 } },
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -205,9 +205,9 @@ describe("updateItemSize functions", () => {
 
         it("should track minimum changed index", () => {
             const itemUpdates = [
-                { itemKey: "item_3", sizeObj: { width: 400, height: 150 } },
-                { itemKey: "item_1", sizeObj: { width: 400, height: 200 } },
-                { itemKey: "item_4", sizeObj: { width: 400, height: 100 } },
+                { itemKey: "item_3", sizeObj: { height: 150, width: 400 } },
+                { itemKey: "item_1", sizeObj: { height: 200, width: 400 } },
+                { itemKey: "item_4", sizeObj: { height: 100, width: 400 } },
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -217,9 +217,7 @@ describe("updateItemSize functions", () => {
 
         it("should update minIndexSizeChanged with existing value", () => {
             mockState.minIndexSizeChanged = 0;
-            const itemUpdates = [
-                { itemKey: "item_2", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_2", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -235,9 +233,7 @@ describe("updateItemSize functions", () => {
 
         it("should skip processing when data is null", () => {
             mockState.props.data = null;
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -247,9 +243,7 @@ describe("updateItemSize functions", () => {
 
     describe("onItemSizeChanged callback", () => {
         it("should call callback with correct parameters", () => {
-            const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_1", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -265,9 +259,7 @@ describe("updateItemSize functions", () => {
 
         it("should show correct previous size when updating", () => {
             mockState.sizesKnown.set("item_1", 100);
-            const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 160 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_1", sizeObj: { height: 160, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -277,9 +269,7 @@ describe("updateItemSize functions", () => {
 
         it("should handle missing callback gracefully", () => {
             mockState.props.onItemSizeChanged = undefined;
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             expect(() => updateItemSizes(mockCtx, mockState, itemUpdates)).not.toThrow();
         });
@@ -288,9 +278,7 @@ describe("updateItemSize functions", () => {
     describe("recalculation triggers", () => {
         it("should trigger recalculation when containers haven't laid out", () => {
             mockCtx.values.set("containersDidLayout", false);
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -302,7 +290,7 @@ describe("updateItemSize functions", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 2;
             const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 150 } }, // In range
+                { itemKey: "item_1", sizeObj: { height: 150, width: 400 } }, // In range
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -312,9 +300,7 @@ describe("updateItemSize functions", () => {
 
         it("should trigger recalculation when item is in a container", () => {
             mockCtx.values.set("containerItemKey0", "item_3");
-            const itemUpdates = [
-                { itemKey: "item_3", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_3", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -328,9 +314,9 @@ describe("updateItemSize functions", () => {
             for (let i = 0; i < 10; i++) {
                 mockCtx.values.delete(`containerItemKey${i}`);
             }
-            
+
             const itemUpdates = [
-                { itemKey: "item_3", sizeObj: { width: 400, height: 150 } }, // Out of range
+                { itemKey: "item_3", sizeObj: { height: 150, width: 400 } }, // Out of range
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -341,10 +327,10 @@ describe("updateItemSize functions", () => {
 
     describe("scroll position adjustments", () => {
         it("should request adjust when scrollingTo with viewPosition", () => {
-            mockState.scrollingTo = { index: 1, viewPosition: 0.5, offset: 200, animated: true };
+            mockState.scrollingTo = { animated: true, index: 1, offset: 200, viewPosition: 0.5 };
             mockState.props.maintainVisibleContentPosition = true;
             const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 160 } }, // +60 diff
+                { itemKey: "item_1", sizeObj: { height: 160, width: 400 } }, // +60 diff
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -354,11 +340,9 @@ describe("updateItemSize functions", () => {
         });
 
         it("should not request adjust when scrollingTo without viewPosition", () => {
-            mockState.scrollingTo = { index: 1, offset: 200, animated: true };
+            mockState.scrollingTo = { animated: true, index: 1, offset: 200 };
             mockState.props.maintainVisibleContentPosition = true;
-            const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 160 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_1", sizeObj: { height: 160, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -366,11 +350,9 @@ describe("updateItemSize functions", () => {
         });
 
         it("should not request adjust when maintainVisibleContentPosition is false", () => {
-            mockState.scrollingTo = { index: 1, viewPosition: 0.5, offset: 200, animated: true };
+            mockState.scrollingTo = { animated: true, index: 1, offset: 200, viewPosition: 0.5 };
             mockState.props.maintainVisibleContentPosition = false;
-            const itemUpdates = [
-                { itemKey: "item_1", sizeObj: { width: 400, height: 160 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_1", sizeObj: { height: 160, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -383,7 +365,7 @@ describe("updateItemSize functions", () => {
             mockState.needsOtherAxisSize = true;
             mockCtx.values.set("otherAxisSize", 300);
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 500, height: 150 } }, // width > current otherAxisSize
+                { itemKey: "item_0", sizeObj: { height: 150, width: 500 } }, // width > current otherAxisSize
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -395,7 +377,7 @@ describe("updateItemSize functions", () => {
             mockState.needsOtherAxisSize = true;
             mockCtx.values.set("otherAxisSize", 600);
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } }, // width < current otherAxisSize
+                { itemKey: "item_0", sizeObj: { height: 150, width: 400 } }, // width < current otherAxisSize
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -408,7 +390,7 @@ describe("updateItemSize functions", () => {
             mockState.needsOtherAxisSize = true;
             mockCtx.values.set("otherAxisSize", 100);
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 200, height: 300 } }, // height is other axis
+                { itemKey: "item_0", sizeObj: { height: 300, width: 200 } }, // height is other axis
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -422,7 +404,7 @@ describe("updateItemSize functions", () => {
             mockState.sizesKnown.set("item_0", 100); // Previous size
             mockState.props.maintainScrollAtEnd = true;
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 110 } }, // +10 change, > 5 threshold
+                { itemKey: "item_0", sizeObj: { height: 110, width: 400 } }, // +10 change, > 5 threshold
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -434,7 +416,7 @@ describe("updateItemSize functions", () => {
             mockState.sizesKnown.set("item_0", 100);
             mockState.props.maintainScrollAtEnd = true;
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 103 } }, // +3 change, < 5 threshold
+                { itemKey: "item_0", sizeObj: { height: 103, width: 400 } }, // +3 change, < 5 threshold
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -445,9 +427,7 @@ describe("updateItemSize functions", () => {
         it("should handle maintainScrollAtEnd as object with onItemLayout", () => {
             mockState.sizesKnown.set("item_0", 100);
             mockState.props.maintainScrollAtEnd = { onItemLayout: true };
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 110 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 110, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -460,16 +440,14 @@ describe("updateItemSize functions", () => {
             // Mock __DEV__ to true for this test
             const originalDev = (global as any).__DEV__;
             (global as any).__DEV__ = true;
-            
+
             mockState.props.suggestEstimatedItemSize = true;
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
             expect(mockState.timeoutSizeMessage).toBeDefined();
-            
+
             // Restore
             (global as any).__DEV__ = originalDev;
         });
@@ -478,28 +456,24 @@ describe("updateItemSize functions", () => {
             // Mock __DEV__ to true for this test
             const originalDev = (global as any).__DEV__;
             (global as any).__DEV__ = true;
-            
+
             mockState.props.suggestEstimatedItemSize = true;
             mockState.timeoutSizeMessage = setTimeout(() => {}, 1000);
             const originalTimeout = mockState.timeoutSizeMessage;
 
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
             expect(mockState.timeoutSizeMessage).not.toBe(originalTimeout);
-            
+
             // Restore
             (global as any).__DEV__ = originalDev;
         });
 
         it("should not set timeout when suggestEstimatedItemSize is false", () => {
             mockState.props.suggestEstimatedItemSize = false;
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -510,9 +484,7 @@ describe("updateItemSize functions", () => {
     describe("updateItemSize (single item wrapper)", () => {
         it("should call updateItemSizes with single item", () => {
             // Use the existing proper setup that should work
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 200 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 200, width: 400 } }];
 
             // Call updateItemSizes directly since the wrapper should just call this
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -529,27 +501,27 @@ describe("updateItemSize functions", () => {
             // Setup container mappings
             mockCtx.values.set("containerItemKey0", "item_0");
             mockCtx.values.set("containerItemKey1", "item_1");
-            
+
             // Mock view refs with measure capability
             const mockRef1 = {
                 current: {
                     measure: (callback: (x: number, y: number, width: number, height: number) => void) => {
                         callback(0, 0, 400, 120);
-                    }
-                }
+                    },
+                },
             };
             const mockRef2 = {
                 current: {
                     measure: (callback: (x: number, y: number, width: number, height: number) => void) => {
                         callback(0, 0, 400, 180);
-                    }
-                }
+                    },
+                },
             };
-            
+
             mockCtx.viewRefs.set(0, mockRef1);
             mockCtx.viewRefs.set(1, mockRef2);
 
-            const sizeObj = { width: 400, height: 150 };
+            const sizeObj = { height: 150, width: 400 };
             updateItemSize(mockCtx, mockState, "item_0", sizeObj);
 
             // Should have measured and updated both items
@@ -563,9 +535,7 @@ describe("updateItemSize functions", () => {
 
     describe("edge cases and error handling", () => {
         it("should handle invalid item keys", () => {
-            const itemUpdates = [
-                { itemKey: "non_existent", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "non_existent", sizeObj: { height: 150, width: 400 } }];
 
             // Should not throw, but won't find the item in indexByKey
             expect(() => updateItemSizes(mockCtx, mockState, itemUpdates)).not.toThrow();
@@ -573,16 +543,14 @@ describe("updateItemSize functions", () => {
 
         it("should handle corrupted indexByKey", () => {
             mockState.indexByKey = null as any;
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400, height: 150 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150, width: 400 } }];
 
             expect(() => updateItemSizes(mockCtx, mockState, itemUpdates)).toThrow();
         });
 
         it("should handle very large size values", () => {
             const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: Number.MAX_SAFE_INTEGER, height: Number.MAX_SAFE_INTEGER } },
+                { itemKey: "item_0", sizeObj: { height: Number.MAX_SAFE_INTEGER, width: Number.MAX_SAFE_INTEGER } },
             ];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
@@ -591,9 +559,7 @@ describe("updateItemSize functions", () => {
         });
 
         it("should handle floating point precision", () => {
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: 400.123456789, height: 150.987654321 } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: 150.987654321, width: 400.123456789 } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -602,9 +568,7 @@ describe("updateItemSize functions", () => {
         });
 
         it("should handle NaN and Infinity values", () => {
-            const itemUpdates = [
-                { itemKey: "item_0", sizeObj: { width: NaN, height: Infinity } },
-            ];
+            const itemUpdates = [{ itemKey: "item_0", sizeObj: { height: Infinity, width: NaN } }];
 
             updateItemSizes(mockCtx, mockState, itemUpdates);
 
@@ -617,7 +581,7 @@ describe("updateItemSize functions", () => {
         it("should handle large batch updates efficiently", () => {
             const itemUpdates = Array.from({ length: 1000 }, (_, i) => ({
                 itemKey: `item_${i}`,
-                sizeObj: { width: 400, height: 150 + i },
+                sizeObj: { height: 150 + i, width: 400 },
             }));
 
             // Add items to indexByKey
@@ -634,17 +598,15 @@ describe("updateItemSize functions", () => {
 
         it("should maintain memory efficiency", () => {
             const initialMemory = process.memoryUsage().heapUsed;
-            
+
             for (let i = 0; i < 100; i++) {
-                const itemUpdates = [
-                    { itemKey: `item_${i % 5}`, sizeObj: { width: 400, height: 150 + i } },
-                ];
+                const itemUpdates = [{ itemKey: `item_${i % 5}`, sizeObj: { height: 150 + i, width: 400 } }];
                 updateItemSizes(mockCtx, mockState, itemUpdates);
             }
-            
+
             const finalMemory = process.memoryUsage().heapUsed;
             const memoryIncrease = finalMemory - initialMemory;
-            
+
             expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
         });
     });

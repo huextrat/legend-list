@@ -1,26 +1,54 @@
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
 import { checkThreshold } from "../../src/utils/checkThreshold";
+import * as checkThresholdModule from "../../src/utils/checkThreshold";
+
+// CRITICAL: Ensure we're testing the real function, not a mock from other tests
+function ensureRealFunction() {
+    // Check if the function has been mocked by other tests
+    const fn = checkThresholdModule.checkThreshold;
+    if (fn && typeof fn === 'function' && 'mockRestore' in fn) {
+        // Function is mocked, restore it
+        (fn as any).mockRestore();
+    }
+}
 
 describe("checkThreshold", () => {
     let activeTimers: NodeJS.Timeout[] = [];
+    let originalSetTimeout: typeof setTimeout;
 
     beforeEach(() => {
+        // CRITICAL: Ensure we're testing the real function
+        ensureRealFunction();
+        // Store original setTimeout in case other tests mocked it
+        originalSetTimeout = globalThis.setTimeout;
+        
         // Clear any active timers
-        activeTimers.forEach(timer => clearTimeout(timer));
+        activeTimers.forEach((timer) => clearTimeout(timer));
         activeTimers = [];
+    });
+
+    afterEach(() => {
+        // Clean up any timers that might still be running
+        activeTimers.forEach((timer) => clearTimeout(timer));
+        activeTimers = [];
+        
+        // Restore setTimeout if it was changed by other tests
+        if (globalThis.setTimeout !== originalSetTimeout) {
+            globalThis.setTimeout = originalSetTimeout;
+        }
     });
 
     // Helper function to create mock callbacks
     function createMockCallbacks() {
         const onReachedCalls: number[] = [];
         const blockTimerCalls: boolean[] = [];
-        
+
         const onReached = (distance: number) => onReachedCalls.push(distance);
         const blockTimer = (blocked: boolean) => blockTimerCalls.push(blocked);
-        
-        return { onReached, blockTimer, onReachedCalls, blockTimerCalls };
+
+        return { blockTimer, blockTimerCalls, onReached, onReachedCalls };
     }
 
     describe("threshold detection", () => {
@@ -34,7 +62,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -52,7 +80,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -70,7 +98,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false);
@@ -88,7 +116,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -106,7 +134,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -126,7 +154,7 @@ describe("checkThreshold", () => {
                 true, // isReached (already triggered)
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true); // Should maintain reached state
@@ -144,7 +172,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 true, // isBlockedByTimer (blocked)
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false); // Should maintain blocked state
@@ -162,7 +190,7 @@ describe("checkThreshold", () => {
                 true, // isReached
                 true, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true); // Should maintain reached state
@@ -182,7 +210,7 @@ describe("checkThreshold", () => {
                 true, // isReached (was previously reached)
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false); // Should reset to false
@@ -200,7 +228,7 @@ describe("checkThreshold", () => {
                 true, // isReached (was previously reached)
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true); // Should maintain reached state
@@ -218,7 +246,7 @@ describe("checkThreshold", () => {
                 true, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false); // Should reset (>= 1.3 * threshold)
@@ -236,13 +264,13 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(blockTimerCalls).toEqual([true]);
 
             // Wait for timer to complete
-            await new Promise(resolve => setTimeout(resolve, 750));
+            await new Promise((resolve) => setTimeout(resolve, 750));
 
             expect(blockTimerCalls).toEqual([true, false]);
         });
@@ -251,20 +279,20 @@ describe("checkThreshold", () => {
             const { onReached, blockTimer, onReachedCalls, blockTimerCalls } = createMockCallbacks();
 
             // First trigger
-            let result1 = checkThreshold(50, false, 100, false, false, onReached, blockTimer);
+            const result1 = checkThreshold(50, false, 100, false, false, onReached, blockTimer);
             expect(result1).toBe(true);
             expect(blockTimerCalls).toEqual([true]);
 
             // Wait a bit but not full timer duration
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise((resolve) => setTimeout(resolve, 300));
 
             // Second trigger (should not call because state management handles it)
-            let result2 = checkThreshold(50, false, 100, true, true, onReached, blockTimer);
+            const result2 = checkThreshold(50, false, 100, true, true, onReached, blockTimer);
             expect(result2).toBe(true);
             expect(blockTimerCalls).toEqual([true]); // No additional calls
 
             // Wait for timer to complete
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise((resolve) => setTimeout(resolve, 500));
             expect(blockTimerCalls).toEqual([true, false]);
         });
     });
@@ -278,7 +306,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 undefined, // onReached (undefined)
-                undefined // blockTimer (undefined)
+                undefined, // blockTimer (undefined)
             );
 
             expect(result).toBe(true);
@@ -295,7 +323,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                undefined // blockTimer (undefined)
+                undefined, // blockTimer (undefined)
             );
 
             expect(result).toBe(true);
@@ -312,7 +340,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 undefined, // onReached (undefined)
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -331,7 +359,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             // With zero threshold, abs(0) < 0 is false, so should not trigger
@@ -349,7 +377,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             // With negative threshold, abs(50) < -100 is false (50 < -100 is false)
@@ -367,7 +395,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false);
@@ -384,7 +412,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -401,7 +429,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false);
@@ -418,7 +446,7 @@ describe("checkThreshold", () => {
                 false, // isReached
                 false, // isBlockedByTimer
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             // NaN comparisons are always false, so should not trigger
@@ -427,9 +455,9 @@ describe("checkThreshold", () => {
         });
 
         it("should handle callback throwing errors", () => {
-            let blockTimerCalls: boolean[] = [];
+            const blockTimerCalls: boolean[] = [];
             const blockTimer = (blocked: boolean) => blockTimerCalls.push(blocked);
-            
+
             const onReached = () => {
                 throw new Error("Callback error");
             };
@@ -442,7 +470,7 @@ describe("checkThreshold", () => {
                     false, // isReached
                     false, // isBlockedByTimer
                     onReached,
-                    blockTimer
+                    blockTimer,
                 );
             }).toThrow("Callback error");
 
@@ -456,7 +484,7 @@ describe("checkThreshold", () => {
             const { onReached, blockTimer, onReachedCalls, blockTimerCalls } = createMockCallbacks();
 
             const start = Date.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 checkThreshold(
                     i % 200, // varying distances
@@ -465,7 +493,7 @@ describe("checkThreshold", () => {
                     false,
                     false,
                     onReached,
-                    blockTimer
+                    blockTimer,
                 );
             }
 
@@ -473,7 +501,7 @@ describe("checkThreshold", () => {
             expect(duration).toBeLessThan(10); // Should be very fast
 
             // Should only trigger for distances < 100
-            const expectedCalls = Array.from({ length: 1000 }, (_, i) => i % 200).filter(d => d < 100).length;
+            const expectedCalls = Array.from({ length: 1000 }, (_, i) => i % 200).filter((d) => d < 100).length;
             expect(onReachedCalls.length).toBe(expectedCalls);
         });
 
@@ -523,7 +551,7 @@ describe("checkThreshold", () => {
                 false,
                 false,
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(true);
@@ -545,7 +573,7 @@ describe("checkThreshold", () => {
                 true, // was previously reached
                 false,
                 onReached,
-                blockTimer
+                blockTimer,
             );
 
             expect(result).toBe(false); // Should reset

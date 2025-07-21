@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
-import { createColumnWrapperStyle } from "../../src/utils/createColumnWrapperStyle";
 import type { ViewStyle } from "react-native";
+
+import { createColumnWrapperStyle } from "../../src/utils/createColumnWrapperStyle";
 
 describe("createColumnWrapperStyle", () => {
     describe("basic functionality", () => {
@@ -22,15 +23,15 @@ describe("createColumnWrapperStyle", () => {
 
         it("should extract gap and remove it from contentContainerStyle", () => {
             const style: ViewStyle = {
-                gap: 15,
                 backgroundColor: "blue",
+                gap: 15,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 15,
                 columnGap: undefined,
+                gap: 15,
                 rowGap: undefined,
             });
             expect(style.gap).toBeUndefined();
@@ -46,8 +47,8 @@ describe("createColumnWrapperStyle", () => {
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 20,
+                gap: undefined,
                 rowGap: undefined,
             });
             expect(style.columnGap).toBeUndefined();
@@ -63,8 +64,8 @@ describe("createColumnWrapperStyle", () => {
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: undefined,
+                gap: undefined,
                 rowGap: 25,
             });
             expect(style.rowGap).toBeUndefined();
@@ -73,17 +74,17 @@ describe("createColumnWrapperStyle", () => {
 
         it("should extract all gap properties together", () => {
             const style: ViewStyle = {
-                gap: 10,
                 columnGap: 15,
-                rowGap: 20,
+                gap: 10,
                 padding: 5,
+                rowGap: 20,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 10,
                 columnGap: 15,
+                gap: 10,
                 rowGap: 20,
             });
             expect(style.gap).toBeUndefined();
@@ -96,8 +97,8 @@ describe("createColumnWrapperStyle", () => {
     describe("edge cases and data types", () => {
         it("should handle zero values (falsy, returns undefined)", () => {
             const style: ViewStyle = {
-                gap: 0,
                 columnGap: 0,
+                gap: 0,
                 rowGap: 0,
             };
 
@@ -113,72 +114,72 @@ describe("createColumnWrapperStyle", () => {
 
         it("should handle negative values", () => {
             const style: ViewStyle = {
-                gap: -5,
                 columnGap: -10,
+                gap: -5,
                 rowGap: -15,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: -5,
                 columnGap: -10,
+                gap: -5,
                 rowGap: -15,
             });
         });
 
         it("should handle floating point values", () => {
             const style: ViewStyle = {
-                gap: 12.5,
                 columnGap: 7.25,
+                gap: 12.5,
                 rowGap: 18.75,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 12.5,
                 columnGap: 7.25,
+                gap: 12.5,
                 rowGap: 18.75,
             });
         });
 
         it("should handle very large values", () => {
             const style: ViewStyle = {
-                gap: Number.MAX_SAFE_INTEGER,
                 columnGap: 999999,
+                gap: Number.MAX_SAFE_INTEGER,
                 rowGap: 1000000,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: Number.MAX_SAFE_INTEGER,
                 columnGap: 999999,
+                gap: Number.MAX_SAFE_INTEGER,
                 rowGap: 1000000,
             });
         });
 
         it("should handle special numeric values", () => {
             const style: ViewStyle = {
-                gap: NaN,
                 columnGap: Infinity,
+                gap: NaN,
                 rowGap: -Infinity,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: NaN,
                 columnGap: Infinity,
+                gap: NaN,
                 rowGap: -Infinity,
             });
         });
 
         it("should handle non-numeric values (type assertion)", () => {
             const style: ViewStyle = {
-                gap: "10px" as any,
                 columnGap: "auto" as any,
+                gap: "10px" as any,
                 rowGap: null as any,
             };
 
@@ -186,8 +187,8 @@ describe("createColumnWrapperStyle", () => {
 
             // Function uses type assertions, so these will be cast to numbers
             expect(result).toEqual({
+                columnGap: "auto",
                 gap: "10px",
-                columnGap: "auto", 
                 rowGap: null,
             });
         });
@@ -196,15 +197,15 @@ describe("createColumnWrapperStyle", () => {
     describe("partial gap properties", () => {
         it("should handle only gap property", () => {
             const style: ViewStyle = {
-                gap: 12,
                 backgroundColor: "green",
+                gap: 12,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 12,
                 columnGap: undefined,
+                gap: 12,
                 rowGap: undefined,
             });
         });
@@ -218,8 +219,8 @@ describe("createColumnWrapperStyle", () => {
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 8,
+                gap: undefined,
                 rowGap: undefined,
             });
         });
@@ -233,24 +234,24 @@ describe("createColumnWrapperStyle", () => {
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: undefined,
+                gap: undefined,
                 rowGap: 16,
             });
         });
 
         it("should handle gap and columnGap only", () => {
             const style: ViewStyle = {
-                gap: 10,
                 columnGap: 5,
+                gap: 10,
                 padding: 20,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 10,
                 columnGap: 5,
+                gap: 10,
                 rowGap: undefined,
             });
         });
@@ -258,15 +259,15 @@ describe("createColumnWrapperStyle", () => {
         it("should handle gap and rowGap only", () => {
             const style: ViewStyle = {
                 gap: 14,
-                rowGap: 7,
                 margin: 3,
+                rowGap: 7,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 14,
                 columnGap: undefined,
+                gap: 14,
                 rowGap: 7,
             });
         });
@@ -274,15 +275,15 @@ describe("createColumnWrapperStyle", () => {
         it("should handle columnGap and rowGap only", () => {
             const style: ViewStyle = {
                 columnGap: 18,
-                rowGap: 22,
                 flexDirection: "row",
+                rowGap: 22,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 18,
+                gap: undefined,
                 rowGap: 22,
             });
         });
@@ -291,11 +292,11 @@ describe("createColumnWrapperStyle", () => {
     describe("style mutation behavior", () => {
         it("should mutate the original style object", () => {
             const style: ViewStyle = {
-                gap: 15,
-                columnGap: 10,
-                rowGap: 20,
                 backgroundColor: "yellow",
+                columnGap: 10,
+                gap: 15,
                 padding: 5,
+                rowGap: 20,
             };
 
             const originalStyle = { ...style }; // Keep a copy for comparison
@@ -329,17 +330,17 @@ describe("createColumnWrapperStyle", () => {
 
         it("should handle already undefined gap properties", () => {
             const style: ViewStyle = {
-                gap: undefined,
                 columnGap: 12,
-                rowGap: undefined,
+                gap: undefined,
                 padding: 6,
+                rowGap: undefined,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 12,
+                gap: undefined,
                 rowGap: undefined,
             });
             expect(style.columnGap).toBeUndefined();
@@ -349,32 +350,32 @@ describe("createColumnWrapperStyle", () => {
     describe("complex style objects", () => {
         it("should handle style with many properties", () => {
             const style: ViewStyle = {
+                alignItems: "stretch",
                 backgroundColor: "red",
-                margin: 10,
-                padding: 15,
-                gap: 8,
-                columnGap: 12,
-                rowGap: 6,
-                borderWidth: 2,
                 borderColor: "blue",
                 borderRadius: 5,
+                borderWidth: 2,
+                columnGap: 12,
+                elevation: 4,
+                flexDirection: "column",
+                gap: 8,
+                height: 200,
+                justifyContent: "center",
+                margin: 10,
+                padding: 15,
+                rowGap: 6,
                 shadowColor: "black",
-                shadowOffset: { width: 1, height: 1 },
+                shadowOffset: { height: 1, width: 1 },
                 shadowOpacity: 0.3,
                 shadowRadius: 3,
-                elevation: 4,
                 width: "100%",
-                height: 200,
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "stretch",
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 8,
                 columnGap: 12,
+                gap: 8,
                 rowGap: 6,
             });
 
@@ -404,39 +405,39 @@ describe("createColumnWrapperStyle", () => {
         it("should handle style with nested objects", () => {
             const style: ViewStyle = {
                 gap: 10,
+                shadowOffset: { height: 3, width: 2 },
                 transform: [{ translateX: 5 }, { scale: 1.2 }],
-                shadowOffset: { width: 2, height: 3 },
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 10,
                 columnGap: undefined,
+                gap: 10,
                 rowGap: undefined,
             });
             expect(style.gap).toBeUndefined();
             expect(style.transform).toEqual([{ translateX: 5 }, { scale: 1.2 }]);
-            expect(style.shadowOffset).toEqual({ width: 2, height: 3 });
+            expect(style.shadowOffset).toEqual({ height: 3, width: 2 });
         });
     });
 
     describe("integration scenarios", () => {
         it("should work with typical FlatList column layout", () => {
             const style: ViewStyle = {
+                backgroundColor: "#f5f5f5",
+                columnGap: 8, // Horizontal space between columns
+                gap: 12, // Space between items
                 paddingHorizontal: 16,
                 paddingVertical: 8,
-                backgroundColor: "#f5f5f5",
-                gap: 12, // Space between items
-                columnGap: 8, // Horizontal space between columns
                 rowGap: 16, // Vertical space between rows
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 12,
                 columnGap: 8,
+                gap: 12,
                 rowGap: 16,
             });
 
@@ -453,16 +454,16 @@ describe("createColumnWrapperStyle", () => {
             const style: ViewStyle = {
                 flexDirection: "row",
                 flexWrap: "wrap",
-                justifyContent: "space-between",
                 gap: 20,
+                justifyContent: "space-between",
                 padding: 10,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 20,
                 columnGap: undefined,
+                gap: 20,
                 rowGap: undefined,
             });
 
@@ -474,19 +475,19 @@ describe("createColumnWrapperStyle", () => {
 
         it("should handle responsive design patterns", () => {
             const style: ViewStyle = {
-                width: "100%",
-                maxWidth: 600,
-                marginHorizontal: "auto",
                 columnGap: 16,
-                rowGap: 24,
+                marginHorizontal: "auto",
+                maxWidth: 600,
                 padding: 20,
+                rowGap: 24,
+                width: "100%",
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 16,
+                gap: undefined,
                 rowGap: 24,
             });
 
@@ -503,10 +504,10 @@ describe("createColumnWrapperStyle", () => {
 
             for (let i = 0; i < 1000; i++) {
                 const style: ViewStyle = {
-                    gap: i % 20,
                     columnGap: (i + 5) % 15,
-                    rowGap: (i + 10) % 25,
+                    gap: i % 20,
                     padding: i % 10,
+                    rowGap: (i + 10) % 25,
                 };
 
                 createColumnWrapperStyle(style);
@@ -519,8 +520,8 @@ describe("createColumnWrapperStyle", () => {
         it("should not create unnecessary objects when no gaps exist", () => {
             const style: ViewStyle = {
                 backgroundColor: "red",
-                padding: 10,
                 margin: 5,
+                padding: 10,
             };
 
             const result = createColumnWrapperStyle(style);
@@ -549,41 +550,41 @@ describe("createColumnWrapperStyle", () => {
     describe("type safety and edge cases", () => {
         it("should handle style with undefined properties", () => {
             const style: ViewStyle = {
-                gap: 10,
-                columnGap: undefined,
-                rowGap: 15,
                 backgroundColor: undefined,
+                columnGap: undefined,
+                gap: 10,
+                rowGap: 15,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: 10,
                 columnGap: undefined,
+                gap: 10,
                 rowGap: 15,
             });
         });
 
         it("should handle style with mixed defined/undefined gap properties", () => {
             const style: ViewStyle = {
-                gap: undefined,
                 columnGap: 8,
+                gap: undefined,
                 rowGap: undefined,
             };
 
             const result = createColumnWrapperStyle(style);
 
             expect(result).toEqual({
-                gap: undefined,
                 columnGap: 8,
+                gap: undefined,
                 rowGap: undefined,
             });
         });
 
         it("should handle readonly style properties", () => {
             const style: ViewStyle = Object.freeze({
-                gap: 12,
                 backgroundColor: "blue",
+                gap: 12,
             });
 
             // Function will try to mutate frozen object

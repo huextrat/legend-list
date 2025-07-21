@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -34,61 +34,61 @@ describe("handleLayout", () => {
         setCanRender = (canRender: boolean) => setCanRenderCalls.push(canRender);
 
         mockCtx = createMockContext({
-            scrollSize: { width: 400, height: 600 },
-            numColumns: 1,
             contentSize: 1000,
+            numColumns: 1,
+            scrollSize: { height: 600, width: 400 },
         });
 
         mockState = {
-            lastLayout: undefined,
-            scrollLength: 0,
-            otherAxisSize: 0,
+            averageSizes: {},
+            columns: new Map(),
+            endReachedBlockedByTimer: false,
+            firstFullyOnScreenIndex: undefined,
+            hasScrolled: false,
+            idCache: new Map(),
+            ignoreScrollFromMVCP: undefined,
+            indexByKey: new Map(),
+            isAtEnd: false,
+            isAtStart: true,
+            isEndReached: false,
+            isStartReached: false,
             lastBatchingAction: 0,
-            scrollForNextCalculateItemsInView: undefined,
-            queuedInitialLayout: true,
+            lastLayout: undefined,
             maintainingScrollAtEnd: false,
             needsOtherAxisSize: false,
-            scroll: 0,
-            scrollPending: 0,
-            hasScrolled: false,
-            scrollHistory: [],
-            scrollTime: 0,
-            scrollPrev: 0,
-            scrollPrevTime: 0,
-            scrollingTo: undefined,
-            ignoreScrollFromMVCP: undefined,
-            isAtEnd: false,
-            isEndReached: false,
-            endReachedBlockedByTimer: false,
-            isAtStart: true,
-            isStartReached: false,
-            startReachedBlockedByTimer: false,
+            otherAxisSize: 0,
             positions: new Map(),
-            indexByKey: new Map(),
-            idCache: new Map(),
-            sizesKnown: new Map(),
-            sizes: new Map(),
-            columns: new Map(),
-            averageSizes: {},
-            firstFullyOnScreenIndex: undefined,
             props: {
-                horizontal: false,
-                maintainScrollAtEnd: false,
-                stylePaddingTop: 0,
-                onEndReachedThreshold: 0.2,
-                onStartReachedThreshold: 0.2,
-                maintainScrollAtEndThreshold: 0.1,
                 data: [],
                 estimatedItemSize: 100,
                 getEstimatedItemSize: undefined,
+                horizontal: false,
+                maintainScrollAtEnd: false,
+                maintainScrollAtEndThreshold: 0.1,
+                onEndReachedThreshold: 0.2,
+                onStartReachedThreshold: 0.2,
+                stylePaddingTop: 0,
             },
+            queuedInitialLayout: true,
+            scroll: 0,
+            scrollForNextCalculateItemsInView: undefined,
+            scrollHistory: [],
+            scrollingTo: undefined,
+            scrollLength: 0,
+            scrollPending: 0,
+            scrollPrev: 0,
+            scrollPrevTime: 0,
+            scrollTime: 0,
+            sizes: new Map(),
+            sizesKnown: new Map(),
+            startReachedBlockedByTimer: false,
         } as InternalState;
 
         mockLayout = {
+            height: 600,
+            width: 400,
             x: 0,
             y: 0,
-            width: 400,
-            height: 600,
         };
     });
 
@@ -103,7 +103,7 @@ describe("handleLayout", () => {
 
         it("should update scroll length for horizontal layout", () => {
             mockState.props.horizontal = true;
-            
+
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
 
             expect(mockState.scrollLength).toBe(400); // width
@@ -118,9 +118,9 @@ describe("handleLayout", () => {
 
         it("should update last batching action timestamp", () => {
             const beforeTime = Date.now();
-            
+
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
-            
+
             const afterTime = Date.now();
 
             expect(mockState.lastBatchingAction).toBeGreaterThanOrEqual(beforeTime);
@@ -128,7 +128,7 @@ describe("handleLayout", () => {
         });
 
         it("should clear scrollForNextCalculateItemsInView", () => {
-            mockState.scrollForNextCalculateItemsInView = { top: 100, bottom: 200 };
+            mockState.scrollForNextCalculateItemsInView = { bottom: 200, top: 100 };
 
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
 
@@ -147,9 +147,9 @@ describe("handleLayout", () => {
         });
 
         it("should detect size changes", () => {
-            mockState.lastLayout = { x: 0, y: 0, width: 400, height: 600 };
+            mockState.lastLayout = { height: 600, width: 400, x: 0, y: 0 };
             mockState.scrollLength = 600;
-            
+
             // Change height
             mockLayout.height = 800;
 
@@ -159,9 +159,9 @@ describe("handleLayout", () => {
         });
 
         it("should detect position changes", () => {
-            mockState.lastLayout = { x: 0, y: 0, width: 400, height: 600 };
+            mockState.lastLayout = { height: 600, width: 400, x: 0, y: 0 };
             mockState.scrollLength = 600;
-            
+
             // Change position
             mockLayout.x = 50;
             mockLayout.y = 100;
@@ -173,9 +173,9 @@ describe("handleLayout", () => {
         });
 
         it("should not recalculate when dimensions are smaller", () => {
-            mockState.lastLayout = { x: 0, y: 0, width: 400, height: 600 };
+            mockState.lastLayout = { height: 600, width: 400, x: 0, y: 0 };
             mockState.scrollLength = 600;
-            
+
             // Make smaller
             mockLayout.height = 400;
 
@@ -185,9 +185,9 @@ describe("handleLayout", () => {
         });
 
         it("should trigger recalculation when size increases", () => {
-            mockState.lastLayout = { x: 0, y: 0, width: 400, height: 600 };
+            mockState.lastLayout = { height: 600, width: 400, x: 0, y: 0 };
             mockState.scrollLength = 600;
-            
+
             // Make larger
             mockLayout.height = 800;
 
@@ -285,7 +285,7 @@ describe("handleLayout", () => {
         it("should update scrollSize when other axis size changes", () => {
             mockState.scrollLength = 600; // Same scroll length
             mockState.otherAxisSize = 300; // Different other axis size
-            
+
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
 
             expect(mockCtx.values.get("scrollSize")).toEqual({
@@ -298,7 +298,7 @@ describe("handleLayout", () => {
             mockState.scrollLength = 600;
             mockState.otherAxisSize = 400;
             mockCtx.values.set("scrollSize", { height: 600, width: 400 });
-            
+
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
 
             // Should still be updated due to implementation
@@ -348,7 +348,7 @@ describe("handleLayout", () => {
             const incompleteLayout = { width: 400 }; // Missing height
 
             handleLayout(mockCtx, mockState, incompleteLayout as any, setCanRender);
-            
+
             // Function handles missing properties gracefully
             expect(mockState.scrollLength).toBe(undefined); // height is undefined
             expect(mockState.otherAxisSize).toBe(400); // width is present
@@ -448,43 +448,43 @@ describe("handleLayout", () => {
     describe("performance considerations", () => {
         it("should handle rapid layout changes efficiently", () => {
             const start = Date.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 mockLayout.height = 600 + i;
                 handleLayout(mockCtx, mockState, mockLayout, setCanRender);
             }
-            
+
             const duration = Date.now() - start;
             expect(duration).toBeLessThan(1000); // Should handle rapid changes efficiently
         });
 
         it("should maintain memory efficiency", () => {
             const initialMemory = process.memoryUsage().heapUsed;
-            
+
             for (let i = 0; i < 100; i++) {
                 const layout = {
+                    height: 600 + i,
+                    width: 400 + i,
                     x: i,
                     y: i,
-                    width: 400 + i,
-                    height: 600 + i,
                 };
                 handleLayout(mockCtx, mockState, layout, setCanRender);
             }
-            
+
             const finalMemory = process.memoryUsage().heapUsed;
             const memoryIncrease = finalMemory - initialMemory;
-            
+
             expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
         });
 
         it("should optimize when layout hasn't changed", () => {
             // First call
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
-            
+
             // Second call with same layout (but needsCalculate will still be true due to missing lastLayout initially)
             const callsBefore = setCanRenderCalls.length;
             handleLayout(mockCtx, mockState, mockLayout, setCanRender);
-            
+
             expect(setCanRenderCalls.length).toBe(callsBefore + 1);
         });
     });
@@ -515,17 +515,17 @@ describe("handleLayout", () => {
 
         it("should handle multiple consecutive size changes", () => {
             const sizes = [
-                { width: 300, height: 500 },
-                { width: 400, height: 600 },
-                { width: 500, height: 700 },
-                { width: 600, height: 800 },
+                { height: 500, width: 300 },
+                { height: 600, width: 400 },
+                { height: 700, width: 500 },
+                { height: 800, width: 600 },
             ];
 
-            sizes.forEach(size => {
+            sizes.forEach((size) => {
                 mockLayout.width = size.width;
                 mockLayout.height = size.height;
                 handleLayout(mockCtx, mockState, mockLayout, setCanRender);
-                
+
                 expect(mockState.scrollLength).toBe(size.height);
                 expect(mockState.otherAxisSize).toBe(size.width);
             });

@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -28,26 +28,26 @@ describe("updateTotalSize", () => {
 
     beforeEach(() => {
         mockCtx = createMockContext({
-            totalSize: 0,
             alignItemsPaddingTop: 0,
-            stylePaddingTop: 0,
-            headerSize: 0,
             footerSize: 0,
+            headerSize: 0,
+            stylePaddingTop: 0,
+            totalSize: 0,
         });
 
         mockState = {
-            totalSize: 0,
+            idCache: new Map(),
             positions: new Map(),
             props: {
-                data: [],
                 alignItemsAtEnd: false,
+                data: [],
                 keyExtractor: (item: any, index: number) => `item_${index}`,
             },
-            idCache: new Map(),
+            scrollingTo: undefined,
+            scrollLength: 300,
             sizes: new Map(),
             sizesKnown: new Map(),
-            scrollLength: 300,
-            scrollingTo: undefined,
+            totalSize: 0,
         } as InternalState;
     });
 
@@ -82,7 +82,7 @@ describe("updateTotalSize", () => {
         it("should calculate total size for single item", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             // Setup item data
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
@@ -98,7 +98,7 @@ describe("updateTotalSize", () => {
         it("should handle item with zero size", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 0);
@@ -113,7 +113,7 @@ describe("updateTotalSize", () => {
         it("should handle item with non-zero position", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 100);
@@ -129,7 +129,7 @@ describe("updateTotalSize", () => {
         it("should calculate total size for multiple items", () => {
             const testData = Array.from({ length: 5 }, (_, i) => ({ id: i }));
             mockState.props.data = testData;
-            
+
             // Setup items with increasing positions
             for (let i = 0; i < 5; i++) {
                 const itemId = `item_${i}`;
@@ -148,11 +148,11 @@ describe("updateTotalSize", () => {
         it("should handle varying item sizes", () => {
             const testData = Array.from({ length: 3 }, (_, i) => ({ id: i }));
             mockState.props.data = testData;
-            
+
             // Setup items with different sizes
             const sizes = [100, 75, 150];
             let position = 0;
-            
+
             for (let i = 0; i < 3; i++) {
                 const itemId = `item_${i}`;
                 mockState.idCache.set(i, itemId);
@@ -171,7 +171,7 @@ describe("updateTotalSize", () => {
             const itemCount = 10000;
             const testData = Array.from({ length: itemCount }, (_, i) => ({ id: i }));
             mockState.props.data = testData;
-            
+
             // Setup last item only (function only checks last item)
             const lastId = `item_${itemCount - 1}`;
             mockState.idCache.set(itemCount - 1, lastId);
@@ -191,9 +191,9 @@ describe("updateTotalSize", () => {
         it("should handle missing item ID", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             // Don't set up idCache - getId will return undefined
-            
+
             updateTotalSize(mockCtx, mockState);
 
             // Should not crash, totalSize should remain unchanged
@@ -203,7 +203,7 @@ describe("updateTotalSize", () => {
         it("should handle missing position data", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             // Don't set position - will be undefined
@@ -218,7 +218,7 @@ describe("updateTotalSize", () => {
         it("should handle missing size data", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 100);
@@ -238,7 +238,7 @@ describe("updateTotalSize", () => {
             mockState.props.alignItemsAtEnd = true;
             mockState.props.data = [{ id: 0 }];
             mockState.scrollLength = 500;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 0);
@@ -262,7 +262,7 @@ describe("updateTotalSize", () => {
         it("should not trigger align items padding update when alignItemsAtEnd is false", () => {
             mockState.props.alignItemsAtEnd = false;
             mockState.props.data = [{ id: 0 }];
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 0);
@@ -279,7 +279,7 @@ describe("updateTotalSize", () => {
             mockState.props.alignItemsAtEnd = true;
             mockState.props.data = [{ id: 0 }];
             mockState.scrollLength = 200; // Smaller than content
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 0);
@@ -301,7 +301,7 @@ describe("updateTotalSize", () => {
         it("should handle negative positions", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, -50);
@@ -315,7 +315,7 @@ describe("updateTotalSize", () => {
         it("should handle negative sizes", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 100);
@@ -329,7 +329,7 @@ describe("updateTotalSize", () => {
         it("should handle floating point values", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 100.5);
@@ -343,7 +343,7 @@ describe("updateTotalSize", () => {
         it("should handle very large numbers", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, Number.MAX_SAFE_INTEGER - 1000);
@@ -357,7 +357,7 @@ describe("updateTotalSize", () => {
         it("should handle corrupted positions map", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions = null as any;
@@ -371,14 +371,14 @@ describe("updateTotalSize", () => {
         it("should handle corrupted state context", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const corruptedCtx = {
                 ...mockCtx,
                 values: {
                     set: () => {
                         throw new Error("Context corrupted");
-                    }
-                }
+                    },
+                },
             } as any;
 
             const itemId = "item_0";
@@ -397,7 +397,7 @@ describe("updateTotalSize", () => {
             const itemCount = 1000;
             const testData = Array.from({ length: itemCount }, (_, i) => ({ id: i }));
             mockState.props.data = testData;
-            
+
             const lastId = `item_${itemCount - 1}`;
             mockState.idCache.set(itemCount - 1, lastId);
             mockState.positions.set(lastId, (itemCount - 1) * 50);
@@ -416,7 +416,7 @@ describe("updateTotalSize", () => {
         it("should handle rapid consecutive updates", () => {
             const testData = [{ id: 0 }];
             mockState.props.data = testData;
-            
+
             const itemId = "item_0";
             mockState.idCache.set(0, itemId);
             mockState.positions.set(itemId, 0);
@@ -437,7 +437,7 @@ describe("updateTotalSize", () => {
         it("should maintain state consistency during updates", () => {
             const testData = Array.from({ length: 3 }, (_, i) => ({ id: i }));
             mockState.props.data = testData;
-            
+
             // Setup items
             for (let i = 0; i < 3; i++) {
                 const itemId = `item_${i}`;

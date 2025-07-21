@@ -1,44 +1,27 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
+import type { InternalState } from "../../src/types";
 import { checkAtTop } from "../../src/utils/checkAtTop";
 import * as checkThresholdModule from "../../src/utils/checkThreshold";
-import type { InternalState } from "../../src/types";
 
 function createMockState(overrides: Partial<InternalState> = {}): InternalState {
     return {
-        scrollPending: 0,
+        endReachedBlockedByTimer: false,
         hasScrolled: false,
-        lastBatchingAction: 0,
-        scrollHistory: [],
-        scroll: 100,
-        scrollPrev: 90,
-        scrollTime: 0,
-        scrollPrevTime: 0,
-        scrollingTo: undefined,
+        idCache: new Map(),
+        idsInView: [],
         ignoreScrollFromMVCP: undefined,
         ignoreScrollFromMVCPTimeout: undefined,
-        scrollForNextCalculateItemsInView: undefined,
-        scrollLength: 500,
-        isScrolling: false,
-        queuedInitialLayout: true,
-        maintainingScrollAtEnd: false,
-        isAtEnd: false,
-        isEndReached: false,
-        endReachedBlockedByTimer: false,
-        isAtStart: false,
-        isStartReached: false,
-        startReachedBlockedByTimer: false,
-        sizes: new Map(),
-        positions: new Map(),
-        sizesCache: new Map(),
-        idCache: new Map(),
         indexByKey: new Map(),
-        idsInView: [],
-        timeouts: new Set(),
-        scrollAdjustHandler: {
-            requestAdjust: () => {},
-        },
+        isAtEnd: false,
+        isAtStart: false,
+        isEndReached: false,
+        isScrolling: false,
+        isStartReached: false,
+        lastBatchingAction: 0,
+        maintainingScrollAtEnd: false,
+        positions: new Map(),
         props: {
             data: [
                 { id: 0, text: "Item 0" },
@@ -46,9 +29,26 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
                 { id: 2, text: "Item 2" },
             ],
             keyExtractor: (item: any) => `item-${item.id}`,
-            onStartReachedThreshold: 0.2, // 20%
             onStartReached: undefined,
+            onStartReachedThreshold: 0.2, // 20%
         },
+        queuedInitialLayout: true,
+        scroll: 100,
+        scrollAdjustHandler: {
+            requestAdjust: () => {},
+        },
+        scrollForNextCalculateItemsInView: undefined,
+        scrollHistory: [],
+        scrollingTo: undefined,
+        scrollLength: 500,
+        scrollPending: 0,
+        scrollPrev: 90,
+        scrollPrevTime: 0,
+        scrollTime: 0,
+        sizes: new Map(),
+        sizesCache: new Map(),
+        startReachedBlockedByTimer: false,
+        timeouts: new Set(),
         ...overrides,
     } as InternalState;
 }
@@ -66,7 +66,7 @@ describe("checkAtTop", () => {
 
         // Spy on dependencies
         checkThresholdSpy = spyOn(checkThresholdModule, "checkThreshold").mockReturnValue(false);
-        
+
         // Create a mock function for onStartReached
         onStartReachedMock = spyOn({ fn: () => {} }, "fn");
         mockState.props.onStartReached = onStartReachedMock;
@@ -225,10 +225,12 @@ describe("checkAtTop", () => {
     describe("onStartReached callback handling", () => {
         it("should call onStartReached when threshold callback is executed", () => {
             let capturedCallback: any;
-            checkThresholdSpy.mockImplementation((distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
-                capturedCallback = onReached;
-                return false;
-            });
+            checkThresholdSpy.mockImplementation(
+                (distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
+                    capturedCallback = onReached;
+                    return false;
+                },
+            );
 
             checkAtTop(mockState);
 
@@ -241,10 +243,12 @@ describe("checkAtTop", () => {
         it("should handle undefined onStartReached gracefully", () => {
             mockState.props.onStartReached = undefined;
             let capturedCallback: any;
-            checkThresholdSpy.mockImplementation((distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
-                capturedCallback = onReached;
-                return false;
-            });
+            checkThresholdSpy.mockImplementation(
+                (distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
+                    capturedCallback = onReached;
+                    return false;
+                },
+            );
 
             checkAtTop(mockState);
 
@@ -254,10 +258,12 @@ describe("checkAtTop", () => {
 
         it("should update startReachedBlockedByTimer via callback", () => {
             let capturedBlockCallback: any;
-            checkThresholdSpy.mockImplementation((distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
-                capturedBlockCallback = onBlock;
-                return false;
-            });
+            checkThresholdSpy.mockImplementation(
+                (distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
+                    capturedBlockCallback = onBlock;
+                    return false;
+                },
+            );
 
             checkAtTop(mockState);
 
@@ -335,8 +341,8 @@ describe("checkAtTop", () => {
         it("should handle rapid scroll position changes", () => {
             // Simulate rapid scroll position changes near the top
             const scrollPositions = [0, 10, 5, 15, 0, 20, 8, 3];
-            
-            scrollPositions.forEach(scroll => {
+
+            scrollPositions.forEach((scroll) => {
                 mockState.scroll = scroll;
                 checkAtTop(mockState);
             });
@@ -347,8 +353,8 @@ describe("checkAtTop", () => {
 
         it("should handle scroll length changes", () => {
             const scrollLengths = [300, 500, 800, 1000, 200];
-            
-            scrollLengths.forEach(length => {
+
+            scrollLengths.forEach((length) => {
                 mockState.scrollLength = length;
                 checkAtTop(mockState);
             });
@@ -366,12 +372,12 @@ describe("checkAtTop", () => {
 
             // Note: checkThresholdSpy may be called in previous tests, so we verify it was called
             expect(checkThresholdSpy).toHaveBeenCalled();
-            
+
             // Verify different threshold values were used in the last two calls
             const callCount = checkThresholdSpy.mock.calls.length;
             const secondLastCall = checkThresholdSpy.mock.calls[callCount - 2];
             const lastCall = checkThresholdSpy.mock.calls[callCount - 1];
-            
+
             expect(secondLastCall[2]).toBe(50); // 0.1 * 500
             expect(lastCall[2]).toBe(250); // 0.5 * 500
         });
@@ -380,23 +386,25 @@ describe("checkAtTop", () => {
             // Start with not reached
             mockState.isStartReached = false;
             checkThresholdSpy.mockReturnValue(true);
-            
+
             checkAtTop(mockState);
             expect(mockState.isStartReached).toBe(true);
 
             // Transition back
             checkThresholdSpy.mockReturnValue(false);
-            
+
             checkAtTop(mockState);
             expect(mockState.isStartReached).toBe(false);
         });
 
         it("should handle blocked timer state changes", () => {
             let capturedBlockCallback: any;
-            checkThresholdSpy.mockImplementation((distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
-                capturedBlockCallback = onBlock;
-                return false;
-            });
+            checkThresholdSpy.mockImplementation(
+                (distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
+                    capturedBlockCallback = onBlock;
+                    return false;
+                },
+            );
 
             checkAtTop(mockState);
 
@@ -416,12 +424,12 @@ describe("checkAtTop", () => {
     describe("performance considerations", () => {
         it("should handle many successive calls efficiently", () => {
             const start = performance.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 mockState.scroll = i;
                 checkAtTop(mockState);
             }
-            
+
             const duration = performance.now() - start;
             expect(duration).toBeLessThan(50); // Should be fast
         });
@@ -429,11 +437,11 @@ describe("checkAtTop", () => {
         it("should not accumulate state incorrectly", () => {
             // Ensure state doesn't accumulate unintended side effects
             const initialState = { ...mockState };
-            
+
             for (let i = 0; i < 100; i++) {
                 checkAtTop(mockState);
             }
-            
+
             // Only expected state should have changed
             expect(mockState.scroll).toBe(initialState.scroll);
             expect(mockState.scrollLength).toBe(initialState.scrollLength);
@@ -443,17 +451,17 @@ describe("checkAtTop", () => {
     describe("integration patterns", () => {
         it("should work correctly with different scroll positions", () => {
             const scenarios = [
-                { scroll: 0, expected: true }, // at top
-                { scroll: 5, expected: false }, // slightly below top
-                { scroll: 50, expected: false }, // well below top
-                { scroll: -10, expected: true }, // above top (overscroll)
+                { expected: true, scroll: 0 }, // at top
+                { expected: false, scroll: 5 }, // slightly below top
+                { expected: false, scroll: 50 }, // well below top
+                { expected: true, scroll: -10 }, // above top (overscroll)
             ];
 
             scenarios.forEach(({ scroll, expected }) => {
                 mockState.scroll = scroll;
-                
+
                 checkAtTop(mockState);
-                
+
                 expect(mockState.isAtStart).toBe(expected);
             });
         });
@@ -461,24 +469,28 @@ describe("checkAtTop", () => {
         it("should handle infinite scroll patterns", () => {
             // Simulate approaching top and triggering onStartReached
             let startReachedCount = 0;
-            mockState.props.onStartReached = () => { startReachedCount++; };
-            
+            mockState.props.onStartReached = () => {
+                startReachedCount++;
+            };
+
             let capturedCallback: any;
-            checkThresholdSpy.mockImplementation((distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
-                capturedCallback = onReached;
-                return distance < threshold;
-            });
+            checkThresholdSpy.mockImplementation(
+                (distance, isContentLess, threshold, reached, blocked, onReached, onBlock) => {
+                    capturedCallback = onReached;
+                    return distance < threshold;
+                },
+            );
 
             // Scroll near top
             mockState.scroll = 30; // Distance: 30
             mockState.props.onStartReachedThreshold = 0.1; // 10% = 50px (of 500)
-            
+
             checkAtTop(mockState);
-            
+
             if (capturedCallback) {
                 capturedCallback(30);
             }
-            
+
             expect(startReachedCount).toBe(1);
         });
 
@@ -487,9 +499,9 @@ describe("checkAtTop", () => {
             mockState.scroll = 100; // Distance: 100
             mockState.scrollLength = 500;
             mockState.props.onStartReachedThreshold = 0.2; // 20% = 100px
-            
+
             checkAtTop(mockState);
-            
+
             // Verify threshold calculation
             expect(checkThresholdSpy).toHaveBeenCalledWith(
                 100,
@@ -506,26 +518,26 @@ describe("checkAtTop", () => {
     describe("boundary conditions", () => {
         it("should handle minimum scroll position", () => {
             mockState.scroll = Number.MIN_SAFE_INTEGER;
-            
+
             checkAtTop(mockState);
-            
+
             expect(mockState.isAtStart).toBe(true);
         });
 
         it("should handle floating point scroll values", () => {
             mockState.scroll = 0.0001;
-            
+
             checkAtTop(mockState);
-            
+
             expect(mockState.isAtStart).toBe(false);
         });
 
         it("should handle very small threshold values", () => {
             mockState.props.onStartReachedThreshold = 0.001; // 0.1%
             mockState.scrollLength = 1000;
-            
+
             checkAtTop(mockState);
-            
+
             expect(checkThresholdSpy).toHaveBeenCalledWith(
                 expect.any(Number),
                 false,
@@ -540,9 +552,9 @@ describe("checkAtTop", () => {
         it("should handle large threshold values", () => {
             mockState.props.onStartReachedThreshold = 2; // 200%
             mockState.scrollLength = 500;
-            
+
             checkAtTop(mockState);
-            
+
             expect(checkThresholdSpy).toHaveBeenCalledWith(
                 expect.any(Number),
                 false,
@@ -560,11 +572,11 @@ describe("checkAtTop", () => {
             // Verify that repeated calls don't corrupt state
             const originalScroll = mockState.scroll;
             const originalScrollLength = mockState.scrollLength;
-            
+
             for (let i = 0; i < 10; i++) {
                 checkAtTop(mockState);
             }
-            
+
             expect(mockState.scroll).toBe(originalScroll);
             expect(mockState.scrollLength).toBe(originalScrollLength);
         });
@@ -573,9 +585,9 @@ describe("checkAtTop", () => {
             // Test that both flags are updated appropriately
             mockState.scroll = 0;
             checkThresholdSpy.mockReturnValue(true);
-            
+
             checkAtTop(mockState);
-            
+
             expect(mockState.isAtStart).toBe(true);
             expect(mockState.isStartReached).toBe(true);
         });
@@ -584,9 +596,9 @@ describe("checkAtTop", () => {
             // isAtStart and isStartReached can have different values
             mockState.scroll = 50; // Not at start
             checkThresholdSpy.mockReturnValue(true); // But within threshold
-            
+
             checkAtTop(mockState);
-            
+
             expect(mockState.isAtStart).toBe(false);
             expect(mockState.isStartReached).toBe(true);
         });

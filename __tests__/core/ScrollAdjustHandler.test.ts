@@ -10,13 +10,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -101,7 +101,7 @@ describe("ScrollAdjustHandler", () => {
 
         it("should add to existing scrollAdjust value", () => {
             mockCtx.values.set("scrollAdjust", 5);
-            
+
             handler.requestAdjust(10);
             expect((handler as any).appliedAdjust).toBe(15);
 
@@ -134,7 +134,7 @@ describe("ScrollAdjustHandler", () => {
 
             // Should have RAF calls for each adjustment
             expect(rafCallCount).toBe(3);
-            
+
             // Final appliedAdjust should be the last adjustment (2) plus initial context (0)
             expect((handler as any).appliedAdjust).toBe(2);
 
@@ -162,7 +162,7 @@ describe("ScrollAdjustHandler", () => {
     describe("setMounted", () => {
         it("should change mounted state", () => {
             expect((handler as any).mounted).toBe(false);
-            
+
             handler.setMounted();
             expect((handler as any).mounted).toBe(true);
         });
@@ -194,7 +194,7 @@ describe("ScrollAdjustHandler", () => {
     describe("edge cases and error handling", () => {
         it("should handle undefined scrollAdjust in context", () => {
             mockCtx.values.delete("scrollAdjust");
-            
+
             handler.requestAdjust(10);
             expect((handler as any).appliedAdjust).toBe(10);
 
@@ -204,7 +204,7 @@ describe("ScrollAdjustHandler", () => {
 
         it("should handle null scrollAdjust in context", () => {
             mockCtx.values.set("scrollAdjust", null);
-            
+
             handler.requestAdjust(10);
             expect((handler as any).appliedAdjust).toBe(10);
 
@@ -214,7 +214,7 @@ describe("ScrollAdjustHandler", () => {
 
         it("should handle very large adjustment values", () => {
             const largeValue = Number.MAX_SAFE_INTEGER;
-            
+
             handler.requestAdjust(largeValue);
             expect((handler as any).appliedAdjust).toBe(largeValue);
 
@@ -224,7 +224,7 @@ describe("ScrollAdjustHandler", () => {
 
         it("should handle very small adjustment values", () => {
             const smallValue = Number.MIN_SAFE_INTEGER;
-            
+
             handler.requestAdjust(smallValue);
             expect((handler as any).appliedAdjust).toBe(smallValue);
 
@@ -257,12 +257,12 @@ describe("ScrollAdjustHandler", () => {
         it("should handle floating point precision", () => {
             handler.requestAdjust(0.1);
             expect((handler as any).appliedAdjust).toBe(0.1);
-            
+
             // Update context to simulate the set
             mockCtx.values.set("scrollAdjust", 0.1);
-            
+
             handler.requestAdjust(0.2);
-            
+
             // Check that the result is approximately correct
             const result = (handler as any).appliedAdjust;
             expect(Math.abs(result - 0.3)).toBeLessThan(Number.EPSILON);
@@ -295,13 +295,13 @@ describe("ScrollAdjustHandler", () => {
         it("should handle complex adjustment sequences", () => {
             // Mixed positive and negative adjustments - simulate proper sequence with context updates
             const adjustments = [10, -5, 15, -8, 3, -2];
-            
+
             let contextValue = 0;
             for (const adjustment of adjustments) {
                 handler.requestAdjust(adjustment);
                 const expectedApplied = adjustment + contextValue;
                 expect((handler as any).appliedAdjust).toBe(expectedApplied);
-                
+
                 // Simulate the context being updated
                 contextValue = expectedApplied;
                 mockCtx.values.set("scrollAdjust", contextValue);

@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -34,14 +34,10 @@ describe("updateAllPositions", () => {
         mockState = {
             averageSizes: {},
             columns: new Map(),
-            indexByKey: new Map(),
-            positions: new Map(),
             firstFullyOnScreenIndex: undefined,
             idCache: new Map(),
-            sizesKnown: new Map(),
-            sizes: new Map(), // Required by getItemSize
-            scrollHistory: [],
-            scrollingTo: undefined, // Required by getItemSize
+            indexByKey: new Map(),
+            positions: new Map(),
             props: {
                 data: [
                     { id: "item1", name: "First" },
@@ -50,11 +46,15 @@ describe("updateAllPositions", () => {
                     { id: "item4", name: "Fourth" },
                     { id: "item5", name: "Fifth" },
                 ],
-                keyExtractor: (item: any, index: number) => item.id,
-                snapToIndices: undefined,
                 estimatedItemSize: undefined,
                 getEstimatedItemSize: undefined,
+                keyExtractor: (item: any, index: number) => item.id,
+                snapToIndices: undefined,
             },
+            scrollHistory: [],
+            scrollingTo: undefined, // Required by getItemSize
+            sizes: new Map(), // Required by getItemSize
+            sizesKnown: new Map(),
         } as InternalState;
     });
 
@@ -161,7 +161,7 @@ describe("updateAllPositions", () => {
 
         it("should handle 3-column layout", () => {
             mockCtx.values.set("numColumns", 3);
-            
+
             updateAllPositions(mockCtx, mockState);
 
             // Row 1: items 1, 2, 3
@@ -180,7 +180,7 @@ describe("updateAllPositions", () => {
             // Set up state for backwards optimization
             mockState.firstFullyOnScreenIndex = 10;
             mockState.sizesKnown.set("item1", 100);
-            
+
             // Create larger dataset for backwards optimization
             const largeData = Array.from({ length: 20 }, (_, i) => ({ id: `item${i + 1}`, name: `Item ${i + 1}` }));
             mockState.props.data = largeData;
@@ -380,7 +380,7 @@ describe("updateAllPositions", () => {
         it("should handle backwards optimization with columns", () => {
             mockCtx.values.set("numColumns", 2);
             mockState.firstFullyOnScreenIndex = 8;
-            
+
             // Create dataset and setup for backwards optimization
             const data = Array.from({ length: 20 }, (_, i) => ({ id: `item${i}`, name: `Item ${i}` }));
             mockState.props.data = data;
@@ -398,7 +398,7 @@ describe("updateAllPositions", () => {
                 mockState.idCache.set(i, id);
                 mockState.sizesKnown.set(id, 100);
             }
-            
+
             // Set anchor position
             mockState.positions.set("item8", 400);
 
@@ -438,7 +438,7 @@ describe("updateAllPositions", () => {
     describe("snapToIndices integration", () => {
         it("should call updateSnapToOffsets when snapToIndices is provided", () => {
             mockState.props.snapToIndices = [0, 2, 4];
-            
+
             // Mock updateSnapToOffsets by checking if it would be called
             updateAllPositions(mockCtx, mockState);
 
@@ -478,7 +478,7 @@ describe("updateAllPositions", () => {
     describe("memory efficiency", () => {
         it("should maintain reasonable memory usage with large datasets", () => {
             const initialMemory = process.memoryUsage().heapUsed;
-            
+
             const largeData = Array.from({ length: 5000 }, (_, i) => ({ id: `item${i}`, name: `Item ${i}` }));
             mockState.props.data = largeData;
 

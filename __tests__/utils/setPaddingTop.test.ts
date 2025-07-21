@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
-import { setPaddingTop } from "../../src/utils/setPaddingTop";
-import * as stateModule from "../../src/state/state";
 import type { StateContext } from "../../src/state/state";
+import * as stateModule from "../../src/state/state";
+import { setPaddingTop } from "../../src/utils/setPaddingTop";
 
 // Create a properly typed mock context
 function createMockContext(initialValues: Record<string, any> = {}): StateContext {
@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -31,8 +31,8 @@ describe("setPaddingTop", () => {
 
     beforeEach(() => {
         mockCtx = createMockContext({
-            stylePaddingTop: 0,
             alignItemsPaddingTop: 0,
+            stylePaddingTop: 0,
             totalSize: 1000,
         });
 
@@ -44,7 +44,7 @@ describe("setPaddingTop", () => {
         peekSpy = spyOn(stateModule, "peek$").mockImplementation((ctx, key) => {
             return mockCtx.values.get(key);
         });
-        
+
         setSpy = spyOn(stateModule, "set$").mockImplementation((ctx, key, value) => {
             mockCtx.values.set(key, value);
         });
@@ -117,21 +117,21 @@ describe("setPaddingTop", () => {
 
     describe("both padding types", () => {
         it("should set both padding types when provided", () => {
-            setPaddingTop(mockCtx, { stylePaddingTop: 40, alignItemsPaddingTop: 60 });
+            setPaddingTop(mockCtx, { alignItemsPaddingTop: 60, stylePaddingTop: 40 });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 40);
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "alignItemsPaddingTop", 60);
         });
 
         it("should handle both as zero", () => {
-            setPaddingTop(mockCtx, { stylePaddingTop: 0, alignItemsPaddingTop: 0 });
+            setPaddingTop(mockCtx, { alignItemsPaddingTop: 0, stylePaddingTop: 0 });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 0);
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "alignItemsPaddingTop", 0);
         });
 
         it("should handle mixed values", () => {
-            setPaddingTop(mockCtx, { stylePaddingTop: 100, alignItemsPaddingTop: -50 });
+            setPaddingTop(mockCtx, { alignItemsPaddingTop: -50, stylePaddingTop: 100 });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 100);
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "alignItemsPaddingTop", -50);
@@ -150,10 +150,10 @@ describe("setPaddingTop", () => {
 
             // Should temporarily increase totalSize
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "totalSize", 2100); // 2000 + 100
-            
+
             // Should set new padding
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 50);
-            
+
             // Should have scheduled a timeout
             expect(timeoutCallbacks).toHaveLength(1);
         });
@@ -164,7 +164,7 @@ describe("setPaddingTop", () => {
             // Should only set new padding, not modify totalSize
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 150);
             expect(setSpy).not.toHaveBeenCalledWith(mockCtx, "totalSize", expect.anything());
-            
+
             // Should not schedule timeout
             expect(timeoutCallbacks).toHaveLength(0);
         });
@@ -175,7 +175,7 @@ describe("setPaddingTop", () => {
             // Should only set padding
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 100);
             expect(setSpy).not.toHaveBeenCalledWith(mockCtx, "totalSize", expect.anything());
-            
+
             // Should not schedule timeout
             expect(timeoutCallbacks).toHaveLength(0);
         });
@@ -300,9 +300,9 @@ describe("setPaddingTop", () => {
         });
 
         it("should handle very large padding values", () => {
-            setPaddingTop(mockCtx, { 
+            setPaddingTop(mockCtx, {
+                alignItemsPaddingTop: Number.MAX_SAFE_INTEGER,
                 stylePaddingTop: Number.MAX_SAFE_INTEGER,
-                alignItemsPaddingTop: Number.MAX_SAFE_INTEGER 
             });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", Number.MAX_SAFE_INTEGER);
@@ -310,9 +310,9 @@ describe("setPaddingTop", () => {
         });
 
         it("should handle NaN padding values", () => {
-            setPaddingTop(mockCtx, { 
+            setPaddingTop(mockCtx, {
+                alignItemsPaddingTop: NaN,
                 stylePaddingTop: NaN,
-                alignItemsPaddingTop: NaN 
             });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", NaN);
@@ -320,9 +320,9 @@ describe("setPaddingTop", () => {
         });
 
         it("should handle Infinity padding values", () => {
-            setPaddingTop(mockCtx, { 
+            setPaddingTop(mockCtx, {
+                alignItemsPaddingTop: -Infinity,
                 stylePaddingTop: Infinity,
-                alignItemsPaddingTop: -Infinity 
             });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", Infinity);
@@ -330,9 +330,9 @@ describe("setPaddingTop", () => {
         });
 
         it("should handle floating point values", () => {
-            setPaddingTop(mockCtx, { 
+            setPaddingTop(mockCtx, {
+                alignItemsPaddingTop: -6.789,
                 stylePaddingTop: 12.345,
-                alignItemsPaddingTop: -6.789 
             });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 12.345);
@@ -393,7 +393,7 @@ describe("setPaddingTop", () => {
 
             // All should work independently
             setSpy.mockClear();
-            timeoutCallbacks.forEach(callback => callback());
+            timeoutCallbacks.forEach((callback) => callback());
 
             // Each should restore to the respective original totalSize
             // (Note: in real implementation, this might cause issues, but the function
@@ -420,9 +420,9 @@ describe("setPaddingTop", () => {
             const start = performance.now();
 
             for (let i = 0; i < 1000; i++) {
-                setPaddingTop(mockCtx, { 
+                setPaddingTop(mockCtx, {
+                    alignItemsPaddingTop: (i + 50) % 100,
                     stylePaddingTop: i % 100,
-                    alignItemsPaddingTop: (i + 50) % 100 
                 });
             }
 
@@ -459,9 +459,9 @@ describe("setPaddingTop", () => {
     describe("integration patterns", () => {
         it("should work correctly with alignItemsAtEnd workflow", () => {
             // Common pattern: set both paddings together for alignItemsAtEnd
-            setPaddingTop(mockCtx, { 
+            setPaddingTop(mockCtx, {
+                alignItemsPaddingTop: 300,
                 stylePaddingTop: 20,
-                alignItemsPaddingTop: 300 
             });
 
             expect(setSpy).toHaveBeenCalledWith(mockCtx, "stylePaddingTop", 20);
@@ -490,7 +490,7 @@ describe("setPaddingTop", () => {
             const paddingValues = [200, 150, 100, 50, 0];
             mockCtx.values.set("stylePaddingTop", 250);
 
-            paddingValues.forEach(padding => {
+            paddingValues.forEach((padding) => {
                 setPaddingTop(mockCtx, { stylePaddingTop: padding });
             });
 

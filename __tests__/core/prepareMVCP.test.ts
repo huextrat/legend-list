@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
 import { prepareMVCP } from "../../src/core/prepareMVCP";
-import * as requestAdjustModule from "../../src/utils/requestAdjust";
 import type { StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
+import * as requestAdjustModule from "../../src/utils/requestAdjust";
 
 // Create a properly typed mock context
 function createMockContext(initialValues: Record<string, any> = {}): StateContext {
@@ -12,13 +12,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -41,29 +41,7 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
     ]);
 
     return {
-        scrollPending: 0,
         hasScrolled: false,
-        lastBatchingAction: 0,
-        scrollHistory: [],
-        scroll: 0,
-        scrollPrev: 0,
-        scrollTime: 0,
-        scrollPrevTime: 0,
-        scrollingTo: undefined,
-        ignoreScrollFromMVCP: undefined,
-        ignoreScrollFromMVCPTimeout: undefined,
-        scrollForNextCalculateItemsInView: undefined,
-        scrollLength: 500,
-        isScrolling: false,
-        sizes: new Map([
-            ["item-0", 100],
-            ["item-1", 150],
-            ["item-2", 200],
-            ["item-3", 100],
-            ["item-4", 180],
-        ]),
-        positions,
-        sizesCache: new Map(),
         idCache: new Map([
             [0, "item-0"],
             [1, "item-1"],
@@ -71,12 +49,13 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
             [3, "item-3"],
             [4, "item-4"],
         ]),
-        indexByKey,
         idsInView: ["item-1", "item-2"], // Default items in view
-        timeouts: new Set(),
-        scrollAdjustHandler: {
-            requestAdjust: () => {}, // Mock scroll adjust handler
-        },
+        ignoreScrollFromMVCP: undefined,
+        ignoreScrollFromMVCPTimeout: undefined,
+        indexByKey,
+        isScrolling: false,
+        lastBatchingAction: 0,
+        positions,
         props: {
             data: [
                 { id: 0, text: "Item 0" },
@@ -90,6 +69,27 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
                 minIndexForVisible: 0,
             },
         },
+        scroll: 0,
+        scrollAdjustHandler: {
+            requestAdjust: () => {}, // Mock scroll adjust handler
+        },
+        scrollForNextCalculateItemsInView: undefined,
+        scrollHistory: [],
+        scrollingTo: undefined,
+        scrollLength: 500,
+        scrollPending: 0,
+        scrollPrev: 0,
+        scrollPrevTime: 0,
+        scrollTime: 0,
+        sizes: new Map([
+            ["item-0", 100],
+            ["item-1", 150],
+            ["item-2", 200],
+            ["item-3", 100],
+            ["item-4", 180],
+        ]),
+        sizesCache: new Map(),
+        timeouts: new Set(),
         ...overrides,
     } as InternalState;
 }
@@ -121,57 +121,57 @@ describe("prepareMVCP", () => {
 
         it("should return no-op function when maintainVisibleContentPosition is disabled", () => {
             mockState.props.maintainVisibleContentPosition = undefined;
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change positions
             mockState.positions.set("item-1", 200);
-            
+
             // Execute the returned function
             adjustFunction();
-            
+
             // Should not call requestAdjust
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should capture initial position of first visible item", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change the position of the first visible item
             mockState.positions.set("item-1", 150); // Changed from 100 to 150
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
         });
 
         it("should handle scrollingTo target prioritization", () => {
-            mockState.scrollingTo = { index: 3, animated: true };
-            
+            mockState.scrollingTo = { animated: true, index: 3 };
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change the position of the scroll target
             mockState.positions.set("item-3", 500); // Changed from 450 to 500
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
         });
     });
 
     describe("anchor selection logic", () => {
         it("should prefer scrollingTo target over visible items", () => {
-            mockState.scrollingTo = { index: 2, animated: true };
+            mockState.scrollingTo = { animated: true, index: 2 };
             mockState.idsInView = ["item-0", "item-1"]; // Different visible items
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change positions of both potential anchors
             mockState.positions.set("item-0", 50); // First visible item
             mockState.positions.set("item-2", 300); // Scroll target (should win)
-            
+
             adjustFunction();
-            
+
             // Should track the scroll target (item-2), not the first visible item
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50); // 300 - 250 = 50
         });
@@ -179,38 +179,38 @@ describe("prepareMVCP", () => {
         it("should fallback to first visible item when no scrollingTo", () => {
             mockState.scrollingTo = undefined;
             mockState.idsInView = ["item-2", "item-3"];
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change position of first visible item
             mockState.positions.set("item-2", 300); // Changed from 250 to 300
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
         });
 
         it("should handle visible items not in indexByKey", () => {
             mockState.idsInView = ["non-existent-item", "item-1"];
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change position of the valid visible item
             mockState.positions.set("item-1", 150);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
         });
 
         it("should handle no valid anchor items", () => {
             mockState.idsInView = [];
             mockState.scrollingTo = undefined;
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
     });
@@ -218,34 +218,34 @@ describe("prepareMVCP", () => {
     describe("position change detection", () => {
         it("should ignore small position changes (<=0.1)", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Make a tiny change
             mockState.positions.set("item-1", 100.05); // Change of 0.05
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle exactly 0.1 position change", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 100.1); // Change of exactly 0.1
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should trigger on position change just above threshold", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 100.11); // Change of 0.11
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledTimes(1);
-            
+
             // Get the actual call parameters to see what was passed
             const calls = requestAdjustSpy.mock.calls;
             expect(calls[0][0]).toBe(mockCtx);
@@ -255,30 +255,30 @@ describe("prepareMVCP", () => {
 
         it("should handle negative position changes", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 50); // Change from 100 to 50 = -50
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, -50);
         });
 
         it("should handle zero position change", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // No position change
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle large position changes", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 1000); // Large change
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 900);
         });
     });
@@ -286,86 +286,86 @@ describe("prepareMVCP", () => {
     describe("edge cases and error handling", () => {
         it("should handle missing position data after preparation", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Remove the position after preparation
             mockState.positions.delete("item-1");
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle containers not yet laid out", () => {
             mockCtx.values.set("containersDidLayout", false);
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 150);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle empty idsInView array", () => {
             mockState.idsInView = [];
             mockState.scrollingTo = undefined;
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle corrupted indexByKey", () => {
             mockState.indexByKey = new Map(); // Empty map
             mockState.scrollingTo = undefined;
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle corrupted positions map", () => {
             mockState.positions = new Map(); // Empty map
-            
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle invalid scrollingTo index", () => {
-            mockState.scrollingTo = { index: 999, animated: true }; // Out of bounds
-            
+            mockState.scrollingTo = { animated: true, index: 999 }; // Out of bounds
+
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle NaN position values", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", NaN);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
 
         it("should handle Infinity position values", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", Infinity);
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, Infinity);
         });
     });
@@ -376,15 +376,15 @@ describe("prepareMVCP", () => {
             const adjust1 = prepareMVCP(mockCtx, mockState);
             const adjust2 = prepareMVCP(mockCtx, mockState);
             const adjust3 = prepareMVCP(mockCtx, mockState);
-            
+
             // Change position
             mockState.positions.set("item-1", 150);
-            
+
             // Execute all adjustment functions
             adjust1();
             adjust2();
             adjust3();
-            
+
             // All should detect the same change
             expect(requestAdjustSpy).toHaveBeenCalledTimes(3);
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
@@ -392,20 +392,20 @@ describe("prepareMVCP", () => {
 
         it("should handle switching between scroll targets", () => {
             // First preparation with scroll target
-            mockState.scrollingTo = { index: 2, animated: true };
+            mockState.scrollingTo = { animated: true, index: 2 };
             const adjust1 = prepareMVCP(mockCtx, mockState);
-            
+
             // Change scroll target and prepare again
-            mockState.scrollingTo = { index: 3, animated: true };
+            mockState.scrollingTo = { animated: true, index: 3 };
             const adjust2 = prepareMVCP(mockCtx, mockState);
-            
+
             // Change positions
             mockState.positions.set("item-2", 300); // Original target
             mockState.positions.set("item-3", 500); // New target
-            
+
             adjust1(); // Should track item-2
             adjust2(); // Should track item-3
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledTimes(2);
             expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50); // item-2: 300-250
             expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50); // item-3: 500-450
@@ -413,20 +413,20 @@ describe("prepareMVCP", () => {
 
         it("should handle changing from scrollingTo to visible items", () => {
             // First with scrollingTo
-            mockState.scrollingTo = { index: 2, animated: true };
+            mockState.scrollingTo = { animated: true, index: 2 };
             const adjust1 = prepareMVCP(mockCtx, mockState);
-            
+
             // Then without scrollingTo (falls back to visible items)
             mockState.scrollingTo = undefined;
             const adjust2 = prepareMVCP(mockCtx, mockState);
-            
+
             // Change positions
             mockState.positions.set("item-2", 300); // scroll target
             mockState.positions.set("item-1", 150); // first visible item
-            
-            adjust1(); // Should track item-2 
+
+            adjust1(); // Should track item-2
             adjust2(); // Should track item-1
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledTimes(2);
             expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50); // item-2
             expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50); // item-1
@@ -439,27 +439,27 @@ describe("prepareMVCP", () => {
             const largeIndexByKey = new Map();
             const largePositions = new Map();
             const largeIdsInView = [];
-            
+
             for (let i = 0; i < 1000; i++) {
                 const id = `item-${i}`;
                 largeIndexByKey.set(id, i);
                 largePositions.set(id, i * 100);
                 if (i < 10) largeIdsInView.push(id);
             }
-            
+
             mockState.indexByKey = largeIndexByKey;
             mockState.positions = largePositions;
             mockState.idsInView = largeIdsInView;
-            
+
             const start = performance.now();
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Change first visible item position
             mockState.positions.set("item-0", 50);
             adjustFunction();
-            
+
             const duration = performance.now() - start;
-            
+
             expect(duration).toBeLessThan(5); // Should be very fast
             expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
         });
@@ -468,16 +468,17 @@ describe("prepareMVCP", () => {
             // NOTE: Each call to prepareMVCP captures the current position, so we need
             // to prepare it fresh each time to test rapid execution properly
             const start = performance.now();
-            
+
             // Execute many MVCP preparations and adjustments
-            for (let i = 1; i <= 100; i++) { // Start from 1 to ensure meaningful position changes
+            for (let i = 1; i <= 100; i++) {
+                // Start from 1 to ensure meaningful position changes
                 const adjustFunction = prepareMVCP(mockCtx, mockState);
                 mockState.positions.set("item-1", 100 + i * 0.2); // Use 0.2 increments to ensure > 0.1 threshold
                 adjustFunction();
             }
-            
+
             const duration = performance.now() - start;
-            
+
             expect(duration).toBeLessThan(50); // Should handle rapid execution
             expect(requestAdjustSpy).toHaveBeenCalledTimes(100);
         });
@@ -486,12 +487,12 @@ describe("prepareMVCP", () => {
     describe("floating point precision", () => {
         it("should handle floating point precision correctly", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             // Test borderline floating point case
             mockState.positions.set("item-1", 100.10000000001); // Just above 0.1 threshold
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).toHaveBeenCalledTimes(1);
             const calls = requestAdjustSpy.mock.calls;
             expect(calls[0][0]).toBe(mockCtx);
@@ -501,11 +502,11 @@ describe("prepareMVCP", () => {
 
         it("should handle very small floating point differences", () => {
             const adjustFunction = prepareMVCP(mockCtx, mockState);
-            
+
             mockState.positions.set("item-1", 100.0000001); // Very small change
-            
+
             adjustFunction();
-            
+
             expect(requestAdjustSpy).not.toHaveBeenCalled();
         });
     });

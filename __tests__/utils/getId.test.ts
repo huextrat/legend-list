@@ -9,6 +9,7 @@ describe("getId", () => {
 
     beforeEach(() => {
         mockState = {
+            idCache: new Map(),
             props: {
                 data: [
                     { id: "item1", name: "First" },
@@ -17,7 +18,6 @@ describe("getId", () => {
                 ],
                 keyExtractor: (item: any, index: number) => item.id,
             },
-            idCache: new Map(),
         } as InternalState;
     });
 
@@ -158,9 +158,9 @@ describe("getId", () => {
 
         it("should handle complex keyExtractor logic", () => {
             mockState.props.data = [
-                { type: "user", id: 1, name: "John" },
-                { type: "post", id: 2, title: "Hello" },
-                { type: "user", id: 3, name: "Jane" },
+                { id: 1, name: "John", type: "user" },
+                { id: 2, title: "Hello", type: "post" },
+                { id: 3, name: "Jane", type: "user" },
             ];
             mockState.props.keyExtractor = (item: any, index: number) => `${item.type}_${item.id}`;
 
@@ -194,7 +194,7 @@ describe("getId", () => {
 
         it("should overwrite cache if called again for same index", () => {
             getId(mockState, 0);
-            
+
             // Change the data and keyExtractor
             mockState.props.data[0] = { id: "changed", name: "Changed" };
             getId(mockState, 0);
@@ -205,15 +205,7 @@ describe("getId", () => {
 
     describe("type handling", () => {
         it("should handle various data types in array", () => {
-            mockState.props.data = [
-                null,
-                undefined,
-                "",
-                0,
-                false,
-                {},
-                [],
-            ];
+            mockState.props.data = [null, undefined, "", 0, false, {}, []];
             mockState.props.keyExtractor = (item: any, index: number) => `type_${typeof item}_${index}`;
 
             expect(getId(mockState, 0)).toBe("type_object_0"); // null is typeof object
@@ -243,12 +235,12 @@ describe("getId", () => {
             mockState.props.keyExtractor = (item: any) => item.id;
 
             const start = Date.now();
-            
+
             // Generate IDs for various indices
             for (let i = 0; i < 100; i++) {
                 getId(mockState, i * 100);
             }
-            
+
             const duration = Date.now() - start;
             expect(duration).toBeLessThan(50); // Should be very fast
             expect(mockState.idCache.size).toBe(100);
@@ -267,15 +259,15 @@ describe("getId", () => {
 
         it("should maintain memory efficiency with cache", () => {
             const initialMemory = process.memoryUsage().heapUsed;
-            
+
             // Generate many IDs
             for (let i = 0; i < 1000; i++) {
                 getId(mockState, i % 10); // Cycle through 10 items
             }
-            
+
             const finalMemory = process.memoryUsage().heapUsed;
             const memoryIncrease = finalMemory - initialMemory;
-            
+
             // Should not have significant memory increase (cache should be bounded)
             expect(memoryIncrease).toBeLessThan(1024 * 1024); // Less than 1MB
             expect(mockState.idCache.size).toBe(10); // Only 10 unique entries

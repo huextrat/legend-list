@@ -1,22 +1,22 @@
-import { beforeEach, afterEach, describe, expect, it, spyOn } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
 import {
-    isFunction,
-    isArray,
-    warnDevOnce,
-    roundSize,
-    isNullOrUndefined,
-    comparatorDefault,
     byIndex,
+    comparatorDefault,
     extractPadding,
+    isArray,
+    isFunction,
+    isNullOrUndefined,
+    roundSize,
+    warnDevOnce,
 } from "../../src/utils/helpers";
 
 describe("helpers", () => {
     describe("isFunction", () => {
         it("should return true for functions", () => {
             expect(isFunction(() => {})).toBe(true);
-            expect(isFunction(function() {})).toBe(true);
+            expect(isFunction(() => {})).toBe(true);
             expect(isFunction(async () => {})).toBe(true);
             expect(isFunction(function* () {})).toBe(true);
             expect(isFunction(Math.max)).toBe(true);
@@ -61,7 +61,7 @@ describe("helpers", () => {
         });
 
         it("should handle array-like objects", () => {
-            expect(isArray({ length: 3, 0: "a", 1: "b", 2: "c" })).toBe(false);
+            expect(isArray({ 0: "a", 1: "b", 2: "c", length: 3 })).toBe(false);
             // Skip arguments test in Bun environment
             // expect(isArray(arguments)).toBe(false);
         });
@@ -76,7 +76,7 @@ describe("helpers", () => {
             // Mock console.warn
             originalConsoleWarn = console.warn;
             consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
-            
+
             // Mock __DEV__ to be true
             originalDev = (globalThis as any).__DEV__;
             (globalThis as any).__DEV__ = true;
@@ -174,11 +174,12 @@ describe("helpers", () => {
         it("should prevent accumulating rounding errors", () => {
             // Simulate multiple operations that could accumulate errors
             let value = 0;
-            for (let i = 0; i < 8; i++) { // Use 8 since it rounds to 1/8 pixels
+            for (let i = 0; i < 8; i++) {
+                // Use 8 since it rounds to 1/8 pixels
                 value += 0.125; // Use 1/8 since that's what the function rounds to
                 value = roundSize(value);
             }
-            
+
             // Should be exactly 1, not accumulating floating point errors
             expect(value).toBe(1);
         });
@@ -210,14 +211,14 @@ describe("helpers", () => {
     describe("comparatorDefault", () => {
         it("should return correct comparison for numbers", () => {
             expect(comparatorDefault(1, 2)).toBe(-1); // 1 - 2 = -1
-            expect(comparatorDefault(2, 1)).toBe(1);  // 2 - 1 = 1
-            expect(comparatorDefault(5, 5)).toBe(0);  // 5 - 5 = 0
+            expect(comparatorDefault(2, 1)).toBe(1); // 2 - 1 = 1
+            expect(comparatorDefault(5, 5)).toBe(0); // 5 - 5 = 0
         });
 
         it("should handle negative numbers", () => {
-            expect(comparatorDefault(-1, -2)).toBe(1);  // -1 - (-2) = 1
+            expect(comparatorDefault(-1, -2)).toBe(1); // -1 - (-2) = 1
             expect(comparatorDefault(-2, -1)).toBe(-1); // -2 - (-1) = -1
-            expect(comparatorDefault(-5, 0)).toBe(-5);  // -5 - 0 = -5
+            expect(comparatorDefault(-5, 0)).toBe(-5); // -5 - 0 = -5
         });
 
         it("should handle zero", () => {
@@ -247,7 +248,7 @@ describe("helpers", () => {
         it("should work with Array.sort", () => {
             const numbers = [3, 1, 4, 1, 5, 9, 2, 6];
             const sorted = numbers.sort(comparatorDefault);
-            
+
             expect(sorted).toEqual([1, 1, 2, 3, 4, 5, 6, 9]);
         });
     });
@@ -260,7 +261,7 @@ describe("helpers", () => {
         });
 
         it("should handle objects with additional properties", () => {
-            const obj = { index: 42, name: "test", data: { foo: "bar" } };
+            const obj = { data: { foo: "bar" }, index: 42, name: "test" };
             expect(byIndex(obj)).toBe(42);
         });
 
@@ -274,7 +275,7 @@ describe("helpers", () => {
                 { index: 5, value: "b" },
                 { index: 15, value: "c" },
             ];
-            
+
             const indices = objects.map(byIndex);
             expect(indices).toEqual([10, 5, 15]);
         });
@@ -285,7 +286,7 @@ describe("helpers", () => {
                 { index: 1, value: "a" },
                 { index: 2, value: "b" },
             ];
-            
+
             const sorted = objects.sort((a, b) => comparatorDefault(byIndex(a), byIndex(b)));
             expect(sorted.map(byIndex)).toEqual([1, 2, 3]);
         });
@@ -295,21 +296,21 @@ describe("helpers", () => {
         it("should extract padding from both styles", () => {
             const style = { paddingTop: 10 };
             const contentContainerStyle = { paddingTop: 5 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(15);
         });
 
         it("should handle missing padding properties", () => {
             const style = {};
             const contentContainerStyle = {};
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(0);
         });
 
         it("should use paddingVertical fallback", () => {
             const style = { paddingVertical: 8 };
             const contentContainerStyle = { paddingVertical: 4 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(12);
             expect(extractPadding(style, contentContainerStyle, "Bottom")).toBe(12);
         });
@@ -317,50 +318,50 @@ describe("helpers", () => {
         it("should use padding fallback", () => {
             const style = { padding: 6 };
             const contentContainerStyle = { padding: 2 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(8);
             expect(extractPadding(style, contentContainerStyle, "Bottom")).toBe(8);
         });
 
         it("should prioritize specific over general padding", () => {
-            const style = { paddingTop: 20, paddingVertical: 10, padding: 5 };
-            const contentContainerStyle = { paddingTop: 15, paddingVertical: 8, padding: 3 };
-            
+            const style = { padding: 5, paddingTop: 20, paddingVertical: 10 };
+            const contentContainerStyle = { padding: 3, paddingTop: 15, paddingVertical: 8 };
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(35); // 20 + 15
         });
 
         it("should mix different padding types", () => {
             const style = { paddingTop: 12 }; // Specific top
             const contentContainerStyle = { paddingVertical: 6 }; // Vertical fallback
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(18); // 12 + 6
         });
 
         it("should handle Bottom padding", () => {
             const style = { paddingBottom: 14 };
             const contentContainerStyle = { paddingBottom: 7 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Bottom")).toBe(21);
         });
 
         it("should handle zero values", () => {
             const style = { paddingTop: 0 };
             const contentContainerStyle = { paddingTop: 0 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(0);
         });
 
         it("should handle negative values", () => {
             const style = { paddingTop: -5 };
             const contentContainerStyle = { paddingTop: 10 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(5); // -5 + 10
         });
 
         it("should handle floating point values", () => {
             const style = { paddingTop: 5.5 };
             const contentContainerStyle = { paddingTop: 2.3 };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBeCloseTo(7.8, 1);
         });
 
@@ -372,16 +373,16 @@ describe("helpers", () => {
 
         it("should work with complex style hierarchies", () => {
             const style = {
-                paddingTop: 20,
-                paddingBottom: 25,
-                paddingVertical: 15, // Should be ignored because specific values exist
                 padding: 10, // Should be ignored
+                paddingBottom: 25,
+                paddingTop: 20,
+                paddingVertical: 15, // Should be ignored because specific values exist
             };
-            
+
             const contentContainerStyle = {
                 paddingVertical: 8, // Should be used for both top and bottom
             };
-            
+
             expect(extractPadding(style, contentContainerStyle, "Top")).toBe(28); // 20 + 8
             expect(extractPadding(style, contentContainerStyle, "Bottom")).toBe(33); // 25 + 8
         });
@@ -391,8 +392,9 @@ describe("helpers", () => {
         it("should handle extreme values", () => {
             expect(roundSize(1000000)).toBeGreaterThan(999999);
             expect(roundSize(Number.MIN_VALUE)).toBe(0); // Very small number rounds to 0
-            expect(comparatorDefault(Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER))
-                .toBe(Number.MAX_SAFE_INTEGER - Number.MIN_SAFE_INTEGER);
+            expect(comparatorDefault(Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER)).toBe(
+                Number.MAX_SAFE_INTEGER - Number.MIN_SAFE_INTEGER,
+            );
         });
 
         it("should handle type coercion edge cases", () => {
@@ -403,15 +405,15 @@ describe("helpers", () => {
         });
 
         it("should handle concurrent warning calls", () => {
-            let originalConsoleWarn = console.warn;
-            let consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
+            const originalConsoleWarn = console.warn;
+            const consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
             (globalThis as any).__DEV__ = true;
 
             // Simulate concurrent calls
-            const promises = Array.from({ length: 100 }, (_, i) => 
-                Promise.resolve().then(() => warnDevOnce("concurrent-test", `Message ${i}`))
+            const promises = Array.from({ length: 100 }, (_, i) =>
+                Promise.resolve().then(() => warnDevOnce("concurrent-test", `Message ${i}`)),
             );
-            
+
             return Promise.all(promises).then(() => {
                 expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
                 console.warn = originalConsoleWarn;
@@ -419,8 +421,8 @@ describe("helpers", () => {
         });
 
         it("should handle memory pressure with many warnings", () => {
-            let originalConsoleWarn = console.warn;
-            let consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
+            const originalConsoleWarn = console.warn;
+            const consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
             (globalThis as any).__DEV__ = true;
 
             // Create many unique warning IDs
@@ -437,10 +439,10 @@ describe("helpers", () => {
                 index = 99;
                 constructor() {}
             }
-            
+
             const instance = new TestClass();
             expect(byIndex(instance)).toBe(99);
-            
+
             const inherited = Object.create({ index: 88 });
             expect(byIndex(inherited)).toBe(88);
         });
@@ -448,45 +450,45 @@ describe("helpers", () => {
 
     describe("performance considerations", () => {
         it("should handle rapid function type checks", () => {
-            const items = Array.from({ length: 1000 }, (_, i) => i % 2 === 0 ? () => i : i);
-            
+            const items = Array.from({ length: 1000 }, (_, i) => (i % 2 === 0 ? () => i : i));
+
             const start = performance.now();
             const functions = items.filter(isFunction);
             const duration = performance.now() - start;
-            
+
             expect(duration).toBeLessThan(10);
             expect(functions.length).toBe(500);
         });
 
         it("should handle rapid array type checks", () => {
-            const items = Array.from({ length: 1000 }, (_, i) => i % 2 === 0 ? [i] : i);
-            
+            const items = Array.from({ length: 1000 }, (_, i) => (i % 2 === 0 ? [i] : i));
+
             const start = performance.now();
             const arrays = items.filter(isArray);
             const duration = performance.now() - start;
-            
+
             expect(duration).toBeLessThan(10);
             expect(arrays.length).toBe(500);
         });
 
         it("should handle rapid size rounding", () => {
             const start = performance.now();
-            
+
             for (let i = 0; i < 10000; i++) {
                 roundSize(i + Math.random());
             }
-            
+
             const duration = performance.now() - start;
             expect(duration).toBeLessThan(50);
         });
 
         it("should handle rapid comparisons", () => {
             const numbers = Array.from({ length: 1000 }, () => Math.random() * 1000);
-            
+
             const start = performance.now();
             numbers.sort(comparatorDefault);
             const duration = performance.now() - start;
-            
+
             expect(duration).toBeLessThan(10);
         });
     });

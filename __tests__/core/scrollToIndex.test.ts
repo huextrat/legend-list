@@ -11,13 +11,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -29,35 +29,35 @@ describe("scrollToIndex", () => {
 
     beforeEach(() => {
         mockScrollCalls = [];
-        
+
         mockCtx = createMockContext({
-            stylePaddingTop: 0,
             headerSize: 0,
+            stylePaddingTop: 0,
         });
 
         mockState = {
+            idCache: new Map(),
             positions: new Map(),
             props: {
                 data: Array.from({ length: 10 }, (_, i) => ({ id: i })),
-                horizontal: false,
-                keyExtractor: (item: any, index: number) => `item_${index}`,
                 estimatedItemSize: 100,
                 getEstimatedItemSize: undefined,
+                horizontal: false,
+                keyExtractor: (item: any, index: number) => `item_${index}`,
             },
-            idCache: new Map(),
-            scrollForNextCalculateItemsInView: undefined,
-            scrollHistory: [],
-            scrollingTo: undefined,
-            scrollPending: 0,
-            scroll: 0,
-            scrollLength: 1000, // Required by calculateOffsetWithOffsetPosition
-            sizes: new Map(),
-            sizesKnown: new Map(),
             refScroller: {
                 current: {
                     scrollTo: (params: any) => mockScrollCalls.push(params),
-                }
+                },
             },
+            scroll: 0,
+            scrollForNextCalculateItemsInView: undefined,
+            scrollHistory: [],
+            scrollingTo: undefined,
+            scrollLength: 1000, // Required by calculateOffsetWithOffsetPosition
+            scrollPending: 0,
+            sizes: new Map(),
+            sizesKnown: new Map(),
         } as InternalState;
 
         // Setup default positions for items
@@ -192,13 +192,13 @@ describe("scrollToIndex", () => {
         });
 
         it("should respect animated=false", () => {
-            scrollToIndex(mockCtx, mockState, { index: 3, animated: false });
+            scrollToIndex(mockCtx, mockState, { animated: false, index: 3 });
 
             expect(mockScrollCalls[0].animated).toBe(false);
         });
 
         it("should respect animated=true explicitly", () => {
-            scrollToIndex(mockCtx, mockState, { index: 3, animated: true });
+            scrollToIndex(mockCtx, mockState, { animated: true, index: 3 });
 
             expect(mockScrollCalls[0].animated).toBe(true);
         });
@@ -226,7 +226,7 @@ describe("scrollToIndex", () => {
 
     describe("state management", () => {
         it("should clear scrollForNextCalculateItemsInView", () => {
-            mockState.scrollForNextCalculateItemsInView = { top: 100, bottom: 200 };
+            mockState.scrollForNextCalculateItemsInView = { bottom: 200, top: 100 };
 
             scrollToIndex(mockCtx, mockState, { index: 3 });
 
@@ -234,14 +234,14 @@ describe("scrollToIndex", () => {
         });
 
         it("should set scrollingTo state", () => {
-            scrollToIndex(mockCtx, mockState, { index: 3, viewOffset: 50, animated: false });
+            scrollToIndex(mockCtx, mockState, { animated: false, index: 3, viewOffset: 50 });
 
             expect(mockState.scrollingTo).toEqual({
+                animated: false,
                 index: 3,
                 offset: expect.any(Number),
                 viewOffset: 50,
                 viewPosition: 0,
-                animated: false,
             });
         });
 
@@ -264,7 +264,7 @@ describe("scrollToIndex", () => {
         });
 
         it("should update scroll position for non-animated scrolls", async () => {
-            scrollToIndex(mockCtx, mockState, { index: 3, animated: false });
+            scrollToIndex(mockCtx, mockState, { animated: false, index: 3 });
 
             expect(typeof mockState.scroll).toBe("number");
             expect(mockState.scroll).toBeGreaterThanOrEqual(0);
@@ -301,7 +301,7 @@ describe("scrollToIndex", () => {
 
         it("should handle large index values", () => {
             const largeIndex = Number.MAX_SAFE_INTEGER;
-            
+
             scrollToIndex(mockCtx, mockState, { index: largeIndex });
 
             // Should clamp to last valid index
@@ -375,26 +375,26 @@ describe("scrollToIndex", () => {
             mockCtx.values.set("stylePaddingTop", 25);
             mockCtx.values.set("headerSize", 75);
 
-            scrollToIndex(mockCtx, mockState, { 
-                index: 5, 
-                viewOffset: 30, 
+            scrollToIndex(mockCtx, mockState, {
+                animated: false,
+                index: 5,
+                viewOffset: 30,
                 viewPosition: 0.5,
-                animated: false 
             });
 
             expect(mockScrollCalls.length).toBe(1);
             expect(mockState.scrollingTo).toEqual({
+                animated: false,
                 index: 5,
                 offset: expect.any(Number),
                 viewOffset: 30,
                 viewPosition: 0.5,
-                animated: false,
             });
 
             // Complex calculation:
             // 1. calculateOffsetForIndex: position(500) + padding(25) + header(75) = 600
             // 2. scrollToIndex: firstIndexScrollPosition = 600 - viewOffset(30) = 570
-            // 3. calculateOffsetWithOffsetPosition: 
+            // 3. calculateOffsetWithOffsetPosition:
             //    - offset = 570 - viewOffset(30) = 540
             //    - offset -= viewPosition(0.5) * (scrollLength(1000) - itemSize(100)) = 540 - 0.5 * 900 = 540 - 450 = 90
             expect(mockScrollCalls[0].y).toBe(90);
@@ -402,7 +402,7 @@ describe("scrollToIndex", () => {
 
         it("should maintain state consistency across multiple calls", () => {
             // First scroll
-            scrollToIndex(mockCtx, mockState, { index: 3, animated: false });
+            scrollToIndex(mockCtx, mockState, { animated: false, index: 3 });
             const firstScrollTo = { ...mockState.scrollingTo };
 
             // Second scroll
@@ -419,13 +419,13 @@ describe("scrollToIndex", () => {
             // Test switching between horizontal and vertical
             mockState.props.horizontal = false;
             scrollToIndex(mockCtx, mockState, { index: 3 });
-            
+
             expect(mockScrollCalls[0].x).toBe(0);
             expect(mockScrollCalls[0].y).toBe(300);
 
             mockState.props.horizontal = true;
             scrollToIndex(mockCtx, mockState, { index: 5 });
-            
+
             expect(mockScrollCalls[1].x).toBe(500);
             expect(mockScrollCalls[1].y).toBe(0);
         });

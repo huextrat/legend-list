@@ -1,17 +1,14 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
-import {
-    setupViewability,
-    updateViewableItems,
-} from "../../src/core/viewability";
+import { setupViewability, updateViewableItems } from "../../src/core/viewability";
 import type { StateContext } from "../../src/state/state";
-import type { 
-    InternalState, 
-    ViewabilityConfig, 
+import type {
+    InternalState,
+    ViewAmountToken,
+    ViewabilityConfig,
     ViewabilityConfigCallbackPair,
     ViewToken,
-    ViewAmountToken 
 } from "../../src/types";
 
 // Create a properly typed mock context
@@ -20,13 +17,13 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
-        values,
+        columnWrapperStyle: undefined,
         listeners,
-        mapViewabilityCallbacks: new Map(),
-        mapViewabilityValues: new Map(),
         mapViewabilityAmountCallbacks: new Map(),
         mapViewabilityAmountValues: new Map(),
-        columnWrapperStyle: undefined,
+        mapViewabilityCallbacks: new Map(),
+        mapViewabilityValues: new Map(),
+        values,
         viewRefs: new Map(),
     };
 }
@@ -49,21 +46,7 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
     ]);
 
     return {
-        scrollPending: 0,
         hasScrolled: false,
-        lastBatchingAction: 0,
-        scrollHistory: [],
-        scroll: 0,
-        scrollPrev: 0,
-        scrollTime: 0,
-        scrollPrevTime: 0,
-        scrollingTo: undefined,
-        ignoreScrollFromMVCP: undefined,
-        scrollLength: 500,
-        isScrolling: false,
-        sizes,
-        positions,
-        sizesCache: new Map(),
         idCache: new Map([
             [0, "item-0"],
             [1, "item-1"],
@@ -71,6 +54,7 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
             [3, "item-3"],
             [4, "item-4"],
         ]),
+        ignoreScrollFromMVCP: undefined,
         indexByKey: new Map([
             ["item-0", 0],
             ["item-1", 1],
@@ -78,7 +62,9 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
             ["item-3", 3],
             ["item-4", 4],
         ]),
-        timeouts: new Set(),
+        isScrolling: false,
+        lastBatchingAction: 0,
+        positions,
         props: {
             data: [
                 { id: 0, text: "Item 0" },
@@ -89,6 +75,17 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
             ],
             keyExtractor: (item: any) => `item-${item.id}`,
         },
+        scroll: 0,
+        scrollHistory: [],
+        scrollingTo: undefined,
+        scrollLength: 500,
+        scrollPending: 0,
+        scrollPrev: 0,
+        scrollPrevTime: 0,
+        scrollTime: 0,
+        sizes,
+        sizesCache: new Map(),
+        timeouts: new Set(),
         ...overrides,
     } as InternalState;
 }
@@ -109,8 +106,8 @@ describe("viewability system", () => {
             };
 
             const props = {
-                viewabilityConfig,
                 onViewableItemsChanged,
+                viewabilityConfig,
             };
 
             const result = setupViewability(props);
@@ -131,16 +128,18 @@ describe("viewability system", () => {
         it("should merge existing viewabilityConfigCallbackPairs with new config", () => {
             const existingCallback = () => {};
             const newCallback = () => {};
-            
-            const existingPairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: { id: "existing", itemVisiblePercentThreshold: 25 },
-                onViewableItemsChanged: existingCallback,
-            }];
+
+            const existingPairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: existingCallback,
+                    viewabilityConfig: { id: "existing", itemVisiblePercentThreshold: 25 },
+                },
+            ];
 
             const props = {
-                viewabilityConfigCallbackPairs: existingPairs,
                 onViewableItemsChanged: newCallback,
                 viewabilityConfig: { id: "new", viewAreaCoveragePercentThreshold: 75 },
+                viewabilityConfigCallbackPairs: existingPairs,
             };
 
             const result = setupViewability(props);
@@ -151,10 +150,12 @@ describe("viewability system", () => {
 
         it("should handle viewabilityConfigCallbackPairs without additional config", () => {
             const callback = () => {};
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: { id: "test", itemVisiblePercentThreshold: 50 },
-                onViewableItemsChanged: callback,
-            }];
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: callback,
+                    viewabilityConfig: { id: "test", itemVisiblePercentThreshold: 50 },
+                },
+            ];
 
             const props = { viewabilityConfigCallbackPairs: pairs };
             const result = setupViewability(props);
@@ -163,8 +164,8 @@ describe("viewability system", () => {
 
         it("should handle edge case with missing viewabilityConfig id", () => {
             const props = {
-                viewabilityConfig: { viewAreaCoveragePercentThreshold: 50 } as ViewabilityConfig,
                 onViewableItemsChanged: () => {},
+                viewabilityConfig: { viewAreaCoveragePercentThreshold: 50 } as ViewabilityConfig,
             };
 
             // Should handle gracefully even without id
@@ -180,16 +181,16 @@ describe("viewability system", () => {
 
         beforeEach(() => {
             onViewableItemsChangedCalls = [];
-            
+
             mockCtx = createMockContext({
-                stylePaddingTop: 0,
-                headerSize: 0,
-                numContainers: 5,
                 containerItemKey0: "item-0",
-                containerItemKey1: "item-1", 
+                containerItemKey1: "item-1",
                 containerItemKey2: "item-2",
                 containerItemKey3: "item-3",
                 containerItemKey4: "item-4",
+                headerSize: 0,
+                numContainers: 5,
+                stylePaddingTop: 0,
             });
 
             mockState = createMockState();
@@ -208,15 +209,17 @@ describe("viewability system", () => {
                 sizeVisible: 100,
             });
 
-            viewabilityPairs = [{
-                viewabilityConfig: {
-                    id: "test-config",
-                    itemVisiblePercentThreshold: 50,
+            viewabilityPairs = [
+                {
+                    onViewableItemsChanged: (info: { changed: ViewToken[]; viewableItems: ViewToken[] }) => {
+                        onViewableItemsChangedCalls.push(info);
+                    },
+                    viewabilityConfig: {
+                        id: "test-config",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: (info: { changed: ViewToken[], viewableItems: ViewToken[] }) => {
-                    onViewableItemsChangedCalls.push(info);
-                },
-            }];
+            ];
 
             // Setup viewability first
             setupViewability({
@@ -226,30 +229,32 @@ describe("viewability system", () => {
 
         it("should update viewable items immediately when no minimumViewTime", () => {
             updateViewableItems(mockState, mockCtx, viewabilityPairs, 500, 0, 2);
-            
+
             // Should trigger callback immediately
             expect(onViewableItemsChangedCalls).toHaveLength(1);
         });
 
         it("should delay updates when minimumViewTime is set", async () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "delayed-config",
-                    itemVisiblePercentThreshold: 50,
-                    minimumViewTime: 100,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: (info) => onViewableItemsChangedCalls.push(info),
+                    viewabilityConfig: {
+                        id: "delayed-config",
+                        itemVisiblePercentThreshold: 50,
+                        minimumViewTime: 100,
+                    },
                 },
-                onViewableItemsChanged: (info) => onViewableItemsChangedCalls.push(info),
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
-            
+
             updateViewableItems(mockState, mockCtx, pairs, 500, 0, 2);
-            
+
             // Should not trigger immediately
             expect(onViewableItemsChangedCalls).toHaveLength(0);
-            
+
             // Wait for timeout
-            await new Promise(resolve => setTimeout(resolve, 150));
+            await new Promise((resolve) => setTimeout(resolve, 150));
             expect(onViewableItemsChangedCalls).toHaveLength(1);
         });
 
@@ -270,7 +275,7 @@ describe("viewability system", () => {
             // First update with items 0-2 visible
             updateViewableItems(mockState, mockCtx, viewabilityPairs, 500, 0, 2);
             expect(onViewableItemsChangedCalls).toHaveLength(1);
-            
+
             const firstCall = onViewableItemsChangedCalls[0];
             expect(firstCall.viewableItems).toHaveLength(3);
             expect(firstCall.changed.every((item: ViewToken) => item.isViewable)).toBe(true);
@@ -290,7 +295,7 @@ describe("viewability system", () => {
         it("should handle scroll position changes affecting viewability", () => {
             // Scroll down so first items are out of view
             const scrolledState = createMockState({ scroll: 300 });
-            
+
             updateViewableItems(scrolledState, mockCtx, viewabilityPairs, 500, 2, 4);
             expect(onViewableItemsChangedCalls).toHaveLength(1);
         });
@@ -301,11 +306,11 @@ describe("viewability system", () => {
             mockState.sizes.set("item-99", 100);
             mockState.positions.set("item-99", -500); // Position way above visible area
             mockState.idCache.set(99, "item-99");
-            
+
             // Add a container mapping for this item
             mockCtx.values.set("containerItemKey99", "item-99");
             mockCtx.values.set("numContainers", 100);
-            
+
             // Add an entry that will be recomputed
             mockCtx.mapViewabilityAmountValues.set(99, {
                 containerId: 99,
@@ -321,22 +326,24 @@ describe("viewability system", () => {
             });
 
             expect(mockCtx.mapViewabilityAmountValues.has(99)).toBe(true);
-            
+
             // Run updateViewableItems - the computeViewability should calculate negative sizeVisible
             // and the cleanup should remove it
             updateViewableItems(mockState, mockCtx, viewabilityPairs, 500, 0, 2);
-            
+
             expect(mockCtx.mapViewabilityAmountValues.has(99)).toBe(false);
         });
 
         it("should handle corrupted viewability state gracefully", () => {
-            const corruptedPairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "corrupted",
-                    itemVisiblePercentThreshold: 50,
+            const corruptedPairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: null as any, // Corrupted callback
+                    viewabilityConfig: {
+                        id: "corrupted",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: null as any, // Corrupted callback
-            }];
+            ];
 
             // First setup the viewability to create the map entry
             setupViewability({ viewabilityConfigCallbackPairs: corruptedPairs });
@@ -349,12 +356,12 @@ describe("viewability system", () => {
         it("should handle very large scroll ranges", () => {
             const largeState = createMockState();
             largeState.props.data = Array.from({ length: 1000 }, (_, i) => ({ id: i, text: `Item ${i}` }));
-            
+
             // Add idCache entries for the range we're testing
             for (let i = 0; i < 10; i++) {
                 largeState.idCache.set(i, `item-${i}`);
             }
-            
+
             // Update with smaller range to avoid performance issues
             expect(() => {
                 updateViewableItems(largeState, mockCtx, viewabilityPairs, 500, 0, 9);
@@ -363,12 +370,12 @@ describe("viewability system", () => {
 
         it("should handle performance with rapid successive calls", () => {
             const start = performance.now();
-            
+
             // Simulate rapid scrolling with 100 updates
             for (let i = 0; i < 100; i++) {
                 updateViewableItems(mockState, mockCtx, viewabilityPairs, 500, i % 3, (i % 3) + 2);
             }
-            
+
             const duration = performance.now() - start;
             expect(duration).toBeLessThan(100); // Should complete in reasonable time
         });
@@ -384,13 +391,15 @@ describe("viewability system", () => {
         });
 
         it("should handle missing container mappings", () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "test",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "test",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -401,12 +410,14 @@ describe("viewability system", () => {
         });
 
         it("should handle viewability config without id", () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    itemVisiblePercentThreshold: 50,
-                } as ViewabilityConfig, // Missing id
-                onViewableItemsChanged: () => {},
-            }];
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        itemVisiblePercentThreshold: 50,
+                    } as ViewabilityConfig, // Missing id
+                },
+            ];
 
             expect(() => {
                 setupViewability({ viewabilityConfigCallbackPairs: pairs });
@@ -418,13 +429,15 @@ describe("viewability system", () => {
                 scroll: Number.MAX_SAFE_INTEGER,
             });
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "extreme",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "extreme",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -438,13 +451,15 @@ describe("viewability system", () => {
             corruptedState.sizes.set("item-0", NaN);
             corruptedState.positions.set("item-1", Infinity);
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "nan-test",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "nan-test",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -454,14 +469,16 @@ describe("viewability system", () => {
         });
 
         it("should handle concurrent timeout cleanup", async () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "timeout-test",
-                    itemVisiblePercentThreshold: 50,
-                    minimumViewTime: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "timeout-test",
+                        itemVisiblePercentThreshold: 50,
+                        minimumViewTime: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -471,19 +488,21 @@ describe("viewability system", () => {
             updateViewableItems(mockState, mockCtx, pairs, 500, 2, 4);
 
             // Should handle cleanup gracefully
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
             expect(mockState.timeouts.size).toBe(0);
         });
 
         it("should handle memory pressure with large timeout sets", () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "memory-test",
-                    itemVisiblePercentThreshold: 50,
-                    minimumViewTime: 1000, // Long timeout
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "memory-test",
+                        itemVisiblePercentThreshold: 50,
+                        minimumViewTime: 1000, // Long timeout
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -502,27 +521,29 @@ describe("viewability system", () => {
 
         beforeEach(() => {
             mockCtx = createMockContext({
-                stylePaddingTop: 20,
-                headerSize: 30,
-                numContainers: 5,
                 containerItemKey0: "item-0",
                 containerItemKey1: "item-1",
                 containerItemKey2: "item-2",
                 containerItemKey3: "item-3",
                 containerItemKey4: "item-4",
+                headerSize: 30,
+                numContainers: 5,
+                stylePaddingTop: 20,
             });
 
             mockState = createMockState({ scroll: 100 });
         });
 
         it("should calculate viewability with itemVisiblePercentThreshold", () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "item-threshold",
-                    itemVisiblePercentThreshold: 75,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "item-threshold",
+                        itemVisiblePercentThreshold: 75,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
             updateViewableItems(mockState, mockCtx, pairs, 400, 0, 4);
@@ -532,13 +553,15 @@ describe("viewability system", () => {
         });
 
         it("should calculate viewability with viewAreaCoveragePercentThreshold", () => {
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "area-threshold",
-                    viewAreaCoveragePercentThreshold: 25,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "area-threshold",
+                        viewAreaCoveragePercentThreshold: 25,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
             updateViewableItems(mockState, mockCtx, pairs, 400, 0, 4);
@@ -549,16 +572,18 @@ describe("viewability system", () => {
         it("should handle zero-sized items", () => {
             mockState.sizes.set("item-0", 0);
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "zero-size",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "zero-size",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
-            
+
             expect(() => {
                 updateViewableItems(mockState, mockCtx, pairs, 400, 0, 2);
             }).not.toThrow();
@@ -567,13 +592,15 @@ describe("viewability system", () => {
         it("should handle items entirely outside scroll area", () => {
             mockState.scroll = 1000; // Scroll far past all items
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "outside",
-                    itemVisiblePercentThreshold: 1,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "outside",
+                        itemVisiblePercentThreshold: 1,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
             updateViewableItems(mockState, mockCtx, pairs, 400, 0, 4);
@@ -591,13 +618,15 @@ describe("viewability system", () => {
                 callbackValue = value;
             });
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "callback-test",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "callback-test",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
             updateViewableItems(mockState, mockCtx, pairs, 400, 0, 2);
@@ -612,9 +641,9 @@ describe("viewability system", () => {
         it("should handle large datasets efficiently", () => {
             const largeData = Array.from({ length: 10000 }, (_, i) => ({ id: i, text: `Item ${i}` }));
             const mockCtx = createMockContext({
+                headerSize: 0,
                 numContainers: 100,
                 stylePaddingTop: 0,
-                headerSize: 0,
             });
 
             // Create container mappings for first 100 items
@@ -636,13 +665,15 @@ describe("viewability system", () => {
                 mockState.idCache.set(i, `item-${i}`);
             }
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "large-dataset",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "large-dataset",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 
@@ -655,20 +686,22 @@ describe("viewability system", () => {
 
         it("should handle rapid updates without memory leaks", () => {
             const mockCtx = createMockContext({
+                headerSize: 0,
                 numContainers: 10,
                 stylePaddingTop: 0,
-                headerSize: 0,
             });
 
             const mockState = createMockState();
 
-            const pairs: ViewabilityConfigCallbackPair[] = [{
-                viewabilityConfig: {
-                    id: "rapid-test",
-                    itemVisiblePercentThreshold: 50,
+            const pairs: ViewabilityConfigCallbackPair[] = [
+                {
+                    onViewableItemsChanged: () => {},
+                    viewabilityConfig: {
+                        id: "rapid-test",
+                        itemVisiblePercentThreshold: 50,
+                    },
                 },
-                onViewableItemsChanged: () => {},
-            }];
+            ];
 
             setupViewability({ viewabilityConfigCallbackPairs: pairs });
 

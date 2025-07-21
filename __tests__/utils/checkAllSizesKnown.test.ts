@@ -1,48 +1,28 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
+import type { InternalState } from "../../src/types";
 import { checkAllSizesKnown } from "../../src/utils/checkAllSizesKnown";
 import * as getIdModule from "../../src/utils/getId";
-import type { InternalState } from "../../src/types";
 
 function createMockState(overrides: Partial<InternalState> = {}): InternalState {
     return {
-        scrollPending: 0,
+        endBuffered: null,
+        endReachedBlockedByTimer: false,
         hasScrolled: false,
-        lastBatchingAction: 0,
-        scrollHistory: [],
-        scroll: 0,
-        scrollPrev: 0,
-        scrollTime: 0,
-        scrollPrevTime: 0,
-        scrollingTo: undefined,
+        idCache: new Map(),
+        idsInView: [],
         ignoreScrollFromMVCP: undefined,
         ignoreScrollFromMVCPTimeout: undefined,
-        scrollForNextCalculateItemsInView: undefined,
-        scrollLength: 500,
-        isScrolling: false,
-        queuedInitialLayout: true,
-        maintainingScrollAtEnd: false,
-        isAtEnd: false,
-        isEndReached: false,
-        endReachedBlockedByTimer: false,
-        isAtStart: false,
-        isStartReached: false,
-        startReachedBlockedByTimer: false,
-        totalSize: 0,
-        startBuffered: null,
-        endBuffered: null,
-        sizes: new Map(),
-        sizesKnown: new Map(),
-        sizesCache: new Map(),
-        positions: new Map(),
-        idCache: new Map(),
         indexByKey: new Map(),
-        idsInView: [],
-        timeouts: new Set(),
-        scrollAdjustHandler: {
-            requestAdjust: () => {},
-        },
+        isAtEnd: false,
+        isAtStart: false,
+        isEndReached: false,
+        isScrolling: false,
+        isStartReached: false,
+        lastBatchingAction: 0,
+        maintainingScrollAtEnd: false,
+        positions: new Map(),
         props: {
             data: [
                 { id: 0, text: "Item 0" },
@@ -53,6 +33,26 @@ function createMockState(overrides: Partial<InternalState> = {}): InternalState 
             ],
             keyExtractor: (item: any) => `item-${item.id}`,
         },
+        queuedInitialLayout: true,
+        scroll: 0,
+        scrollAdjustHandler: {
+            requestAdjust: () => {},
+        },
+        scrollForNextCalculateItemsInView: undefined,
+        scrollHistory: [],
+        scrollingTo: undefined,
+        scrollLength: 500,
+        scrollPending: 0,
+        scrollPrev: 0,
+        scrollPrevTime: 0,
+        scrollTime: 0,
+        sizes: new Map(),
+        sizesCache: new Map(),
+        sizesKnown: new Map(),
+        startBuffered: null,
+        startReachedBlockedByTimer: false,
+        timeouts: new Set(),
+        totalSize: 0,
         ...overrides,
     } as InternalState;
 }
@@ -98,7 +98,7 @@ describe("checkAllSizesKnown", () => {
         it("should return true when all sizes in range are known", () => {
             mockState.startBuffered = 1;
             mockState.endBuffered = 3;
-            
+
             // Mark all items in range as having known sizes
             mockState.sizesKnown.set("item-1", 100);
             mockState.sizesKnown.set("item-2", 120);
@@ -116,7 +116,7 @@ describe("checkAllSizesKnown", () => {
         it("should return false when some sizes in range are unknown", () => {
             mockState.startBuffered = 1;
             mockState.endBuffered = 3;
-            
+
             // Mark only some items as having known sizes
             mockState.sizesKnown.set("item-1", 100);
             mockState.sizesKnown.set("item-3", 110);
@@ -174,7 +174,7 @@ describe("checkAllSizesKnown", () => {
         it("should handle large ranges efficiently", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 100;
-            
+
             // Mark all items as known
             for (let i = 0; i <= 100; i++) {
                 mockState.sizesKnown.set(`item-${i}`, 100 + i);
@@ -192,10 +192,10 @@ describe("checkAllSizesKnown", () => {
         it("should handle negative start index", () => {
             mockState.startBuffered = -1;
             mockState.endBuffered = 1;
-            
+
             // Mock getId to handle negative indices
             getIdSpy.mockImplementation((state, index) => `item-${index}`);
-            
+
             mockState.sizesKnown.set("item--1", 80);
             mockState.sizesKnown.set("item-0", 90);
             mockState.sizesKnown.set("item-1", 100);
@@ -211,7 +211,7 @@ describe("checkAllSizesKnown", () => {
         it("should stop checking when first unknown size is found", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 5;
-            
+
             // Mark only first few items as known
             mockState.sizesKnown.set("item-0", 100);
             mockState.sizesKnown.set("item-1", 110);
@@ -233,7 +233,7 @@ describe("checkAllSizesKnown", () => {
         it("should stop immediately if first item is unknown", () => {
             mockState.startBuffered = 10;
             mockState.endBuffered = 15;
-            
+
             // Mark all except first item as known
             for (let i = 11; i <= 15; i++) {
                 mockState.sizesKnown.set(`item-${i}`, 100 + i);
@@ -250,7 +250,7 @@ describe("checkAllSizesKnown", () => {
         it("should check all items when last one is missing", () => {
             mockState.startBuffered = 1;
             mockState.endBuffered = 4;
-            
+
             // Mark all except last item as known
             mockState.sizesKnown.set("item-1", 100);
             mockState.sizesKnown.set("item-2", 110);
@@ -268,12 +268,12 @@ describe("checkAllSizesKnown", () => {
         it("should handle getId returning different key formats", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 2;
-            
+
             // Mock getId to return different formats
             getIdSpy.mockImplementation((state, index) => {
                 return `custom-key-${index}`;
             });
-            
+
             mockState.sizesKnown.set("custom-key-0", 100);
             mockState.sizesKnown.set("custom-key-1", 110);
             mockState.sizesKnown.set("custom-key-2", 120);
@@ -286,12 +286,12 @@ describe("checkAllSizesKnown", () => {
         it("should handle getId returning undefined", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 2;
-            
+
             // Mock getId to return undefined for second item
             getIdSpy.mockImplementation((state, index) => {
                 return index === 1 ? undefined : `item-${index}`;
             });
-            
+
             mockState.sizesKnown.set("item-0", 100);
             mockState.sizesKnown.set("item-2", 120);
 
@@ -303,7 +303,7 @@ describe("checkAllSizesKnown", () => {
         it("should handle getId returning null", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 1;
-            
+
             // Mock getId to return null
             getIdSpy.mockImplementation(() => null);
 
@@ -368,7 +368,9 @@ describe("checkAllSizesKnown", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 1;
             mockState.sizesKnown = {
-                has: () => { throw new Error("Corrupted map"); }
+                has: () => {
+                    throw new Error("Corrupted map");
+                },
             } as any;
 
             expect(() => {
@@ -391,7 +393,7 @@ describe("checkAllSizesKnown", () => {
         it("should handle very large indices", () => {
             mockState.startBuffered = Number.MAX_SAFE_INTEGER - 1;
             mockState.endBuffered = Number.MAX_SAFE_INTEGER;
-            
+
             mockState.sizesKnown.set(`item-${Number.MAX_SAFE_INTEGER - 1}`, 100);
             mockState.sizesKnown.set(`item-${Number.MAX_SAFE_INTEGER}`, 110);
 
@@ -404,10 +406,10 @@ describe("checkAllSizesKnown", () => {
         it("should handle floating point indices", () => {
             mockState.startBuffered = 1.5 as any;
             mockState.endBuffered = 3.7 as any;
-            
+
             // Should work with floating point, but behavior might be unexpected
             const result = checkAllSizesKnown(mockState);
-            
+
             // Function should handle it (though it's not a typical use case)
             expect(typeof result).toBe("boolean");
         });
@@ -417,7 +419,7 @@ describe("checkAllSizesKnown", () => {
         it("should handle large ranges with early termination efficiently", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 10000;
-            
+
             // Mark only first 5 items as known, so it should stop early
             for (let i = 0; i < 5; i++) {
                 mockState.sizesKnown.set(`item-${i}`, 100 + i);
@@ -435,18 +437,18 @@ describe("checkAllSizesKnown", () => {
         it("should handle rapid successive calls efficiently", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 10;
-            
+
             // Mark all as known
             for (let i = 0; i <= 10; i++) {
                 mockState.sizesKnown.set(`item-${i}`, 100 + i);
             }
 
             const start = performance.now();
-            
+
             for (let i = 0; i < 1000; i++) {
                 checkAllSizesKnown(mockState);
             }
-            
+
             const duration = performance.now() - start;
             expect(duration).toBeLessThan(50);
         });
@@ -484,7 +486,7 @@ describe("checkAllSizesKnown", () => {
             const indices = [0, 1, 2, 3, 4, 5];
             indices.forEach((index, i) => {
                 mockState.sizesKnown.set(`item-${index}`, 100 + index);
-                
+
                 const allKnown = checkAllSizesKnown(mockState);
                 if (i === indices.length - 1) {
                     expect(allKnown).toBe(true); // All sizes now known
@@ -516,15 +518,15 @@ describe("checkAllSizesKnown", () => {
         it("should work with different size value types", () => {
             mockState.startBuffered = 0;
             mockState.endBuffered = 3;
-            
+
             // Different types of size values
-            mockState.sizesKnown.set("item-0", 100);    // number
-            mockState.sizesKnown.set("item-1", 0);      // zero
-            mockState.sizesKnown.set("item-2", -50);    // negative
-            mockState.sizesKnown.set("item-3", NaN);    // NaN
+            mockState.sizesKnown.set("item-0", 100); // number
+            mockState.sizesKnown.set("item-1", 0); // zero
+            mockState.sizesKnown.set("item-2", -50); // negative
+            mockState.sizesKnown.set("item-3", NaN); // NaN
 
             const result = checkAllSizesKnown(mockState);
-            
+
             // Function only checks existence, not value validity
             expect(result).toBe(true);
         });
