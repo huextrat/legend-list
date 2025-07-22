@@ -1,6 +1,8 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { LayoutChangeEvent, LayoutRectangle, View } from "react-native";
 
+import { IsNewArchitecture } from "@/constants";
+
 export function useSyncLayoutState<T extends View = View>({
     getValue,
     debounce,
@@ -56,13 +58,15 @@ export function useSyncLayout<T extends View = View>({
         [onChange],
     );
 
-    useLayoutEffect(() => {
-        if (ref.current) {
-            ref.current.measure((x, y, width, height) => {
-                onChange({ height, width, x, y }, true);
-            });
-        }
-    }, []);
+    if (IsNewArchitecture) {
+        useLayoutEffect(() => {
+            if (ref.current) {
+                ref.current.measure((x, y, width, height) => {
+                    onChange({ height, width, x, y }, true);
+                });
+            }
+        }, []);
+    }
 
     return { onLayout, ref };
 }
