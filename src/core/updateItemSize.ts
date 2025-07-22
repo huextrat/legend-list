@@ -1,5 +1,3 @@
-import type { LayoutRectangle } from "react-native";
-
 import { IsNewArchitecture } from "@/constants";
 import { calculateItemsInView } from "@/core/calculateItemsInView";
 import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
@@ -135,40 +133,25 @@ export function updateItemSize(
     itemKey: string,
     sizeObj: { width: number; height: number },
 ) {
-    if (IsNewArchitecture) {
-        const { sizesKnown } = state;
-        const numContainers = peek$(ctx, "numContainers");
-        const changes: { itemKey: string; sizeObj: { width: number; height: number } }[] = [];
+    const { queuedItemSizeUpdates, queuedItemSizeUpdatesWaiting } = state;
+    const containersDidLayout = peek$(ctx, "containersDidLayout");
 
-        // Run through all containers and if we don't already have a known size then measure the item
-        // This is useful because when multiple items render in one frame, the first container fires a
-        // useLayoutEffect and we can measure all containers before their useLayoutEffects fire after a delay.
-        // This lets use fix any gaps/overlaps that might be visible before the useLayoutEffects fire for each container.
-        for (let i = 0; i < numContainers; i++) {
-            const containerItemKey = peek$(ctx, `containerItemKey${i}`);
-            if (itemKey === containerItemKey) {
-                // If it's this item just use the param
-                changes.push({ itemKey, sizeObj });
-            } else if (!sizesKnown.has(containerItemKey) && containerItemKey !== undefined) {
-                const containerRef = ctx.viewRefs.get(i);
-                if (containerRef?.current) {
-                    let measured: LayoutRectangle;
-                    containerRef.current.measure((x, y, width, height) => {
-                        measured = { height, width, x, y };
-                    });
+    if (!containersDidLayout || !queuedItemSizeUpdatesWaiting) {
+        // Update immediately if initial load or we're not already waiting
+        updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
+        if (containersDidLayout) {
+            state.queuedItemSizeUpdatesWaiting = true;
+            requestAnimationFrame(() => {
+                state.queuedItemSizeUpdatesWaiting = false;
 
-                    if (measured!) {
-                        changes.push({ itemKey: containerItemKey, sizeObj: measured });
-                    }
-                }
-            }
-        }
-
-        if (changes.length > 0) {
-            updateItemSizes(ctx, state, changes);
+                // Run all the queued updates
+                updateItemSizes(ctx, state, queuedItemSizeUpdates);
+                queuedItemSizeUpdates.length = 0;
+            });
         }
     } else {
-        updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
+        // If already waiting, queue the update so we don't queue too many renders
+        queuedItemSizeUpdates.push({ itemKey, sizeObj });
     }
 }
 
@@ -189,13 +172,16 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
     sizesKnown.set(itemKey, size);
 
     // Update averages
-    const itemType = "";
-    let averages = averageSizes[itemType];
-    if (!averages) {
-        averages = averageSizes[itemType] = { avg: 0, num: 0 };
+    if (IsNewArchitecture) {
+        const itemType = "";
+
+        let averages = averageSizes[itemType];
+        if (!averages) {
+            averages = averageSizes[itemType] = { avg: 0, num: 0 };
+        }
+        averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
+        averages.num++;
     }
-    averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
-    averages.num++;
 
     if (!prevSize || Math.abs(prevSize - size) > 0.1) {
         sizes.set(itemKey, size);

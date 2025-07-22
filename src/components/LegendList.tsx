@@ -178,6 +178,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             positions: new Map(),
             props: {} as any,
             queuedCalculateItemsInView: 0,
+            queuedItemSizeUpdates: [] as { itemKey: string; sizeObj: { width: number; height: number } }[],
             refScroller: undefined as any,
             scroll: 0,
             scrollAdjustHandler: new ScrollAdjustHandler(ctx),

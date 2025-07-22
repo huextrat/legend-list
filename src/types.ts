@@ -349,6 +349,8 @@ export interface InternalState {
     loadStartTime: number;
     initialScroll: ScrollIndexWithOffsetPosition | undefined;
     lastLayout: LayoutRectangle | undefined;
+    queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
+    queuedItemSizeUpdatesWaiting?: boolean;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
