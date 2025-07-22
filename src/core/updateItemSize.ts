@@ -172,17 +172,16 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
     sizesKnown.set(itemKey, size);
 
     // Update averages
-    if (IsNewArchitecture) {
-        const itemType = "";
+    const itemType = "";
 
-        let averages = averageSizes[itemType];
-        if (!averages) {
-            averages = averageSizes[itemType] = { avg: 0, num: 0 };
-        }
-        averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
-        averages.num++;
+    let averages = averageSizes[itemType];
+    if (!averages) {
+        averages = averageSizes[itemType] = { avg: 0, num: 0 };
     }
+    averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
+    averages.num++;
 
+    // Update saved size if it changed
     if (!prevSize || Math.abs(prevSize - size) > 0.1) {
         sizes.set(itemKey, size);
         return size - prevSize;
