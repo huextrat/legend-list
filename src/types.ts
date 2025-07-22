@@ -589,7 +589,10 @@ export const typedForwardRef = forwardRef as TypedForwardRef;
 
 export type TypedMemo = <T extends React.ComponentType<any>>(
     Component: T,
-    propsAreEqual?: (prevProps: Readonly<ComponentProps<T>>, nextProps: Readonly<ComponentProps<T>>) => boolean,
+    propsAreEqual?: (
+        prevProps: Readonly<React.JSXElementConstructor<T>>,
+        nextProps: Readonly<React.JSXElementConstructor<T>>,
+    ) => boolean,
 ) => T & { displayName?: string };
 
 export const typedMemo = memo as TypedMemo;
