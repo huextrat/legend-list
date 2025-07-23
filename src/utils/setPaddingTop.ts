@@ -1,5 +1,5 @@
 import { peek$, type StateContext, set$ } from "@/state/state";
-import { type InternalState } from "@/types";
+import type { InternalState } from "@/types";
 
 export function setPaddingTop(
     ctx: StateContext,

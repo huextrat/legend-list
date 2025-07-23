@@ -282,7 +282,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // If the stylePaddingTop has changed, scroll to an adjusted offset to
         // keep the same content in view
         const prevPaddingTop = peek$(ctx, "stylePaddingTop");
-        setPaddingTop(ctx,state, { stylePaddingTop: stylePaddingTopState });
+        setPaddingTop(ctx, state, { stylePaddingTop: stylePaddingTopState });
         refState.current!.props.stylePaddingBottom = stylePaddingBottomState;
 
         let paddingDiff = stylePaddingTopState - prevPaddingTop;
@@ -291,11 +291,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (maintainVisibleContentPosition && paddingDiff && prevPaddingTop !== undefined && Platform.OS === "ios") {
             // Scroll can be negative if being animated and that can break the pendingDiff
             if (state.scroll < 0) {
-                paddingDiff += state.scroll
+                paddingDiff += state.scroll;
             }
             requestAdjust(ctx, state, paddingDiff);
         }
-    }
+    };
 
     if (isFirst) {
         initializeStateVars();

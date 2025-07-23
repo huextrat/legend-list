@@ -1,4 +1,3 @@
-import { IsNewArchitecture } from "@/constants";
 import { calculateItemsInView } from "@/core/calculateItemsInView";
 import { doMaintainScrollAtEnd } from "@/core/doMaintainScrollAtEnd";
 import { peek$, type StateContext, set$ } from "@/state/state";
