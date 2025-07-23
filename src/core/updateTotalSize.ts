@@ -30,8 +30,16 @@ export function updateTotalSize(ctx: StateContext, state: InternalState) {
 
 function addTotalSize(ctx: StateContext, state: InternalState, key: string | null, add: number) {
     const { alignItemsAtEnd } = state.props;
+
     if (key === null) {
         state.totalSize = add;
+
+        // If a setPaddingTop timeout is queued to revert the totalSize
+        // it would set size incorrectly, so cancel it
+        if (state.timeoutSetPaddingTop) {
+            clearTimeout(state.timeoutSetPaddingTop);
+            state.timeoutSetPaddingTop = undefined;
+        }
     } else {
         state.totalSize += add;
     }

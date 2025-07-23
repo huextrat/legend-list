@@ -99,6 +99,7 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
             ["stylePaddingTop", 0],
             ["headerSize", 0],
             ["numContainers", 0],
+            ["totalSize", 0],
         ]),
         viewRefs: new Map<number, React.RefObject<View>>(),
     }));
@@ -199,7 +200,7 @@ export function getContentSize(ctx: StateContext) {
     const stylePaddingTop = values.get("stylePaddingTop") || 0;
     const headerSize = values.get("headerSize") || 0;
     const footerSize = values.get("footerSize") || 0;
-    const totalSize = values.get("totalSize") || 0;
+    const totalSize = values.get("totalSize") ;
     return headerSize + footerSize + totalSize + stylePaddingTop;
 }
 

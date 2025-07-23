@@ -13,6 +13,6 @@ export function updateAlignItemsPaddingTop(ctx: StateContext, state: InternalSta
             const contentSize = getContentSize(ctx);
             alignItemsPaddingTop = Math.max(0, Math.floor(scrollLength - contentSize));
         }
-        setPaddingTop(ctx, { alignItemsPaddingTop });
+        setPaddingTop(ctx, state, { alignItemsPaddingTop });
     }
 }

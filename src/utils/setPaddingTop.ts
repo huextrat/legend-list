@@ -1,7 +1,9 @@
 import { peek$, type StateContext, set$ } from "@/state/state";
+import { type InternalState } from "@/types";
 
 export function setPaddingTop(
     ctx: StateContext,
+    state: InternalState,
     { stylePaddingTop, alignItemsPaddingTop }: { stylePaddingTop?: number; alignItemsPaddingTop?: number },
 ) {
     if (stylePaddingTop !== undefined) {
@@ -11,11 +13,11 @@ export function setPaddingTop(
             // scroll itself because the height reduced.
             // First add the padding to the total size so that the total height in the ScrollView
             // doesn't change
-            const prevTotalSize = peek$(ctx, "totalSize") || 0;
+            let prevTotalSize = peek$(ctx, "totalSize");
             set$(ctx, "totalSize", prevTotalSize + prevStylePaddingTop);
-            setTimeout(() => {
-                // Then reset it back to how it was
-                set$(ctx, "totalSize", prevTotalSize);
+            state.timeoutSetPaddingTop = setTimeout(() => {
+                prevTotalSize = peek$(ctx, "totalSize");
+                set$(ctx, "totalSize", prevTotalSize - prevStylePaddingTop);
             }, 16);
         }
 

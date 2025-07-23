@@ -282,7 +282,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         // If the stylePaddingTop has changed, scroll to an adjusted offset to
         // keep the same content in view
         const prevPaddingTop = peek$(ctx, "stylePaddingTop");
-        setPaddingTop(ctx, { stylePaddingTop: stylePaddingTopState });
+        setPaddingTop(ctx,state, { stylePaddingTop: stylePaddingTopState });
         refState.current!.props.stylePaddingBottom = stylePaddingBottomState;
 
         let paddingDiff = stylePaddingTopState - prevPaddingTop;

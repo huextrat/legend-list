@@ -351,6 +351,7 @@ export interface InternalState {
     lastLayout: LayoutRectangle | undefined;
     queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
     queuedItemSizeUpdatesWaiting?: boolean;
+    timeoutSetPaddingTop?: any;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
