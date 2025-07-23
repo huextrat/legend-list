@@ -352,11 +352,11 @@ export function calculateItemsInView(
             }
         }
 
-        if (state.props.viewabilityConfigCallbackPairs) {
+        if (state.viewabilityConfigCallbackPairs) {
             updateViewableItems(
                 state,
                 ctx,
-                state.props.viewabilityConfigCallbackPairs,
+                state.viewabilityConfigCallbackPairs,
                 scrollLength,
                 startNoBuffer!,
                 endNoBuffer!,

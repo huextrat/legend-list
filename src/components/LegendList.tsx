@@ -235,7 +235,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         stylePaddingBottom: stylePaddingBottomState,
         stylePaddingTop: stylePaddingTopState,
         suggestEstimatedItemSize: !!suggestEstimatedItemSize,
-        viewabilityConfigCallbackPairs: undefined,
     };
 
     state.refScroller = refScroller;
@@ -397,7 +396,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             viewabilityConfigCallbackPairs,
         });
         state.viewabilityConfigCallbackPairs = viewability;
-        state.props.viewabilityConfigCallbackPairs = viewability;
         state.enableScrollForNextCalculateItemsInView = !viewability;
     }, [viewabilityConfig, viewabilityConfigCallbackPairs, onViewableItemsChanged]);
 

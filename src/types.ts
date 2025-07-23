@@ -378,7 +378,6 @@ export interface InternalState {
             | React.ComponentType<LegendListRenderItemProps<any>>;
         initialScroll: { index: number; viewOffset?: number; viewPosition?: number } | undefined;
         scrollBuffer: number;
-        viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs | undefined;
         numColumns: number;
         initialContainerPoolRatio: number;
         stylePaddingTop: number | undefined;
