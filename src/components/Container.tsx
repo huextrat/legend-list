@@ -3,9 +3,9 @@ import * as React from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 
-import { LeanView } from "@/components/LeanView";
+import { PositionView } from "@/components/PositionView";
 import { Separator } from "@/components/Separator";
-import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "@/constants";
+import { IsNewArchitecture } from "@/constants";
 import { ContextContainer, type ContextContainerType } from "@/state/ContextContainer";
 import { useArr$, useStateContext } from "@/state/state";
 import { type GetRenderedItem, typedMemo } from "@/types";
@@ -183,32 +183,5 @@ export const Container = typedMemo(function Container<ItemT>({
                 )}
             </ContextContainer.Provider>
         </PositionView>
-    );
-});
-
-const PositionView = typedMemo(function PositionView({
-    id,
-    horizontal,
-    style,
-    refView,
-    ...rest
-}: {
-    id: number;
-    horizontal: boolean;
-    style: StyleProp<ViewStyle>;
-    refView: React.RefObject<View>;
-    onLayout: (event: LayoutChangeEvent) => void;
-    children: React.ReactNode;
-}) {
-    const [position = POSITION_OUT_OF_VIEW] = useArr$([`containerPosition${id}`]);
-    return (
-        <LeanView
-            ref={refView}
-            style={[
-                style,
-                horizontal ? { transform: [{ translateX: position }] } : { transform: [{ translateY: position }] },
-            ]}
-            {...rest}
-        />
     );
 });
