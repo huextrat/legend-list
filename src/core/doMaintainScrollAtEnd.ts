@@ -17,16 +17,19 @@ export function doMaintainScrollAtEnd(ctx: StateContext, state: InternalState, a
         }
 
         requestAnimationFrame(() => {
-            state.maintainingScrollAtEnd = true;
-            refScroller.current?.scrollToEnd({
-                animated,
-            });
-            setTimeout(
-                () => {
-                    state.maintainingScrollAtEnd = false;
-                },
-                animated ? 500 : 0,
-            );
+            // Make sure we're still at the end after the animation frame, before scrolling to the end
+            if (state?.isAtEnd) {
+                state.maintainingScrollAtEnd = true;
+                refScroller.current?.scrollToEnd({
+                    animated,
+                });
+                setTimeout(
+                    () => {
+                        state.maintainingScrollAtEnd = false;
+                    },
+                    animated ? 500 : 0,
+                );
+            }
         });
 
         return true;
