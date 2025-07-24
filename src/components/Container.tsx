@@ -45,42 +45,46 @@ export const Container = typedMemo(function Container<ItemT>({
     const otherAxisSize: DimensionValue | undefined = numColumns > 1 ? `${(1 / numColumns) * 100}%` : undefined;
     let didLayout = false;
 
-    let paddingStyles: ViewStyle | undefined;
-    if (columnWrapperStyle) {
-        // Extract gap properties from columnWrapperStyle if available
-        const { columnGap, rowGap, gap } = columnWrapperStyle;
+    // Style is memoized because it's used as a dependency in PositionView.
+    // It's unlikely to change since the position is usually the only style prop that changes.
+    const style: StyleProp<ViewStyle> = useMemo(() => {
+        let paddingStyles: ViewStyle | undefined;
+        if (columnWrapperStyle) {
+            // Extract gap properties from columnWrapperStyle if available
+            const { columnGap, rowGap, gap } = columnWrapperStyle;
 
-        // Create padding styles for both horizontal and vertical layouts with multiple columns
-        if (horizontal) {
-            paddingStyles = {
-                paddingRight: columnGap || gap || undefined,
-                paddingVertical: numColumns > 1 ? (rowGap || gap || 0) / 2 : undefined,
-            };
-        } else {
-            paddingStyles = {
-                paddingBottom: rowGap || gap || undefined,
-                paddingHorizontal: numColumns > 1 ? (columnGap || gap || 0) / 2 : undefined,
-            };
+            // Create padding styles for both horizontal and vertical layouts with multiple columns
+            if (horizontal) {
+                paddingStyles = {
+                    paddingRight: columnGap || gap || undefined,
+                    paddingVertical: numColumns > 1 ? (rowGap || gap || 0) / 2 : undefined,
+                };
+            } else {
+                paddingStyles = {
+                    paddingBottom: rowGap || gap || undefined,
+                    paddingHorizontal: numColumns > 1 ? (columnGap || gap || 0) / 2 : undefined,
+                };
+            }
         }
-    }
 
-    const style: StyleProp<ViewStyle> = horizontal
-        ? {
-              flexDirection: ItemSeparatorComponent ? "row" : undefined,
-              height: otherAxisSize,
-              left: 0,
-              position: "absolute",
-              top: otherAxisPos,
-              ...(paddingStyles || {}),
-          }
-        : {
-              left: otherAxisPos,
-              position: "absolute",
-              right: numColumns > 1 ? null : 0,
-              top: 0,
-              width: otherAxisSize,
-              ...(paddingStyles || {}),
-          };
+        return horizontal
+            ? {
+                  flexDirection: ItemSeparatorComponent ? "row" : undefined,
+                  height: otherAxisSize,
+                  left: 0,
+                  position: "absolute",
+                  top: otherAxisPos,
+                  ...(paddingStyles || {}),
+              }
+            : {
+                  left: otherAxisPos,
+                  position: "absolute",
+                  right: numColumns > 1 ? null : 0,
+                  top: 0,
+                  width: otherAxisSize,
+                  ...(paddingStyles || {}),
+              };
+    }, [horizontal, otherAxisPos, otherAxisSize, columnWrapperStyle, numColumns]);
 
     const renderedItemInfo = useMemo(
         () => (itemKey !== undefined ? getRenderedItem(itemKey) : null),
@@ -101,6 +105,8 @@ export const Container = typedMemo(function Container<ItemT>({
         };
     }, [id, itemKey, index, data]);
 
+    // Note: useCallback would be pointless because it would need to have itemKey as a dependency,
+    // so it'll change on every render anyway.
     const onLayout = (event: LayoutChangeEvent) => {
         if (!isNullOrUndefined(itemKey)) {
             didLayout = true;
