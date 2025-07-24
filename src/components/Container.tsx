@@ -69,16 +69,18 @@ export const Container = typedMemo(function Container<ItemT>({
         ? {
               flexDirection: ItemSeparatorComponent ? "row" : undefined,
               height: otherAxisSize,
-              left: position,
+              left: 0,
               position: "absolute",
               top: otherAxisPos,
+              transform: [{ translateX: position }],
               ...(paddingStyles || {}),
           }
         : {
               left: otherAxisPos,
               position: "absolute",
               right: numColumns > 1 ? null : 0,
-              top: position,
+              top: 0,
+              transform: [{ translateY: position }],
               width: otherAxisSize,
               ...(paddingStyles || {}),
           };
