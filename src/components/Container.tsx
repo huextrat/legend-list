@@ -29,11 +29,10 @@ export const Container = typedMemo(function Container<ItemT>({
     const ctx = useStateContext();
     const columnWrapperStyle = ctx.columnWrapperStyle;
 
-    const [column = 0, data, itemKey, position = POSITION_OUT_OF_VIEW, numColumns, extraData] = useArr$([
+    const [column = 0, data, itemKey, numColumns, extraData] = useArr$([
         `containerColumn${id}`,
         `containerItemData${id}`,
         `containerItemKey${id}`,
-        `containerPosition${id}`,
         "numColumns",
         "extraData",
     ]);
@@ -72,7 +71,6 @@ export const Container = typedMemo(function Container<ItemT>({
               left: 0,
               position: "absolute",
               top: otherAxisPos,
-              transform: [{ translateX: position }],
               ...(paddingStyles || {}),
           }
         : {
@@ -80,7 +78,6 @@ export const Container = typedMemo(function Container<ItemT>({
               position: "absolute",
               right: numColumns > 1 ? null : 0,
               top: 0,
-              transform: [{ translateY: position }],
               width: otherAxisSize,
               ...(paddingStyles || {}),
           };
@@ -167,7 +164,14 @@ export const Container = typedMemo(function Container<ItemT>({
     // is not rendered when style changes, only the style prop.
     // This is a big perf boost to do less work rendering.
     return (
-        <LeanView key={recycleItems ? undefined : itemKey} onLayout={onLayout} ref={ref} style={style}>
+        <PositionView
+            horizontal={horizontal}
+            id={id}
+            key={recycleItems ? undefined : itemKey}
+            onLayout={onLayout}
+            refView={ref}
+            style={style}
+        >
             <ContextContainer.Provider value={contextValue}>
                 {renderedItem}
                 {renderedItemInfo && ItemSeparatorComponent && (
@@ -178,6 +182,33 @@ export const Container = typedMemo(function Container<ItemT>({
                     />
                 )}
             </ContextContainer.Provider>
-        </LeanView>
+        </PositionView>
+    );
+});
+
+const PositionView = typedMemo(function PositionView({
+    id,
+    horizontal,
+    style,
+    refView,
+    ...rest
+}: {
+    id: number;
+    horizontal: boolean;
+    style: StyleProp<ViewStyle>;
+    refView: React.RefObject<View>;
+    onLayout: (event: LayoutChangeEvent) => void;
+    children: React.ReactNode;
+}) {
+    const [position = POSITION_OUT_OF_VIEW] = useArr$([`containerPosition${id}`]);
+    return (
+        <LeanView
+            ref={refView}
+            style={[
+                style,
+                horizontal ? { transform: [{ translateX: position }] } : { transform: [{ translateY: position }] },
+            ]}
+            {...rest}
+        />
     );
 });
