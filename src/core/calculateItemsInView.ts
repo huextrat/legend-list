@@ -50,7 +50,7 @@ export function calculateItemsInView(
         if (doMVCP || dataChanged) {
             // TODO: This should only run if a size changed or items changed
             // Handle maintainVisibleContentPosition adjustment early
-            const checkMVCP = doMVCP ? prepareMVCP(ctx, state) : undefined;
+            const checkMVCP = doMVCP ? prepareMVCP(ctx, state, dataChanged) : undefined;
 
             // Update all positions upfront so we can assume they're correct
             updateAllPositions(ctx, state, dataChanged);

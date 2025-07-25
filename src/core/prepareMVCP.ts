@@ -1,9 +1,13 @@
+import { Platform } from "react-native";
+
+import { IsNewArchitecture } from "@/constants";
+import { scrollTo } from "@/core/scrollTo";
 import { peek$, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 import { getId } from "@/utils/getId";
 import { requestAdjust } from "@/utils/requestAdjust";
 
-export function prepareMVCP(ctx: StateContext, state: InternalState): () => void {
+export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged?: boolean): () => void {
     const {
         positions,
         scrollingTo,
@@ -42,7 +46,18 @@ export function prepareMVCP(ctx: StateContext, state: InternalState): () => void
                 const positionDiff = newPosition - prevPosition;
 
                 if (Math.abs(positionDiff) > 0.1) {
-                    requestAdjust(ctx, state, positionDiff);
+                    if (
+                        Platform.OS === "android" &&
+                        !IsNewArchitecture &&
+                        dataChanged &&
+                        state.scroll <= positionDiff
+                    ) {
+                        scrollTo(state, {
+                            offset: state.scroll + positionDiff,
+                        });
+                    } else {
+                        requestAdjust(ctx, state, positionDiff);
+                    }
                 }
             }
         }
