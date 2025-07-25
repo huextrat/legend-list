@@ -8,6 +8,7 @@ import {
     type NativeSyntheticEvent,
     ScrollView,
     type ScrollViewProps,
+    Text,
     View,
     type ViewStyle,
 } from "react-native";
@@ -193,6 +194,25 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                     {getComponent(ListFooterComponent)}
                 </View>
             )}
+            {__DEV__ && ENABLE_DEVMODE && <DevNumbers />}
         </SnapOrScroll>
     );
 });
+
+const DevNumbers: React.FC =
+    (__DEV__ as unknown as any) &&
+    function DevNumbers() {
+        return Array.from({ length: 100 }).map((_, index) => (
+            <View
+                key={index}
+                style={{
+                    height: 100,
+                    position: "absolute",
+                    top: index * 100,
+                    width: "100%",
+                }}
+            >
+                <Text style={{ color: "white" }}>{index * 100}</Text>
+            </View>
+        ));
+    };
