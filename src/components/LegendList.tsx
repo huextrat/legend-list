@@ -528,9 +528,17 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 onLayout={onLayout}
                 onLayoutHeader={onLayoutHeader}
                 onMomentumScrollEnd={(event) => {
+                    if (IsNewArchitecture) {
                     requestAnimationFrame(() => {
                         finishScrollTo(refState.current);
                     });
+                    } else {
+                        // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
+                        // This should ideally wait until all layouts have settled.
+                        setTimeout(() => {
+                            finishScrollTo(refState.current);
+                        }, 1000);
+                    }
 
                     if (onMomentumScrollEnd) {
                         onMomentumScrollEnd(event);
