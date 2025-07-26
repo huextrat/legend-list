@@ -5,11 +5,14 @@ import type { InternalState } from "@/types";
 
 export function doInitialAllocateContainers(ctx: StateContext, state: InternalState): boolean | undefined {
     // Allocate containers
-    const { scrollLength } = state;
+    const {
+        scrollLength,
+        props: { getItemType },
+    } = state;
     const data = state.props.data;
     if (scrollLength > 0 && data.length > 0 && !peek$(ctx, "numContainers")) {
         const averageItemSize = state.props.getEstimatedItemSize
-            ? state.props.getEstimatedItemSize(0, data[0])
+            ? state.props.getEstimatedItemSize(0, data[0], getItemType ? (getItemType(data[0], 0) ?? "") : "")
             : state.props.estimatedItemSize;
         const Extra = 1.5; // TODO make it a prop, experiment with whether it's faster with more containers
         const numContainers = Math.ceil(

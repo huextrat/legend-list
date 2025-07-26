@@ -21,6 +21,7 @@ export type LegendListPropsBase<
         | ComponentProps<typeof ScrollView>
         | ComponentProps<typeof Animated.ScrollView>
         | ComponentProps<typeof Reanimated.ScrollView>,
+    TItemType extends string | undefined = string | undefined,
 > = Omit<
     TScrollView,
     | "contentOffset"
@@ -75,7 +76,7 @@ export type LegendListPropsBase<
      * In case you have distinct item sizes, you can provide a function to get the size of an item.
      * Use instead of FlatList's getItemLayout or FlashList overrideItemLayout if you want to have accurate initialScrollOffset, you should provide this function
      */
-    getEstimatedItemSize?: (index: number, item: ItemT) => number;
+    getEstimatedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
 
     /**
      * Ratio of initial container pool size to data length (e.g., 0.5 for half).
@@ -234,8 +235,8 @@ export type LegendListPropsBase<
      * @required
      */
     renderItem?:
-        | ((props: LegendListRenderItemProps<ItemT>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<ItemT>>;
+        | ((props: LegendListRenderItemProps<ItemT, TItemType>) => ReactNode)
+        | React.ComponentType<LegendListRenderItemProps<ItemT, TItemType>>;
 
     /**
      * Render custom ScrollView component.
@@ -270,9 +271,9 @@ export type LegendListPropsBase<
 
     snapToIndices?: number[];
 
-    getItemType?: (item: ItemT, index: number) => string | number | undefined;
+    getItemType?: (item: ItemT, index: number) => TItemType;
 
-    getFixedItemSize?: (index: number, item: ItemT) => number;
+    getFixedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
 };
 
 export interface MaintainScrollAtEndOptions {
@@ -287,7 +288,7 @@ export interface ColumnWrapperStyle {
     columnGap?: number;
 }
 
-export type LegendListProps<ItemT> = LegendListPropsBase<
+export type LegendListProps<ItemT = any> = LegendListPropsBase<
     ItemT,
     Omit<ComponentProps<typeof ScrollView>, "scrollEventThrottle">
 >;
@@ -361,29 +362,25 @@ export interface InternalState {
         alignItemsAtEnd: boolean;
         data: readonly any[];
         estimatedItemSize: number | undefined;
-        getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
-        getFixedItemSize: ((index: number, item: any) => number) | undefined;
-        getItemType: ((item: any, index: number) => string | number | undefined) | undefined;
+        getEstimatedItemSize: LegendListProps["getEstimatedItemSize"];
+        getFixedItemSize: LegendListProps["getFixedItemSize"];
+        getItemType: LegendListProps["getItemType"];
         horizontal: boolean;
-        keyExtractor: ((item: any, index: number) => string) | undefined;
+        keyExtractor: LegendListProps["keyExtractor"];
         maintainScrollAtEnd: boolean | MaintainScrollAtEndOptions;
         maintainScrollAtEndThreshold: number | undefined;
         maintainVisibleContentPosition: boolean;
-        onEndReached: (((info: { distanceFromEnd: number }) => void) | null | undefined) | undefined;
+        onEndReached: LegendListProps["onEndReached"];
         onEndReachedThreshold: number | null | undefined;
-        onItemSizeChanged:
-            | ((info: { size: number; previous: number; index: number; itemKey: string; itemData: any }) => void)
-            | undefined;
-        onLoad: ((info: { elapsedTimeInMs: number }) => void) | undefined;
-        onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-        onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
+        onItemSizeChanged: LegendListProps["onItemSizeChanged"];
+        onLoad: LegendListProps["onLoad"];
+        onScroll: LegendListProps["onScroll"];
+        onStartReached: LegendListProps["onStartReached"];
         onStartReachedThreshold: number | null | undefined;
         recycleItems: boolean;
         suggestEstimatedItemSize: boolean;
         stylePaddingBottom: number | undefined;
-        renderItem:
-            | ((props: LegendListRenderItemProps<any>) => ReactNode)
-            | React.ComponentType<LegendListRenderItemProps<any>>;
+        renderItem: LegendListProps["renderItem"];
         initialScroll: { index: number; viewOffset?: number; viewPosition?: number } | undefined;
         scrollBuffer: number;
         numColumns: number;
@@ -401,8 +398,12 @@ export interface ViewableRange<T> {
     items: T[];
 }
 
-export interface LegendListRenderItemProps<ItemT> {
+export interface LegendListRenderItemProps<
+    ItemT,
+    TItemType extends string | number | undefined = string | number | undefined,
+> {
     item: ItemT;
+    type: TItemType;
     index: number;
     extraData: any;
 }

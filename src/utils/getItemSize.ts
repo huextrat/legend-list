@@ -23,8 +23,10 @@ export function getItemSize(
 
     let size: number | undefined;
 
+    const itemType = getItemType ? (getItemType(data, index) ?? "") : "";
+
     if (getFixedItemSize) {
-        size = getFixedItemSize(index, data);
+        size = getFixedItemSize(index, data, itemType);
         if (size !== undefined) {
             sizesKnown.set(key, size);
         }
@@ -33,7 +35,6 @@ export function getItemSize(
     // useAverageSize will be false if getEstimatedItemSize is defined
     if (size === undefined && useAverageSize && sizeKnown === undefined && !scrollingTo) {
         // Use item type specific average if available
-        const itemType = getItemType ? String(getItemType(data, index) ?? "") : "";
         if (itemType === "") {
             size = defaultAverageSize;
         } else {
@@ -54,7 +55,7 @@ export function getItemSize(
 
     if (size === undefined) {
         // Get estimated size if we don't have an average or already cached size
-        size = getEstimatedItemSize ? getEstimatedItemSize(index, data) : estimatedItemSize!;
+        size = getEstimatedItemSize ? getEstimatedItemSize(index, data, itemType) : estimatedItemSize!;
     }
 
     // Save to rendered sizes

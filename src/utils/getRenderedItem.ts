@@ -10,7 +10,7 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
 
     const {
         indexByKey,
-        props: { data, renderItem },
+        props: { data, getItemType, renderItem },
     } = state;
 
     const index = indexByKey.get(key);
@@ -26,6 +26,7 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
             extraData: peek$(ctx, "extraData"),
             index,
             item: data[index],
+            type: getItemType ? (getItemType(data[index], index) ?? "") : "",
         };
 
         renderedItem = React.createElement(renderItem, itemProps);
