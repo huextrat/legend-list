@@ -40,6 +40,10 @@ const data: ListElement[] = [
         url: "/countries",
     },
     {
+        title: "Countries with headers",
+        url: "/countries-with-headers",
+    },
+    {
         title: "Lazy List",
         url: "/lazy-list",
     },

@@ -160,7 +160,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
         indexByKey,
         sizesKnown,
         averageSizes,
-        props: { data, horizontal },
+        props: { data, horizontal, getEstimatedItemSize, getItemType },
     } = state;
     if (!data) return 0;
 
@@ -170,15 +170,19 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
 
     sizesKnown.set(itemKey, size);
 
-    // Update averages
-    const itemType = "";
+    console.log("updateOneItemSize", itemKey, size, prevSize);
 
-    let averages = averageSizes[itemType];
-    if (!averages) {
-        averages = averageSizes[itemType] = { avg: 0, num: 0 };
+    // Update averages per item type
+    // If user has provided getEstimatedItemSize that has precedence over averages
+    if (!getEstimatedItemSize) {
+        const itemType = getItemType ? String(getItemType(data[index], index) ?? "") : "";
+        let averages = averageSizes[itemType];
+        if (!averages) {
+            averages = averageSizes[itemType] = { avg: 0, num: 0 };
+        }
+        averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
+        averages.num++;
     }
-    averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
-    averages.num++;
 
     // Update saved size if it changed
     if (!prevSize || Math.abs(prevSize - size) > 0.1) {

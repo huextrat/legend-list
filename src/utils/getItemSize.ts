@@ -1,17 +1,20 @@
 import type { InternalState } from "@/types";
+import { roundSize } from "@/utils/helpers";
 
 export function getItemSize(
     state: InternalState,
     key: string,
     index: number,
     data: any,
-    useAverageSize?: number | undefined,
+    useAverageSize?: boolean,
+    defaultAverageSize?: number | undefined,
 ) {
     const {
         sizesKnown,
         sizes,
         scrollingTo,
-        props: { estimatedItemSize, getEstimatedItemSize },
+        averageSizes,
+        props: { estimatedItemSize, getEstimatedItemSize, getItemType },
     } = state;
     const sizeKnown = sizesKnown.get(key)!;
     if (sizeKnown !== undefined) {
@@ -20,10 +23,18 @@ export function getItemSize(
 
     let size: number | undefined;
 
-    // Using average size is not supported on old architecture because it can't layout immediately
-    if (useAverageSize !== undefined && sizeKnown === undefined && !getEstimatedItemSize && !scrollingTo) {
-        // TODO: Hook this up to actual item type later once we have item types
-        size = useAverageSize;
+    // useAverageSize will be false if getEstimatedItemSize is defined
+    if (useAverageSize && sizeKnown === undefined && !scrollingTo) {
+        // Use item type specific average if available
+        const itemType = getItemType ? String(getItemType(data, index) ?? "") : "";
+        if (itemType === "") {
+            size = defaultAverageSize;
+        } else {
+            const averageSizeForType = averageSizes[itemType]?.avg;
+            if (averageSizeForType !== undefined) {
+                size = roundSize(averageSizeForType);
+            }
+        }
     }
 
     if (size === undefined) {

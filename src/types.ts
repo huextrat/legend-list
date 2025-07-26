@@ -269,6 +269,8 @@ export type LegendListPropsBase<
     onLoad?: (info: { elapsedTimeInMs: number }) => void;
 
     snapToIndices?: number[];
+
+    getItemType?: (item: ItemT, index: number) => string | number | undefined;
 };
 
 export interface MaintainScrollAtEndOptions {
@@ -357,6 +359,7 @@ export interface InternalState {
         data: readonly any[];
         estimatedItemSize: number | undefined;
         getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
+        getItemType: ((item: any, index: number) => string | number | undefined) | undefined;
         horizontal: boolean;
         keyExtractor: ((item: any, index: number) => string) | undefined;
         maintainScrollAtEnd: boolean | MaintainScrollAtEndOptions;
@@ -371,6 +374,7 @@ export interface InternalState {
         onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
         onStartReached: (((info: { distanceFromStart: number }) => void) | null | undefined) | undefined;
         onStartReachedThreshold: number | null | undefined;
+        recycleItems: boolean;
         suggestEstimatedItemSize: boolean;
         stylePaddingBottom: number | undefined;
         renderItem:

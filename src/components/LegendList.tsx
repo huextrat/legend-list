@@ -99,6 +99,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         estimatedListSize,
         estimatedItemSize: estimatedItemSizeProp,
         getEstimatedItemSize,
+        getItemType,
         suggestEstimatedItemSize,
         ListHeaderComponent,
         ListEmptyComponent,
@@ -214,6 +215,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         data: dataProp,
         estimatedItemSize,
         getEstimatedItemSize,
+        getItemType,
         horizontal: !!horizontal,
         initialContainerPoolRatio,
         initialScroll,
@@ -229,6 +231,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onScroll: onScrollProp,
         onStartReached,
         onStartReachedThreshold,
+        recycleItems: !!recycleItems,
         renderItem: renderItem!,
         scrollBuffer,
         snapToIndices,
@@ -529,9 +532,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 onLayoutHeader={onLayoutHeader}
                 onMomentumScrollEnd={(event) => {
                     if (IsNewArchitecture) {
-                    requestAnimationFrame(() => {
-                        finishScrollTo(refState.current);
-                    });
+                        requestAnimationFrame(() => {
+                            finishScrollTo(refState.current);
+                        });
                     } else {
                         // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
                         // This should ideally wait until all layouts have settled.
