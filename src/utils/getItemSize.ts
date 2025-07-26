@@ -14,7 +14,7 @@ export function getItemSize(
         sizes,
         scrollingTo,
         averageSizes,
-        props: { estimatedItemSize, getEstimatedItemSize, getItemType },
+        props: { estimatedItemSize, getEstimatedItemSize, getFixedItemSize, getItemType },
     } = state;
     const sizeKnown = sizesKnown.get(key)!;
     if (sizeKnown !== undefined) {
@@ -23,8 +23,15 @@ export function getItemSize(
 
     let size: number | undefined;
 
+    if (getFixedItemSize) {
+        size = getFixedItemSize(index, data);
+        if (size !== undefined) {
+            sizesKnown.set(key, size);
+        }
+    }
+
     // useAverageSize will be false if getEstimatedItemSize is defined
-    if (useAverageSize && sizeKnown === undefined && !scrollingTo) {
+    if (size === undefined && useAverageSize && sizeKnown === undefined && !scrollingTo) {
         // Use item type specific average if available
         const itemType = getItemType ? String(getItemType(data, index) ?? "") : "";
         if (itemType === "") {

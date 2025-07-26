@@ -132,7 +132,21 @@ export function updateItemSize(
     itemKey: string,
     sizeObj: { width: number; height: number },
 ) {
-    const { queuedItemSizeUpdates, queuedItemSizeUpdatesWaiting } = state;
+    const {
+        queuedItemSizeUpdates,
+        queuedItemSizeUpdatesWaiting,
+        sizesKnown,
+        props: { getFixedItemSize },
+    } = state;
+
+    if (getFixedItemSize) {
+        const index = state.indexByKey.get(itemKey)!;
+        const size = getFixedItemSize(index, state.props.data[index]);
+        if (size !== undefined && size === sizesKnown.get(itemKey)) {
+            return;
+        }
+    }
+
     const containersDidLayout = peek$(ctx, "containersDidLayout");
 
     if (!containersDidLayout || !queuedItemSizeUpdatesWaiting) {

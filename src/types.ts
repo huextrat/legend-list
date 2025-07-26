@@ -271,6 +271,8 @@ export type LegendListPropsBase<
     snapToIndices?: number[];
 
     getItemType?: (item: ItemT, index: number) => string | number | undefined;
+
+    getFixedItemSize?: (index: number, item: ItemT) => number;
 };
 
 export interface MaintainScrollAtEndOptions {
@@ -360,6 +362,7 @@ export interface InternalState {
         data: readonly any[];
         estimatedItemSize: number | undefined;
         getEstimatedItemSize: ((index: number, item: any) => number) | undefined;
+        getFixedItemSize: ((index: number, item: any) => number) | undefined;
         getItemType: ((item: any, index: number) => string | number | undefined) | undefined;
         horizontal: boolean;
         keyExtractor: ((item: any, index: number) => string) | undefined;

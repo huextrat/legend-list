@@ -44,6 +44,10 @@ const data: ListElement[] = [
         url: "/countries-with-headers",
     },
     {
+        title: "Countries with headers fixed",
+        url: "/countries-with-headers-fixed",
+    },
+    {
         title: "Lazy List",
         url: "/lazy-list",
     },

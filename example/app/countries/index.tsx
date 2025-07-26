@@ -83,11 +83,17 @@ const App = () => {
                     data={filteredData}
                     estimatedItemSize={70}
                     extraData={selectedId}
+                    getFixedItemSize={(index, item) => {
+                        return 200;
+                    }}
                     keyExtractor={(item) => item.id}
                     onEndReached={({ distanceFromEnd }) => {
                         console.log("onEndReached", distanceFromEnd);
                     }}
                     onEndReachedThreshold={0.1}
+                    onItemSizeChanged={({ size, previous, index, itemKey, itemData }) => {
+                        console.log("onItemSizeChanged", size, previous, index, itemKey, itemData);
+                    }}
                     onStartReached={({ distanceFromStart }) => {
                         console.log("onStartReached", distanceFromStart);
                     }}
