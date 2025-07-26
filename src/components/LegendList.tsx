@@ -157,6 +157,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             averageSizes: {},
             columns: new Map(),
             containerItemKeys: new Set(),
+            containerItemTypes: new Map(),
             enableScrollForNextCalculateItemsInView: true,
             endBuffered: -1,
             endNoBuffer: -1,

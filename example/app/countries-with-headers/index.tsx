@@ -191,10 +191,6 @@ const App = () => {
 
     const keyExtractor = (item: ListItem) => item.id;
 
-    const headerCount = filteredData.filter((item) => item.type === "header").length;
-    const countryCount = filteredData.filter((item) => item.type === "country").length;
-    const bigCountryCount = filteredData.filter((item) => item.type === "big-country").length;
-
     return (
         <SafeAreaProvider>
             <SafeAreaView style={styles.container}>
@@ -226,14 +222,6 @@ const App = () => {
                     recycleItems
                     renderItem={renderItem}
                 />
-                <View style={styles.infoContainer}>
-                    <Text style={styles.infoText}>
-                        This example shows separate average size calculation per item type.{"\n"}
-                        Headers: {headerCount}, Countries: {countryCount}, Big Countries: {bigCountryCount}
-                        {"\n"}
-                        Each type calculates its own average size for better estimates.
-                    </Text>
-                </View>
             </SafeAreaView>
         </SafeAreaProvider>
     );
@@ -301,17 +289,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "700",
         letterSpacing: 1,
-    },
-    infoContainer: {
-        backgroundColor: "#fff",
-        borderTopColor: "#e0e0e0",
-        borderTopWidth: 1,
-        padding: 12,
-    },
-    infoText: {
-        color: "#666",
-        fontSize: 12,
-        textAlign: "center",
     },
     item: {
         alignItems: "center",

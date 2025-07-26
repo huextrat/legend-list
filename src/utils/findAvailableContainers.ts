@@ -9,11 +9,26 @@ export function findAvailableContainers(
     startBuffered: number,
     endBuffered: number,
     pendingRemoval: number[],
+    requiredItemTypes?: string[],
 ): number[] {
     const numContainers = peek$(ctx, "numContainers");
 
     const result: number[] = [];
     const availableContainers: Array<{ index: number; distance: number }> = [];
+
+    // Helper function to check if a container can be reused for a given item type
+    const canReuseContainer = (containerIndex: number, requiredType: string | undefined): boolean => {
+        if (!requiredType) return true; // No type requirement, can reuse any container
+
+        const existingType = state.containerItemTypes.get(containerIndex);
+        if (!existingType) return true; // Untyped container can be reused for any type
+
+        return existingType === requiredType;
+    };
+
+    // Track which types we still need containers for
+    const neededTypes = requiredItemTypes ? [...requiredItemTypes] : [];
+    let typeIndex = 0;
 
     // First pass: collect unallocated containers (most efficient to use)
     for (let u = 0; u < numContainers; u++) {
@@ -23,12 +38,18 @@ export function findAvailableContainers(
             const index = pendingRemoval.indexOf(u);
             if (index !== -1) {
                 pendingRemoval.splice(index, 1);
-                isOk = true;
+                const requiredType = neededTypes[typeIndex];
+                isOk = canReuseContainer(u, requiredType);
             }
         }
+
         // Hasn't been allocated yet or is pending removal, so use it
         if (isOk) {
+            // If we have type requirements, check if this container can be used
             result.push(u);
+            if (requiredItemTypes) {
+                typeIndex++;
+            }
             if (result.length >= numNeeded) {
                 return result; // Early exit if we have enough unallocated containers
             }
@@ -41,10 +62,17 @@ export function findAvailableContainers(
         if (key === undefined) continue; // Skip already collected containers
 
         const index = state.indexByKey.get(key)!;
-        if (index < startBuffered) {
-            availableContainers.push({ distance: startBuffered - index, index: u });
-        } else if (index > endBuffered) {
-            availableContainers.push({ distance: index - endBuffered, index: u });
+        const isOutOfView = index < startBuffered || index > endBuffered;
+
+        if (isOutOfView) {
+            const distance = index < startBuffered ? startBuffered - index : index - endBuffered;
+
+            if (
+                !requiredItemTypes ||
+                (typeIndex < neededTypes.length && canReuseContainer(u, neededTypes[typeIndex]))
+            ) {
+                availableContainers.push({ distance, index: u });
+            }
         }
     }
 
@@ -60,9 +88,12 @@ export function findAvailableContainers(
                 availableContainers.length = remaining;
             }
 
-            // Add to result, keeping track of original indices
+            // Add to result, keeping track of original indices and type requirements
             for (const container of availableContainers) {
                 result.push(container.index);
+                if (requiredItemTypes) {
+                    typeIndex++;
+                }
             }
         }
 

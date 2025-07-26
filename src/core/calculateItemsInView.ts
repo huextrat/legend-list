@@ -257,6 +257,14 @@ export function calculateItemsInView(
             }
 
             if (needNewContainers.length > 0) {
+                // Calculate required item types for type-safe container reuse
+                const requiredItemTypes = state.props.getItemType 
+                    ? needNewContainers.map(i => {
+                        const itemType = state.props.getItemType!(data[i], i);
+                        return itemType ? String(itemType) : "";
+                    })
+                    : undefined;
+
                 const availableContainers = findAvailableContainers(
                     ctx,
                     state,
@@ -264,6 +272,7 @@ export function calculateItemsInView(
                     startBuffered,
                     endBuffered,
                     pendingRemoval,
+                    requiredItemTypes,
                 );
                 for (let idx = 0; idx < needNewContainers.length; idx++) {
                     const i = needNewContainers[idx];
@@ -278,6 +287,11 @@ export function calculateItemsInView(
 
                     set$(ctx, `containerItemKey${containerIndex}`, id);
                     set$(ctx, `containerItemData${containerIndex}`, data[i]);
+
+                    // Store item type for type-safe container reuse
+                    if (requiredItemTypes) {
+                        state.containerItemTypes.set(containerIndex, requiredItemTypes[idx]);
+                    }
 
                     // Update cache when adding new item
                     containerItemKeys!.add(id);
@@ -306,6 +320,9 @@ export function calculateItemsInView(
                 if (itemKey) {
                     containerItemKeys!.delete(itemKey);
                 }
+
+                // Clear container item type when deallocating
+                state.containerItemTypes.delete(i);
 
                 set$(ctx, `containerItemKey${i}`, undefined);
                 set$(ctx, `containerItemData${i}`, undefined);
