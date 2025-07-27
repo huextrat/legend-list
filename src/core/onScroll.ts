@@ -60,9 +60,6 @@ function updateScroll(ctx: StateContext, state: InternalState, newScroll: number
     state.scrollPrevTime = state.scrollTime;
     state.scroll = newScroll;
     state.scrollTime = currentTime;
-
-    // Note: Sticky positioning is now handled purely by Animated values in PositionView
-
     // Use velocity to predict scroll position
     calculateItemsInView(ctx, state);
     checkAtBottom(ctx, state);

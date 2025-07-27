@@ -304,6 +304,11 @@ export function calculateItemsInView(
                         // Set sticky offset to top padding for proper sticky positioning
                         const topPadding = (peek$(ctx, "stylePaddingTop") || 0) + (peek$(ctx, "headerSize") || 0);
                         set$(ctx, `containerStickyOffset${containerIndex}`, new Animated.Value(topPadding));
+                        // Add container to sticky pool
+                        state.stickyContainerPool.add(containerIndex);
+                    } else {
+                        // Ensure container is not in sticky pool if item is not sticky
+                        state.stickyContainerPool.delete(containerIndex);
                     }
 
                     if (containerIndex >= numContainers) {
@@ -338,6 +343,8 @@ export function calculateItemsInView(
                 if (state.stickyContainerPool.has(i)) {
                     set$(ctx, `containerSticky${i}`, false);
                     set$(ctx, `containerStickyOffset${i}`, undefined);
+                    // Remove container from sticky pool
+                    state.stickyContainerPool.delete(i);
                 }
 
                 set$(ctx, `containerItemKey${i}`, undefined);
