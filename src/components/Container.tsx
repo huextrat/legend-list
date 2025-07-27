@@ -3,7 +3,7 @@ import * as React from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DimensionValue, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
 
-import { PositionView } from "@/components/PositionView";
+import { PositionView, PositionViewSticky } from "@/components/PositionView";
 import { Separator } from "@/components/Separator";
 import { IsNewArchitecture } from "@/constants";
 import { ContextContainer, type ContextContainerType } from "@/state/ContextContainer";
@@ -27,14 +27,16 @@ export const Container = typedMemo(function Container<ItemT>({
     ItemSeparatorComponent?: React.ComponentType<{ leadingItem: ItemT }>;
 }) {
     const ctx = useStateContext();
-    const columnWrapperStyle = ctx.columnWrapperStyle;
+    const { columnWrapperStyle, animatedScrollY } = ctx;
 
-    const [column = 0, data, itemKey, numColumns, extraData] = useArr$([
+    const [column = 0, data, itemKey, numColumns, extraData, isSticky, stickyOffset] = useArr$([
         `containerColumn${id}`,
         `containerItemData${id}`,
         `containerItemKey${id}`,
         "numColumns",
         "extraData",
+        `containerSticky${id}`,
+        `containerStickyOffset${id}`,
     ]);
 
     const refLastSize = useRef<{ width: number; height: number }>();
@@ -166,16 +168,25 @@ export const Container = typedMemo(function Container<ItemT>({
         }, [itemKey]);
     }
 
+    // Use animated values from state for sticky positioning
+
     // Use a reactive View to ensure the container element itself
     // is not rendered when style changes, only the style prop.
     // This is a big perf boost to do less work rendering.
+
+    // Always use PositionViewAnimated for sticky containers
+    const PositionComponent = isSticky ? PositionViewSticky : PositionView;
+
     return (
-        <PositionView
+        <PositionComponent
+            animatedScrollY={isSticky ? animatedScrollY : undefined}
             horizontal={horizontal}
             id={id}
+            index={index!}
             key={recycleItems ? undefined : itemKey}
             onLayout={onLayout}
             refView={ref}
+            stickyOffset={isSticky ? stickyOffset : undefined}
             style={style}
         >
             <ContextContainer.Provider value={contextValue}>
@@ -188,6 +199,6 @@ export const Container = typedMemo(function Container<ItemT>({
                     />
                 )}
             </ContextContainer.Provider>
-        </PositionView>
+        </PositionComponent>
     );
 });

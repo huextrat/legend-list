@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { View } from "react-native";
+import { Animated, type View } from "react-native";
 import { useSyncExternalStore } from "use-sync-external-store/shim";
 
 import type {
@@ -25,6 +25,8 @@ export type ListenerType =
     | `containerItemData${number}`
     | `containerPosition${number}`
     | `containerColumn${number}`
+    | `containerSticky${number}`
+    | `containerStickyOffset${number}`
     | "containersDidLayout"
     | "extraData"
     | "numColumns"
@@ -63,6 +65,7 @@ export type ListenerTypeValueMap = {
     otherAxisSize: number;
     snapToOffsets: number[];
     scrollSize: { width: number; height: number };
+    animatedScrollY: any;
 } & {
     [K in ListenerType as K extends `containerItemKey${number}` ? K : never]: string;
 } & {
@@ -71,6 +74,10 @@ export type ListenerTypeValueMap = {
     [K in ListenerType as K extends `containerPosition${number}` ? K : never]: number;
 } & {
     [K in ListenerType as K extends `containerColumn${number}` ? K : never]: number;
+} & {
+    [K in ListenerType as K extends `containerSticky${number}` ? K : never]: boolean;
+} & {
+    [K in ListenerType as K extends `containerStickyOffset${number}` ? K : never]: any;
 };
 
 export interface StateContext {
@@ -82,12 +89,14 @@ export interface StateContext {
     mapViewabilityAmountValues: Map<number, ViewAmountToken>;
     columnWrapperStyle: ColumnWrapperStyle | undefined;
     viewRefs: Map<number, React.RefObject<View>>;
+    animatedScrollY: Animated.Value;
 }
 
 const ContextState = React.createContext<StateContext | null>(null);
 
 export function StateProvider({ children }: { children: React.ReactNode }) {
     const [value] = React.useState<StateContext>(() => ({
+        animatedScrollY: new Animated.Value(0),
         columnWrapperStyle: undefined,
         listeners: new Map(),
         mapViewabilityAmountCallbacks: new Map<number, ViewabilityAmountCallback>(),

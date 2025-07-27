@@ -10,6 +10,7 @@ import {
     useState,
 } from "react";
 import {
+    Animated,
     Dimensions,
     type LayoutChangeEvent,
     type LayoutRectangle,
@@ -118,6 +119,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         refScrollView,
         renderItem,
         snapToIndices,
+        stickyIndices,
         style: styleProp,
         suggestEstimatedItemSize,
         viewabilityConfig,
@@ -155,6 +157,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             (IsNewArchitecture ? { height: 0, width: 0 } : Dimensions.get("window")))[horizontal ? "width" : "height"];
 
         refState.current = {
+            activeStickyIndex: undefined,
             averageSizes: {},
             columns: new Map(),
             containerItemKeys: new Set(),
@@ -197,6 +200,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             startBuffered: -1,
             startNoBuffer: -1,
             startReachedBlockedByTimer: false,
+            stickyContainerPool: new Set(),
+            stickyContainers: new Map(),
             timeoutSizeMessage: 0,
             timeouts: new Set(),
             totalSize: 0,
@@ -238,6 +243,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         renderItem: renderItem!,
         scrollBuffer,
         snapToIndices,
+        stickyIndices,
         stylePaddingBottom: stylePaddingBottomState,
         stylePaddingTop: stylePaddingTopState,
         suggestEstimatedItemSize: !!suggestEstimatedItemSize,
@@ -518,6 +524,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         [],
     );
 
+    // Create dual scroll handlers - one for native animations, one for JS logic
+    const animatedScrollHandler = useMemo<typeof fns.onScroll>(() => {
+        if (stickyIndices?.length) {
+            const { animatedScrollY } = ctx;
+            return Animated.event([{ nativeEvent: { contentOffset: { [horizontal ? "x" : "y"]: animatedScrollY } } }], {
+                listener: fns.onScroll,
+                useNativeDriver: true,
+            });
+        }
+        return fns.onScroll;
+    }, [stickyIndices, horizontal, onScroll]);
+
     return (
         <>
             <ListComponent
@@ -550,7 +568,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         onMomentumScrollEnd(event);
                     }
                 }}
-                onScroll={fns.onScroll}
+                onScroll={animatedScrollHandler}
                 recycleItems={recycleItems}
                 refreshControl={
                     refreshControl
@@ -572,6 +590,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 scrollAdjustHandler={refState.current?.scrollAdjustHandler}
                 scrollEventThrottle={Platform.OS === "web" ? 16 : undefined}
                 snapToIndices={snapToIndices}
+                stickyIndices={stickyIndices}
                 style={style}
                 updateItemSize={fns.updateItemSize}
                 waitForInitialLayout={waitForInitialLayout}

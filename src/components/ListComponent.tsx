@@ -1,12 +1,12 @@
 import * as React from "react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
     Animated,
     type LayoutChangeEvent,
     type LayoutRectangle,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
-    ScrollView,
+    type ScrollView,
     type ScrollViewProps,
     Text,
     View,
@@ -48,6 +48,7 @@ interface ListComponentProps<ItemT>
     canRender: boolean;
     scrollAdjustHandler: ScrollAdjustHandler;
     snapToIndices: number[] | undefined;
+    stickyIndices: number[] | undefined;
 }
 
 const getComponent = (Component: React.ComponentType<any> | React.ReactElement) => {
@@ -111,6 +112,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     scrollAdjustHandler,
     onLayoutHeader,
     snapToIndices,
+    stickyIndices,
     ...rest
 }: ListComponentProps<ItemT>) {
     const ctx = useStateContext();
@@ -124,7 +126,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
               () => React.forwardRef((props, ref) => renderScrollComponent({ ...props, ref } as any)),
               [renderScrollComponent],
           )
-        : ScrollView;
+        : Animated.ScrollView;
 
     React.useEffect(() => {
         if (canRender) {

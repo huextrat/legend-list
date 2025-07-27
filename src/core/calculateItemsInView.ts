@@ -1,4 +1,4 @@
-import { unstable_batchedUpdates } from "react-native";
+import { Animated, unstable_batchedUpdates } from "react-native";
 
 import { ENABLE_DEBUG_VIEW, POSITION_OUT_OF_VIEW } from "@/constants";
 import { calculateOffsetForIndex } from "@/core/calculateOffsetForIndex";
@@ -258,11 +258,11 @@ export function calculateItemsInView(
 
             if (needNewContainers.length > 0) {
                 // Calculate required item types for type-safe container reuse
-                const requiredItemTypes = state.props.getItemType 
-                    ? needNewContainers.map(i => {
-                        const itemType = state.props.getItemType!(data[i], i);
-                        return itemType ? String(itemType) : "";
-                    })
+                const requiredItemTypes = state.props.getItemType
+                    ? needNewContainers.map((i) => {
+                          const itemType = state.props.getItemType!(data[i], i);
+                          return itemType ? String(itemType) : "";
+                      })
                     : undefined;
 
                 const availableContainers = findAvailableContainers(
@@ -273,6 +273,7 @@ export function calculateItemsInView(
                     endBuffered,
                     pendingRemoval,
                     requiredItemTypes,
+                    needNewContainers,
                 );
                 for (let idx = 0; idx < needNewContainers.length; idx++) {
                     const i = needNewContainers[idx];
@@ -295,6 +296,15 @@ export function calculateItemsInView(
 
                     // Update cache when adding new item
                     containerItemKeys!.add(id);
+
+                    // Mark as sticky if this item is in stickyIndices
+                    const stickyIndices = state.props.stickyIndices || [];
+                    if (stickyIndices.includes(i)) {
+                        set$(ctx, `containerSticky${containerIndex}`, true);
+                        // Set sticky offset to top padding for proper sticky positioning
+                        const topPadding = (peek$(ctx, "stylePaddingTop") || 0) + (peek$(ctx, "headerSize") || 0);
+                        set$(ctx, `containerStickyOffset${containerIndex}`, new Animated.Value(topPadding));
+                    }
 
                     if (containerIndex >= numContainers) {
                         numContainers = containerIndex + 1;
@@ -323,6 +333,12 @@ export function calculateItemsInView(
 
                 // Clear container item type when deallocating
                 state.containerItemTypes.delete(i);
+
+                // Clear sticky state if this was a sticky container
+                if (state.stickyContainerPool.has(i)) {
+                    set$(ctx, `containerSticky${i}`, false);
+                    set$(ctx, `containerStickyOffset${i}`, undefined);
+                }
 
                 set$(ctx, `containerItemKey${i}`, undefined);
                 set$(ctx, `containerItemData${i}`, undefined);

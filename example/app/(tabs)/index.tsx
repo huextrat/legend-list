@@ -48,6 +48,10 @@ const data: ListElement[] = [
         url: "/countries-with-headers-fixed",
     },
     {
+        title: "Countries with headers sticky",
+        url: "/countries-with-headers-sticky",
+    },
+    {
         title: "Lazy List",
         url: "/lazy-list",
     },

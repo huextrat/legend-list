@@ -186,8 +186,6 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
 
     sizesKnown.set(itemKey, size);
 
-    console.log("updateOneItemSize", itemKey, size, prevSize);
-
     // Update averages per item type
     // If user has provided getEstimatedItemSize that has precedence over averages
     if (!getEstimatedItemSize) {

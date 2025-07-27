@@ -10,11 +10,17 @@ export function findAvailableContainers(
     endBuffered: number,
     pendingRemoval: number[],
     requiredItemTypes?: string[],
+    needNewContainers?: number[],
 ): number[] {
     const numContainers = peek$(ctx, "numContainers");
+    const stickyIndices = state.props.stickyIndices || [];
 
     const result: number[] = [];
     const availableContainers: Array<{ index: number; distance: number }> = [];
+
+    // Separate sticky and non-sticky items
+    const stickyItemIndices = needNewContainers?.filter((index) => stickyIndices.includes(index)) || [];
+    const nonStickyItemIndices = needNewContainers?.filter((index) => !stickyIndices.includes(index)) || [];
 
     // Helper function to check if a container can be reused for a given item type
     const canReuseContainer = (containerIndex: number, requiredType: string | undefined): boolean => {
@@ -30,34 +36,78 @@ export function findAvailableContainers(
     const neededTypes = requiredItemTypes ? [...requiredItemTypes] : [];
     let typeIndex = 0;
 
-    // First pass: collect unallocated containers (most efficient to use)
-    for (let u = 0; u < numContainers; u++) {
-        const key = peek$(ctx, `containerItemKey${u}`);
-        let isOk = key === undefined;
-        if (!isOk) {
-            const index = pendingRemoval.indexOf(u);
-            if (index !== -1) {
-                pendingRemoval.splice(index, 1);
-                const requiredType = neededTypes[typeIndex];
-                isOk = canReuseContainer(u, requiredType);
+    // Handle sticky items first - allocate from sticky container pool
+    for (let i = 0; i < stickyItemIndices.length; i++) {
+        const requiredType = neededTypes[typeIndex];
+
+        // Try to find available sticky container
+        let foundContainer = false;
+        for (const containerIndex of state.stickyContainerPool) {
+            const key = peek$(ctx, `containerItemKey${containerIndex}`);
+            const isPendingRemoval = pendingRemoval.includes(containerIndex);
+
+            if ((key === undefined || isPendingRemoval) && canReuseContainer(containerIndex, requiredType)) {
+                result.push(containerIndex);
+                if (isPendingRemoval) {
+                    const index = pendingRemoval.indexOf(containerIndex);
+                    pendingRemoval.splice(index, 1);
+                }
+                foundContainer = true;
+                if (requiredItemTypes) typeIndex++;
+                break;
             }
         }
 
-        // Hasn't been allocated yet or is pending removal, so use it
-        if (isOk) {
-            // If we have type requirements, check if this container can be used
-            result.push(u);
-            if (requiredItemTypes) {
-                typeIndex++;
+        // If no available sticky container, create a new one
+        if (!foundContainer) {
+            const newContainerIndex = numContainers + result.filter((index) => index >= numContainers).length;
+            result.push(newContainerIndex);
+            state.stickyContainerPool.add(newContainerIndex);
+            if (requiredItemTypes) typeIndex++;
+        }
+    }
+
+    // For non-sticky items, only allocate from non-sticky containers
+    if (nonStickyItemIndices.length > 0) {
+        // First pass: collect unallocated non-sticky containers (most efficient to use)
+        for (let u = 0; u < numContainers; u++) {
+            // Skip if this is a sticky container
+            if (state.stickyContainerPool.has(u)) {
+                continue;
             }
-            if (result.length >= numNeeded) {
-                return result; // Early exit if we have enough unallocated containers
+
+            const key = peek$(ctx, `containerItemKey${u}`);
+            let isOk = key === undefined;
+            if (!isOk) {
+                const index = pendingRemoval.indexOf(u);
+                if (index !== -1) {
+                    pendingRemoval.splice(index, 1);
+                    const requiredType = neededTypes[typeIndex];
+                    isOk = canReuseContainer(u, requiredType);
+                }
+            }
+
+            // Hasn't been allocated yet or is pending removal, so use it
+            if (isOk) {
+                // If we have type requirements, check if this container can be used
+                result.push(u);
+                if (requiredItemTypes) {
+                    typeIndex++;
+                }
+                if (result.length >= numNeeded) {
+                    return result; // Early exit if we have enough unallocated containers
+                }
             }
         }
     }
 
-    // Second pass: collect containers that are out of view
+    // Second pass: collect non-sticky containers that are out of view
     for (let u = 0; u < numContainers; u++) {
+        // Skip if this is a sticky container
+        if (state.stickyContainerPool.has(u)) {
+            continue;
+        }
+
         const key = peek$(ctx, `containerItemKey${u}`);
         if (key === undefined) continue; // Skip already collected containers
 

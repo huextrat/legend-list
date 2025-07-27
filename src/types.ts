@@ -2,8 +2,6 @@ import { type ComponentProps, forwardRef, memo, type ReactNode } from "react";
 import type {
     Animated,
     LayoutRectangle,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
     ScrollResponderMixin,
     ScrollView,
     ScrollViewComponent,
@@ -271,6 +269,14 @@ export type LegendListPropsBase<
 
     snapToIndices?: number[];
 
+    /**
+     * Array of child indices determining which children get docked to the top of the screen when scrolling.
+     * For example, passing stickyIndices={[0]} will cause the first child to be fixed to the top of the scroll view.
+     * Not supported in conjunction with horizontal={true}.
+     * @default undefined
+     */
+    stickyIndices?: number[];
+
     getItemType?: (item: ItemT, index: number) => TItemType;
 
     getFixedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
@@ -358,6 +364,9 @@ export interface InternalState {
     queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
     queuedItemSizeUpdatesWaiting?: boolean;
     timeoutSetPaddingTop?: any;
+    activeStickyIndex: number | undefined;
+    stickyContainers: Map<number, number>;
+    stickyContainerPool: Set<number>;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
@@ -387,6 +396,7 @@ export interface InternalState {
         initialContainerPoolRatio: number;
         stylePaddingTop: number | undefined;
         snapToIndices: number[] | undefined;
+        stickyIndices: number[] | undefined;
     };
 }
 
