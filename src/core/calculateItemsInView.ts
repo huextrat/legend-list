@@ -299,7 +299,7 @@ export function calculateItemsInView(
 
                     // Mark as sticky if this item is in stickyIndices
                     const stickyIndices = state.props.stickyIndices || [];
-                    if (stickyIndices.includes(i)) {
+                    if (stickyIndices.has(i)) {
                         set$(ctx, `containerSticky${containerIndex}`, true);
                         // Set sticky offset to top padding for proper sticky positioning
                         const topPadding = (peek$(ctx, "stylePaddingTop") || 0) + (peek$(ctx, "headerSize") || 0);
