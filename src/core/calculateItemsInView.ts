@@ -256,46 +256,33 @@ export function calculateItemsInView(
                 }
             }
 
-            // Also check for sticky items that should be active but aren't
+            // Check for sticky items that should be active but aren't
             const stickyIndices = state.props.stickyIndices;
             if (stickyIndices?.size > 0) {
-                const stickyIndicesArray = Array.from(stickyIndices).sort((a, b) => a - b);
-                const activeStickyIndices = new Set<number>();
+                const stickyArray = Array.from(stickyIndices).sort((a, b) => a - b);
+                const activeIndices = new Set(
+                    Array.from(state.stickyContainerPool)
+                        .map((i) => peek$(ctx, `containerItemKey${i}`))
+                        .map((key) => (key ? indexByKey.get(key) : undefined))
+                        .filter((idx): idx is number => idx !== undefined && stickyArray.includes(idx)),
+                );
 
-                // Collect currently active sticky indices
-                for (const containerIndex of state.stickyContainerPool) {
-                    const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
-                    const itemIndex = itemKey ? indexByKey.get(itemKey) : undefined;
-                    if (itemIndex !== undefined && stickyIndicesArray.includes(itemIndex)) {
-                        activeStickyIndices.add(itemIndex);
-                    }
-                }
-
-                // Find sticky items that should be active but aren't
-                for (const stickyIndex of stickyIndicesArray) {
-                    if (activeStickyIndices.has(stickyIndex)) continue;
+                for (let i = 0; i < stickyArray.length; i++) {
+                    const stickyIndex = stickyArray[i];
+                    if (activeIndices.has(stickyIndex)) continue;
 
                     const stickyId = idCache.get(stickyIndex) ?? getId(state, stickyIndex);
-                    if (!stickyId) continue;
+                    const stickyPos = stickyId ? positions.get(stickyId) : undefined;
+                    if (!stickyPos || scroll < stickyPos) continue;
 
-                    const stickyPosition = positions.get(stickyId);
-                    if (stickyPosition === undefined) continue;
+                    const nextIndex = stickyArray[i + 1];
+                    if (nextIndex) {
+                        const nextId = idCache.get(nextIndex) ?? getId(state, nextIndex);
+                        const nextPos = nextId ? positions.get(nextId) : undefined;
+                        if (nextPos !== undefined && scroll >= nextPos) continue;
+                    }
 
-                    // Check if this sticky item should be active:
-                    // It should be active if we're scrolled past it and there's no next sticky item before the current scroll position
-                    const stickyIndexInArray = stickyIndicesArray.indexOf(stickyIndex);
-                    const nextStickyIndex = stickyIndicesArray[stickyIndexInArray + 1];
-
-                    const shouldActivate =
-                        scroll >= stickyPosition &&
-                        (!nextStickyIndex ||
-                            (() => {
-                                const nextId = idCache.get(nextStickyIndex) ?? getId(state, nextStickyIndex);
-                                const nextPos = nextId ? positions.get(nextId) : undefined;
-                                return nextPos === undefined || scroll < nextPos;
-                            })());
-
-                    if (shouldActivate && !containerItemKeys.has(stickyId)) {
+                    if (stickyId && !containerItemKeys.has(stickyId)) {
                         needNewContainers.push(stickyIndex);
                     }
                 }
@@ -370,36 +357,39 @@ export function calculateItemsInView(
             }
         }
 
-        // Check for sticky containers that are out of view and can be recycled
-        const stickyIndices = state.props.stickyIndices;
-        if (stickyIndices?.size > 0) {
-            const stickyIndicesArray = Array.from(stickyIndices).sort((a, b) => a - b);
+        // Recycle sticky containers that are out of view
+        if (state.props.stickyIndices?.size > 0) {
+            const stickyArray = Array.from(state.props.stickyIndices).sort((a, b) => a - b);
 
             for (const containerIndex of state.stickyContainerPool) {
                 const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
                 const itemIndex = itemKey ? indexByKey.get(itemKey) : undefined;
-                if (itemIndex === undefined) continue;
+                if (itemIndex === undefined) {
+                    continue;
+                }
 
-                const currentStickyIndex = stickyIndicesArray.indexOf(itemIndex);
-                if (currentStickyIndex === -1) continue;
+                const currentIdx = stickyArray.indexOf(itemIndex);
+                if (currentIdx === -1) {
+                    continue;
+                }
 
-                const nextStickyIndex = stickyIndicesArray[currentStickyIndex + 1];
-                const shouldRecycle = nextStickyIndex
-                    ? // Has next sticky: recycle when scrolled past next sticky position
-                      (() => {
-                          const nextId = idCache.get(nextStickyIndex) ?? getId(state, nextStickyIndex);
-                          const nextPos = nextId ? positions.get(nextId) : undefined;
-                          return nextPos !== undefined && scroll > nextPos + scrollBuffer;
-                      })()
-                    : // Last sticky: recycle when scrolled well past current sticky
-                      (() => {
-                          const currentId = idCache.get(itemIndex) ?? getId(state, itemIndex);
-                          if (!currentId) return false;
-                          const currentPos = positions.get(currentId);
-                          const currentSize =
-                              sizes.get(currentId) ?? getItemSize(state, currentId, itemIndex, data[itemIndex]);
-                          return currentPos !== undefined && scroll > currentPos + currentSize + scrollBuffer * 2;
-                      })();
+                const nextIndex = stickyArray[currentIdx + 1];
+                let shouldRecycle = false;
+
+                if (nextIndex) {
+                    const nextId = idCache.get(nextIndex) ?? getId(state, nextIndex);
+                    const nextPos = nextId ? positions.get(nextId) : undefined;
+                    shouldRecycle = nextPos !== undefined && scroll > nextPos + scrollBuffer;
+                } else {
+                    const currentId = idCache.get(itemIndex) ?? getId(state, itemIndex);
+                    if (currentId) {
+                        const currentPos = positions.get(currentId);
+                        const currentSize =
+                            sizes.get(currentId) ?? getItemSize(state, currentId, itemIndex, data[itemIndex]);
+                        shouldRecycle =
+                            currentPos !== undefined && scroll > currentPos + currentSize + scrollBuffer * 2;
+                    }
+                }
 
                 if (shouldRecycle) {
                     pendingRemoval.push(containerIndex);
