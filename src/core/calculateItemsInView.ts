@@ -42,18 +42,24 @@ function handleStickyActivation(
     stickyArray: number[],
     scroll: number,
     needNewContainers: number[],
+    startBuffered: number,
+    endBuffered: number,
 ): void {
     const activeIndices = getActiveStickyIndices(ctx, state, stickyIndices);
     const currentStickyIdx = findCurrentStickyIndex(stickyArray, scroll, state);
 
-    // Activate current and previous sticky items
+    // Activate current and previous sticky items, but only if they're not already covered by regular buffered range
     for (let offset = 0; offset <= 1; offset++) {
         const idx = currentStickyIdx - offset;
         if (idx < 0 || activeIndices.has(stickyArray[idx])) continue;
 
-        const stickyId = state.idCache.get(stickyArray[idx]) ?? getId(state, stickyArray[idx]);
-        if (stickyId && !state.containerItemKeys.has(stickyId)) {
-            needNewContainers.push(stickyArray[idx]);
+        const stickyIndex = stickyArray[idx];
+        const stickyId = state.idCache.get(stickyIndex) ?? getId(state, stickyIndex);
+        
+        // Only add if it's not already in the regular buffered range and not already in containers
+        if (stickyId && !state.containerItemKeys.has(stickyId) && 
+            (stickyIndex < startBuffered || stickyIndex > endBuffered)) {
+            needNewContainers.push(stickyIndex);
         }
     }
 }
@@ -346,7 +352,7 @@ export function calculateItemsInView(
 
             // Handle sticky item activation
             if (stickyIndicesArr.length > 0) {
-                handleStickyActivation(ctx, state, stickyIndicesSet, stickyIndicesArr, scroll, needNewContainers);
+                handleStickyActivation(ctx, state, stickyIndicesSet, stickyIndicesArr, scroll, needNewContainers, startBuffered, endBuffered);
             }
 
             if (needNewContainers.length > 0) {
