@@ -472,7 +472,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     const footerSize = peek$(ctx, "footerSize") || 0;
                     scrollToIndex(ctx, state, {
                         index,
-                        viewOffset: -paddingBottom - footerSize,
+                        viewOffset: -paddingBottom - footerSize + (options?.viewOffset || 0),
                         viewPosition: 1,
                         ...options,
                     });

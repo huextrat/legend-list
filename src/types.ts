@@ -460,8 +460,9 @@ export type LegendListRef = {
      * Scrolls to the end of the list.
      * @param options - Options for scrolling.
      * @param options.animated - If true, animates the scroll. Default: true.
+     * @param options.viewOffset - Offset from the target position.
      */
-    scrollToEnd(options?: { animated?: boolean | undefined }): void;
+    scrollToEnd(options?: { animated?: boolean | undefined; viewOffset?: number | undefined }): void;
 
     /**
      * Scrolls to a specific index in the list.
