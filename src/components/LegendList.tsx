@@ -10,6 +10,7 @@ import {
     useState,
 } from "react";
 import {
+    Animated,
     Dimensions,
     type LayoutChangeEvent,
     type LayoutRectangle,
@@ -78,49 +79,52 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     forwardedRef: ForwardedRef<LegendListRef>,
 ) {
     const {
+        alignItemsAtEnd = false,
+        columnWrapperStyle,
+        contentContainerStyle: contentContainerStyleProp,
         data: dataProp = [],
+        drawDistance = 250,
+        estimatedItemSize: estimatedItemSizeProp,
+        estimatedListSize,
+        extraData,
+        getEstimatedItemSize,
+        getFixedItemSize,
+        getItemType,
+        horizontal,
+        initialContainerPoolRatio = 2,
         initialScrollIndex: initialScrollIndexProp,
         initialScrollOffset,
-        horizontal,
-        drawDistance = 250,
-        recycleItems = false,
-        onEndReachedThreshold = 0.5,
-        onStartReachedThreshold = 0.5,
+        keyExtractor: keyExtractorProp,
+        ListEmptyComponent,
+        ListHeaderComponent,
         maintainScrollAtEnd = false,
         maintainScrollAtEndThreshold = 0.1,
-        alignItemsAtEnd = false,
         maintainVisibleContentPosition = false,
-        onScroll: onScrollProp,
-        onMomentumScrollEnd,
         numColumns: numColumnsProp = 1,
-        columnWrapperStyle,
-        keyExtractor: keyExtractorProp,
-        renderItem,
-        estimatedListSize,
-        estimatedItemSize: estimatedItemSizeProp,
-        getEstimatedItemSize,
-        suggestEstimatedItemSize,
-        ListHeaderComponent,
-        ListEmptyComponent,
+        onEndReached,
+        onEndReachedThreshold = 0.5,
         onItemSizeChanged,
-        refScrollView,
-        waitForInitialLayout = true,
-        extraData,
-        contentContainerStyle: contentContainerStyleProp,
-        style: styleProp,
         onLayout: onLayoutProp,
+        onLoad,
+        onMomentumScrollEnd,
         onRefresh,
-        refreshing,
+        onScroll: onScrollProp,
+        onStartReached,
+        onStartReachedThreshold = 0.5,
+        onViewableItemsChanged,
         progressViewOffset,
+        recycleItems = false,
         refreshControl,
-        initialContainerPoolRatio = 2,
+        refreshing,
+        refScrollView,
+        renderItem,
+        snapToIndices,
+        stickyIndices,
+        style: styleProp,
+        suggestEstimatedItemSize,
         viewabilityConfig,
         viewabilityConfigCallbackPairs,
-        snapToIndices,
-        onViewableItemsChanged,
-        onStartReached,
-        onEndReached,
-        onLoad,
+        waitForInitialLayout = true,
         ...rest
     } = props;
 
@@ -153,9 +157,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             (IsNewArchitecture ? { height: 0, width: 0 } : Dimensions.get("window")))[horizontal ? "width" : "height"];
 
         refState.current = {
+            activeStickyIndex: undefined,
             averageSizes: {},
             columns: new Map(),
             containerItemKeys: new Set(),
+            containerItemTypes: new Map(),
             enableScrollForNextCalculateItemsInView: true,
             endBuffered: -1,
             endNoBuffer: -1,
@@ -194,6 +200,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             startBuffered: -1,
             startNoBuffer: -1,
             startReachedBlockedByTimer: false,
+            stickyContainerPool: new Set(),
+            stickyContainers: new Map(),
             timeoutSizeMessage: 0,
             timeouts: new Set(),
             totalSize: 0,
@@ -214,6 +222,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         data: dataProp,
         estimatedItemSize,
         getEstimatedItemSize,
+        getFixedItemSize,
+        getItemType,
         horizontal: !!horizontal,
         initialContainerPoolRatio,
         initialScroll,
@@ -229,9 +239,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onScroll: onScrollProp,
         onStartReached,
         onStartReachedThreshold,
+        recycleItems: !!recycleItems,
         renderItem: renderItem!,
         scrollBuffer,
         snapToIndices,
+        stickyIndicesArr: stickyIndices ?? [],
+        stickyIndicesSet: useMemo(() => new Set(stickyIndices), [stickyIndices]),
         stylePaddingBottom: stylePaddingBottomState,
         stylePaddingTop: stylePaddingTopState,
         suggestEstimatedItemSize: !!suggestEstimatedItemSize,
@@ -512,6 +525,18 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         [],
     );
 
+    // Create dual scroll handlers - one for native animations, one for JS logic
+    const animatedScrollHandler = useMemo<typeof fns.onScroll>(() => {
+        if (stickyIndices?.length) {
+            const { animatedScrollY } = ctx;
+            return Animated.event([{ nativeEvent: { contentOffset: { [horizontal ? "x" : "y"]: animatedScrollY } } }], {
+                listener: fns.onScroll,
+                useNativeDriver: true,
+            });
+        }
+        return fns.onScroll;
+    }, [stickyIndices, horizontal, onScroll]);
+
     return (
         <>
             <ListComponent
@@ -528,15 +553,23 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 onLayout={onLayout}
                 onLayoutHeader={onLayoutHeader}
                 onMomentumScrollEnd={(event) => {
-                    requestAnimationFrame(() => {
-                        finishScrollTo(refState.current);
-                    });
+                    if (IsNewArchitecture) {
+                        requestAnimationFrame(() => {
+                            finishScrollTo(refState.current);
+                        });
+                    } else {
+                        // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
+                        // This should ideally wait until all layouts have settled.
+                        setTimeout(() => {
+                            finishScrollTo(refState.current);
+                        }, 1000);
+                    }
 
                     if (onMomentumScrollEnd) {
                         onMomentumScrollEnd(event);
                     }
                 }}
-                onScroll={fns.onScroll}
+                onScroll={animatedScrollHandler}
                 recycleItems={recycleItems}
                 refreshControl={
                     refreshControl
@@ -558,6 +591,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 scrollAdjustHandler={refState.current?.scrollAdjustHandler}
                 scrollEventThrottle={Platform.OS === "web" ? 16 : undefined}
                 snapToIndices={snapToIndices}
+                stickyIndices={stickyIndices}
                 style={style}
                 updateItemSize={fns.updateItemSize}
                 waitForInitialLayout={waitForInitialLayout}

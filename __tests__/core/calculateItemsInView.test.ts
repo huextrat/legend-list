@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
 import { calculateItemsInView } from "../../src/core/calculateItemsInView";
-import type { StateContext } from "../../src/state/state";
+import type { ListenerType, StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
 
 // Create a properly typed mock context
 function createMockContext(initialValues: Record<string, any> = {}): StateContext {
-    const values = new Map(Object.entries(initialValues));
+    const values = new Map(Object.entries(initialValues)) as Map<ListenerType, any>;
     const listeners = new Map();
 
     return {
@@ -41,48 +41,91 @@ describe("calculateItemsInView", () => {
             // Core calculateItemsInView properties
             columns: new Map(),
             containerItemKeys: new Set(),
+            containerItemTypes: new Map(),
             enableScrollForNextCalculateItemsInView: true,
             // Required by Pick types from dependencies
-            endBuffered: null,
-            endNoBuffer: null,
+            endBuffered: 0,
+            endNoBuffer: 0,
             endReachedBlockedByTimer: false,
-            firstFullyOnScreenIndex: undefined,
+            firstFullyOnScreenIndex: 0,
             idCache: new Map(),
             idsInView: [],
+            ignoreScrollFromMVCP: undefined,
+            ignoreScrollFromMVCPTimeout: undefined,
             indexByKey: new Map(),
             initialScroll: undefined,
             isAtEnd: false,
+            isAtStart: false,
             isEndReached: false,
+            isStartReached: false,
+            lastBatchingAction: 0,
+            lastLayout: undefined,
             // Required by CheckAtBottom and SetDidLayout
             loadStartTime: Date.now(),
             maintainingScrollAtEnd: false,
             minIndexSizeChanged: undefined,
+            nativeMarginTop: 0,
+            needsOtherAxisSize: false,
+            otherAxisSize: undefined,
+            pendingAdjust: 0,
             positions: new Map(),
             props: {
+                alignItemsAtEnd: false,
                 data: [],
+                estimatedItemSize: undefined,
+                getEstimatedItemSize: undefined,
+                getFixedItemSize: undefined,
+                getItemType: undefined,
+                horizontal: false,
+                initialContainerPoolRatio: 2,
                 initialScroll: undefined,
                 keyExtractor: (item: any, index: number) => `item_${index}`,
+                maintainScrollAtEnd: false,
                 maintainScrollAtEndThreshold: 0.1,
                 maintainVisibleContentPosition: false,
+                numColumns: 1,
                 onEndReached: undefined,
                 onEndReachedThreshold: 0.1,
+                onItemSizeChanged: undefined,
                 onLoad: undefined,
+                onScroll: undefined,
+                onStartReached: undefined,
+                onStartReachedThreshold: 0.1,
+                recycleItems: false,
+                renderItem: undefined,
                 scrollBuffer: 100,
                 snapToIndices: undefined,
-                viewabilityConfigCallbackPairs: undefined,
+                stylePaddingBottom: undefined,
+                stylePaddingTop: 0,
+                suggestEstimatedItemSize: false,
             },
+            queuedCalculateItemsInView: undefined,
             queuedInitialLayout: false,
+            queuedItemSizeUpdates: [],
+            queuedItemSizeUpdatesWaiting: false,
+            refScroller: undefined as any,
             scroll: 0,
-            scrollForNextCalculateItemsInView: null,
+            scrollAdjustHandler: undefined as any,
+            scrollForNextCalculateItemsInView: undefined,
             scrollHistory: [],
             // Required by PrepareMVCP
             scrollingTo: undefined,
             scrollLength: 300,
+            scrollPending: 0,
+            scrollPrev: 0,
+            scrollPrevTime: 0,
+            scrollTime: 0,
             sizes: new Map(),
             sizesKnown: new Map(),
-            startBuffered: null,
-            startBufferedId: null,
-            startNoBuffer: null,
+            startBuffered: 0,
+            startBufferedId: undefined,
+            startNoBuffer: 0,
+            startReachedBlockedByTimer: false,
+            timeoutSetPaddingTop: undefined,
+            timeoutSizeMessage: undefined,
+            timeouts: new Set(),
+            totalSize: 1000,
+            viewabilityConfigCallbackPairs: undefined,
         };
     });
 

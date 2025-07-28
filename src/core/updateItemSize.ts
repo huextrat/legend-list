@@ -132,7 +132,23 @@ export function updateItemSize(
     itemKey: string,
     sizeObj: { width: number; height: number },
 ) {
-    const { queuedItemSizeUpdates, queuedItemSizeUpdatesWaiting } = state;
+    const {
+        queuedItemSizeUpdates,
+        queuedItemSizeUpdatesWaiting,
+        sizesKnown,
+        props: { getFixedItemSize, getItemType },
+    } = state;
+
+    if (getFixedItemSize) {
+        const index = state.indexByKey.get(itemKey)!;
+        const itemData = state.props.data[index];
+        const type = getItemType ? (getItemType(itemData, index) ?? "") : "";
+        const size = getFixedItemSize(index, itemData, type);
+        if (size !== undefined && size === sizesKnown.get(itemKey)) {
+            return;
+        }
+    }
+
     const containersDidLayout = peek$(ctx, "containersDidLayout");
 
     if (!containersDidLayout || !queuedItemSizeUpdatesWaiting) {
@@ -160,7 +176,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
         indexByKey,
         sizesKnown,
         averageSizes,
-        props: { data, horizontal },
+        props: { data, horizontal, getEstimatedItemSize, getItemType },
     } = state;
     if (!data) return 0;
 
@@ -170,15 +186,17 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
 
     sizesKnown.set(itemKey, size);
 
-    // Update averages
-    const itemType = "";
-
-    let averages = averageSizes[itemType];
-    if (!averages) {
-        averages = averageSizes[itemType] = { avg: 0, num: 0 };
+    // Update averages per item type
+    // If user has provided getEstimatedItemSize that has precedence over averages
+    if (!getEstimatedItemSize) {
+        const itemType = getItemType ? (getItemType(data[index], index) ?? "") : "";
+        let averages = averageSizes[itemType];
+        if (!averages) {
+            averages = averageSizes[itemType] = { avg: 0, num: 0 };
+        }
+        averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
+        averages.num++;
     }
-    averages.avg = (averages.avg * averages.num + size) / (averages.num + 1);
-    averages.num++;
 
     // Update saved size if it changed
     if (!prevSize || Math.abs(prevSize - size) > 0.1) {

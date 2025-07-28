@@ -1,13 +1,14 @@
 import * as React from "react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
     Animated,
     type LayoutChangeEvent,
     type LayoutRectangle,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
-    ScrollView,
+    type ScrollView,
     type ScrollViewProps,
+    Text,
     View,
     type ViewStyle,
 } from "react-native";
@@ -47,6 +48,7 @@ interface ListComponentProps<ItemT>
     canRender: boolean;
     scrollAdjustHandler: ScrollAdjustHandler;
     snapToIndices: number[] | undefined;
+    stickyIndices: number[] | undefined;
 }
 
 const getComponent = (Component: React.ComponentType<any> | React.ReactElement) => {
@@ -110,6 +112,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
     scrollAdjustHandler,
     onLayoutHeader,
     snapToIndices,
+    stickyIndices,
     ...rest
 }: ListComponentProps<ItemT>) {
     const ctx = useStateContext();
@@ -123,7 +126,7 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
               () => React.forwardRef((props, ref) => renderScrollComponent({ ...props, ref } as any)),
               [renderScrollComponent],
           )
-        : ScrollView;
+        : Animated.ScrollView;
 
     React.useEffect(() => {
         if (canRender) {
@@ -193,6 +196,26 @@ export const ListComponent = typedMemo(function ListComponent<ItemT>({
                     {getComponent(ListFooterComponent)}
                 </View>
             )}
+            {__DEV__ && ENABLE_DEVMODE && <DevNumbers />}
         </SnapOrScroll>
     );
 });
+
+const DevNumbers: React.FC =
+    (__DEV__ as unknown as any) &&
+    React.memo(function DevNumbers() {
+        return Array.from({ length: 100 }).map((_, index) => (
+            <View
+                key={index}
+                style={{
+                    height: 100,
+                    pointerEvents: "none",
+                    position: "absolute",
+                    top: index * 100,
+                    width: "100%",
+                }}
+            >
+                <Text style={{ color: "red" }}>{index * 100}</Text>
+            </View>
+        ));
+    });

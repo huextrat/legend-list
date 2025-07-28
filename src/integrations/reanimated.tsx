@@ -6,6 +6,8 @@ import { useCombinedRef } from "@/hooks/useCombinedRef";
 
 type KeysToOmit =
     | "getEstimatedItemSize"
+    | "getFixedItemSize"
+    | "getItemType"
     | "keyExtractor"
     | "animatedProps"
     | "renderItem"

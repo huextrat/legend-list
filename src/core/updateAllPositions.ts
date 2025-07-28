@@ -16,7 +16,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
         firstFullyOnScreenIndex,
         idCache,
         sizesKnown,
-        props: { snapToIndices },
+        props: { getEstimatedItemSize, snapToIndices },
     } = state;
     const data = state.props.data;
     const numColumns = peek$(ctx, "numColumns");
@@ -28,7 +28,8 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
         idCache.clear();
     }
 
-    // TODO: Hook this up to actual item types later once we have item types
+    const useAverageSize = !getEstimatedItemSize;
+    // Perf optimization to pre-calculate default average size
     const itemType = "";
     let averageSize = averageSizes[itemType]?.avg;
     if (averageSize !== undefined) {
@@ -54,7 +55,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
             // Process items backwards from firstFullyOnScreenIndex - 1 to 0
             for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
                 const id = idCache.get(i) ?? getId(state, i)!;
-                const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
+                const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
                 const itemColumn = columns.get(id)!;
 
                 maxSizeInRow = Math.max(maxSizeInRow, size);
@@ -96,7 +97,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     for (let i = 0; i < dataLength; i++) {
         // Inline the map get calls to avoid the overhead of the function call
         const id = idCache.get(i) ?? getId(state, i)!;
-        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], averageSize);
+        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
 
         // Set index mapping for this item
         if (__DEV__ && needsIndexByKey) {
