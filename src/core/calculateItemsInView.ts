@@ -256,6 +256,51 @@ export function calculateItemsInView(
                 }
             }
 
+            // Also check for sticky items that should be active but aren't
+            const stickyIndices = state.props.stickyIndices;
+            if (stickyIndices?.size > 0) {
+                const stickyIndicesArray = Array.from(stickyIndices).sort((a, b) => a - b);
+                const activeStickyIndices = new Set<number>();
+
+                // Collect currently active sticky indices
+                for (const containerIndex of state.stickyContainerPool) {
+                    const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
+                    const itemIndex = itemKey ? indexByKey.get(itemKey) : undefined;
+                    if (itemIndex !== undefined && stickyIndicesArray.includes(itemIndex)) {
+                        activeStickyIndices.add(itemIndex);
+                    }
+                }
+
+                // Find sticky items that should be active but aren't
+                for (const stickyIndex of stickyIndicesArray) {
+                    if (activeStickyIndices.has(stickyIndex)) continue;
+
+                    const stickyId = idCache.get(stickyIndex) ?? getId(state, stickyIndex);
+                    if (!stickyId) continue;
+
+                    const stickyPosition = positions.get(stickyId);
+                    if (stickyPosition === undefined) continue;
+
+                    // Check if this sticky item should be active:
+                    // It should be active if we're scrolled past it and there's no next sticky item before the current scroll position
+                    const stickyIndexInArray = stickyIndicesArray.indexOf(stickyIndex);
+                    const nextStickyIndex = stickyIndicesArray[stickyIndexInArray + 1];
+
+                    const shouldActivate =
+                        scroll >= stickyPosition &&
+                        (!nextStickyIndex ||
+                            (() => {
+                                const nextId = idCache.get(nextStickyIndex) ?? getId(state, nextStickyIndex);
+                                const nextPos = nextId ? positions.get(nextId) : undefined;
+                                return nextPos === undefined || scroll < nextPos;
+                            })());
+
+                    if (shouldActivate && !containerItemKeys.has(stickyId)) {
+                        needNewContainers.push(stickyIndex);
+                    }
+                }
+            }
+
             if (needNewContainers.length > 0) {
                 // Calculate required item types for type-safe container reuse
                 const requiredItemTypes = state.props.getItemType
@@ -321,6 +366,43 @@ export function calculateItemsInView(
                     if (numContainers > peek$(ctx, "numContainersPooled")) {
                         set$(ctx, "numContainersPooled", Math.ceil(numContainers * 1.5));
                     }
+                }
+            }
+        }
+
+        // Check for sticky containers that are out of view and can be recycled
+        const stickyIndices = state.props.stickyIndices;
+        if (stickyIndices?.size > 0) {
+            const stickyIndicesArray = Array.from(stickyIndices).sort((a, b) => a - b);
+
+            for (const containerIndex of state.stickyContainerPool) {
+                const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
+                const itemIndex = itemKey ? indexByKey.get(itemKey) : undefined;
+                if (itemIndex === undefined) continue;
+
+                const currentStickyIndex = stickyIndicesArray.indexOf(itemIndex);
+                if (currentStickyIndex === -1) continue;
+
+                const nextStickyIndex = stickyIndicesArray[currentStickyIndex + 1];
+                const shouldRecycle = nextStickyIndex
+                    ? // Has next sticky: recycle when scrolled past next sticky position
+                      (() => {
+                          const nextId = idCache.get(nextStickyIndex) ?? getId(state, nextStickyIndex);
+                          const nextPos = nextId ? positions.get(nextId) : undefined;
+                          return nextPos !== undefined && scroll > nextPos + scrollBuffer;
+                      })()
+                    : // Last sticky: recycle when scrolled well past current sticky
+                      (() => {
+                          const currentId = idCache.get(itemIndex) ?? getId(state, itemIndex);
+                          if (!currentId) return false;
+                          const currentPos = positions.get(currentId);
+                          const currentSize =
+                              sizes.get(currentId) ?? getItemSize(state, currentId, itemIndex, data[itemIndex]);
+                          return currentPos !== undefined && scroll > currentPos + currentSize + scrollBuffer * 2;
+                      })();
+
+                if (shouldRecycle) {
+                    pendingRemoval.push(containerIndex);
                 }
             }
         }
