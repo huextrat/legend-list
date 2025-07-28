@@ -14,14 +14,14 @@ export function findAvailableContainers(
 ): number[] {
     const numContainers = peek$(ctx, "numContainers");
 
-    const stickyIndices = state.props.stickyIndices;
+    const { stickyIndicesSet } = state.props;
 
     const result: number[] = [];
     const availableContainers: Array<{ index: number; distance: number }> = [];
 
     // Separate sticky and non-sticky items
-    const stickyItemIndices = needNewContainers?.filter((index) => stickyIndices.has(index)) || [];
-    const nonStickyItemIndices = needNewContainers?.filter((index) => !stickyIndices.has(index)) || [];
+    const stickyItemIndices = needNewContainers?.filter((index) => stickyIndicesSet.has(index)) || [];
+    const nonStickyItemIndices = needNewContainers?.filter((index) => !stickyIndicesSet.has(index)) || [];
 
     // Helper function to check if a container can be reused for a given item type
     const canReuseContainer = (containerIndex: number, requiredType: string | undefined): boolean => {

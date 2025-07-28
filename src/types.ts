@@ -396,7 +396,8 @@ export interface InternalState {
         initialContainerPoolRatio: number;
         stylePaddingTop: number | undefined;
         snapToIndices: number[] | undefined;
-        stickyIndices: Set<number>;
+        stickyIndicesSet: Set<number>;
+        stickyIndicesArr: number[];
     };
 }
 

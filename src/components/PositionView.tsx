@@ -4,7 +4,7 @@ import { Animated, type LayoutChangeEvent, type StyleProp, type View, type ViewS
 import { LeanView } from "@/components/LeanView";
 import { IsNewArchitecture, POSITION_OUT_OF_VIEW } from "@/constants";
 import { useValue$ } from "@/hooks/useValue$";
-import { peek$, useArr$ } from "@/state/state";
+import { useArr$ } from "@/state/state";
 import { typedMemo } from "@/types";
 
 const PositionViewState = typedMemo(function PositionView({

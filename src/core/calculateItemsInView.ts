@@ -15,6 +15,94 @@ import { getItemSize } from "@/utils/getItemSize";
 import { getScrollVelocity } from "@/utils/getScrollVelocity";
 import { setDidLayout } from "@/utils/setDidLayout";
 
+function findCurrentStickyIndex(stickyArray: number[], scroll: number, state: InternalState): number {
+    for (let i = stickyArray.length - 1; i >= 0; i--) {
+        const stickyId = state.idCache.get(stickyArray[i]) ?? getId(state, stickyArray[i]);
+        const stickyPos = stickyId ? state.positions.get(stickyId) : undefined;
+        if (stickyPos !== undefined && scroll >= stickyPos) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function getActiveStickyIndices(ctx: StateContext, state: InternalState, stickyIndices: Set<number>): Set<number> {
+    return new Set(
+        Array.from(state.stickyContainerPool)
+            .map((i) => peek$(ctx, `containerItemKey${i}`))
+            .map((key) => (key ? state.indexByKey.get(key) : undefined))
+            .filter((idx): idx is number => idx !== undefined && stickyIndices.has(idx)),
+    );
+}
+
+function handleStickyActivation(
+    ctx: StateContext,
+    state: InternalState,
+    stickyIndices: Set<number>,
+    stickyArray: number[],
+    scroll: number,
+    needNewContainers: number[],
+): void {
+    const activeIndices = getActiveStickyIndices(ctx, state, stickyIndices);
+    const currentStickyIdx = findCurrentStickyIndex(stickyArray, scroll, state);
+
+    // Activate current and previous sticky items
+    for (let offset = 0; offset <= 1; offset++) {
+        const idx = currentStickyIdx - offset;
+        if (idx < 0 || activeIndices.has(stickyArray[idx])) continue;
+
+        const stickyId = state.idCache.get(stickyArray[idx]) ?? getId(state, stickyArray[idx]);
+        if (stickyId && !state.containerItemKeys.has(stickyId)) {
+            needNewContainers.push(stickyArray[idx]);
+        }
+    }
+}
+
+function handleStickyRecycling(
+    ctx: StateContext,
+    state: InternalState,
+    stickyArray: number[],
+    scroll: number,
+    scrollBuffer: number,
+    pendingRemoval: number[],
+): void {
+    const currentStickyIdx = findCurrentStickyIndex(stickyArray, scroll, state);
+
+    for (const containerIndex of state.stickyContainerPool) {
+        const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
+        const itemIndex = itemKey ? state.indexByKey.get(itemKey) : undefined;
+        if (itemIndex === undefined) continue;
+
+        const arrayIdx = stickyArray.indexOf(itemIndex);
+        if (arrayIdx === -1) continue;
+
+        // Keep current and adjacent sticky items, recycle distant ones
+        const isRecentSticky = arrayIdx >= currentStickyIdx - 1 && arrayIdx <= currentStickyIdx + 1;
+        if (isRecentSticky) continue;
+
+        const nextIndex = stickyArray[arrayIdx + 1];
+        let shouldRecycle = false;
+
+        if (nextIndex) {
+            const nextId = state.idCache.get(nextIndex) ?? getId(state, nextIndex);
+            const nextPos = nextId ? state.positions.get(nextId) : undefined;
+            shouldRecycle = nextPos !== undefined && scroll > nextPos + scrollBuffer * 2;
+        } else {
+            const currentId = state.idCache.get(itemIndex) ?? getId(state, itemIndex);
+            if (currentId) {
+                const currentPos = state.positions.get(currentId);
+                const currentSize =
+                    state.sizes.get(currentId) ?? getItemSize(state, currentId, itemIndex, state.props.data[itemIndex]);
+                shouldRecycle = currentPos !== undefined && scroll > currentPos + currentSize + scrollBuffer * 3;
+            }
+        }
+
+        if (shouldRecycle) {
+            pendingRemoval.push(containerIndex);
+        }
+    }
+}
+
 export function calculateItemsInView(
     ctx: StateContext,
     state: InternalState,
@@ -34,7 +122,7 @@ export function calculateItemsInView(
             enableScrollForNextCalculateItemsInView,
             minIndexSizeChanged,
         } = state;
-        const data = state.props.data;
+        const { data, stickyIndicesArr, stickyIndicesSet } = state.props;
         const prevNumContainers = peek$(ctx, "numContainers");
         if (!data || scrollLength === 0 || !prevNumContainers) {
             return;
@@ -256,38 +344,9 @@ export function calculateItemsInView(
                 }
             }
 
-            // Check for sticky items that should be active but aren't
-            const stickyIndices = state.props.stickyIndices;
-            if (stickyIndices?.size > 0) {
-                const stickyArray = Array.from(stickyIndices).sort((a, b) => a - b);
-                const activeIndices = new Set(
-                    Array.from(state.stickyContainerPool)
-                        .map((i) => peek$(ctx, `containerItemKey${i}`))
-                        .map((key) => (key ? indexByKey.get(key) : undefined))
-                        .filter((idx): idx is number => idx !== undefined && stickyArray.includes(idx)),
-                );
-
-                // Find the current sticky item that should be active (most recent one we've passed)
-                let currentStickyIdx = -1;
-                for (let i = stickyArray.length - 1; i >= 0; i--) {
-                    const stickyId = idCache.get(stickyArray[i]) ?? getId(state, stickyArray[i]);
-                    const stickyPos = stickyId ? positions.get(stickyId) : undefined;
-                    if (stickyPos !== undefined && scroll >= stickyPos) {
-                        currentStickyIdx = i;
-                        break;
-                    }
-                }
-
-                // Activate current sticky item and the previous one (for smooth scrolling up)
-                for (let offset = 0; offset <= 1; offset++) {
-                    const idx = currentStickyIdx - offset;
-                    if (idx < 0 || activeIndices.has(stickyArray[idx])) continue;
-
-                    const stickyId = idCache.get(stickyArray[idx]) ?? getId(state, stickyArray[idx]);
-                    if (stickyId && !containerItemKeys.has(stickyId)) {
-                        needNewContainers.push(stickyArray[idx]);
-                    }
-                }
+            // Handle sticky item activation
+            if (stickyIndicesArr.length > 0) {
+                handleStickyActivation(ctx, state, stickyIndicesSet, stickyIndicesArr, scroll, needNewContainers);
             }
 
             if (needNewContainers.length > 0) {
@@ -332,8 +391,7 @@ export function calculateItemsInView(
                     containerItemKeys!.add(id);
 
                     // Mark as sticky if this item is in stickyIndices
-                    const stickyIndices = state.props.stickyIndices || [];
-                    if (stickyIndices.has(i)) {
+                    if (stickyIndicesSet.has(i)) {
                         set$(ctx, `containerSticky${containerIndex}`, true);
                         // Set sticky offset to top padding for proper sticky positioning
                         const topPadding = (peek$(ctx, "stylePaddingTop") || 0) + (peek$(ctx, "headerSize") || 0);
@@ -359,54 +417,9 @@ export function calculateItemsInView(
             }
         }
 
-        // Recycle sticky containers that are far out of view
-        if (state.props.stickyIndices?.size > 0) {
-            const stickyArray = Array.from(state.props.stickyIndices).sort((a, b) => a - b);
-
-            // Find current sticky index (most recent one we've passed)
-            let currentStickyIdx = -1;
-            for (let i = stickyArray.length - 1; i >= 0; i--) {
-                const stickyId = idCache.get(stickyArray[i]) ?? getId(state, stickyArray[i]);
-                const stickyPos = stickyId ? positions.get(stickyId) : undefined;
-                if (stickyPos !== undefined && scroll >= stickyPos) {
-                    currentStickyIdx = i;
-                    break;
-                }
-            }
-
-            for (const containerIndex of state.stickyContainerPool) {
-                const itemKey = peek$(ctx, `containerItemKey${containerIndex}`);
-                const itemIndex = itemKey ? indexByKey.get(itemKey) : undefined;
-                if (itemIndex === undefined) continue;
-
-                const arrayIdx = stickyArray.indexOf(itemIndex);
-                if (arrayIdx === -1) continue;
-
-                // Keep current sticky and previous sticky active, recycle others that are far out
-                const isRecentSticky = arrayIdx >= currentStickyIdx - 1 && arrayIdx <= currentStickyIdx + 1;
-                if (isRecentSticky) continue;
-
-                // For far sticky items, use more aggressive recycling
-                const nextIndex = stickyArray[arrayIdx + 1];
-                let shouldRecycle = false;
-
-                if (nextIndex) {
-                    const nextId = idCache.get(nextIndex) ?? getId(state, nextIndex);
-                    const nextPos = nextId ? positions.get(nextId) : undefined;
-                    shouldRecycle = nextPos !== undefined && scroll > nextPos + scrollBuffer * 2;
-                } else {
-                    const currentId = idCache.get(itemIndex) ?? getId(state, itemIndex);
-                    if (currentId) {
-                        const currentPos = positions.get(currentId);
-                        const currentSize = sizes.get(currentId) ?? getItemSize(state, currentId, itemIndex, data[itemIndex]);
-                        shouldRecycle = currentPos !== undefined && scroll > currentPos + currentSize + scrollBuffer * 3;
-                    }
-                }
-
-                if (shouldRecycle) {
-                    pendingRemoval.push(containerIndex);
-                }
-            }
+        // Handle sticky container recycling
+        if (stickyIndicesArr.length > 0) {
+            handleStickyRecycling(ctx, state, stickyIndicesArr, scroll, scrollBuffer, pendingRemoval);
         }
 
         // Update top positions of all containers
