@@ -26,6 +26,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     if (dataChanged) {
         indexByKey.clear();
         idCache.clear();
+        positions.clear();
     }
 
     const useAverageSize = !getEstimatedItemSize;
