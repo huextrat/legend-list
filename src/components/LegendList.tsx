@@ -353,9 +353,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             }
         }
-        if (!isFirst) {
-            calculateItemsInView(ctx, state, { doMVCP: true });
-        }
     }, [dataProp]);
 
     const onLayoutHeader = useCallback((rect: LayoutRectangle, fromLayoutEffect: boolean) => {
