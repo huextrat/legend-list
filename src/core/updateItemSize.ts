@@ -140,8 +140,14 @@ export function updateItemSize(
     } = state;
 
     if (getFixedItemSize) {
-        const index = state.indexByKey.get(itemKey)!;
+        const index = state.indexByKey.get(itemKey);
+        if (index === undefined) {
+            return;
+        }
         const itemData = state.props.data[index];
+        if (itemData === undefined) {
+            return;
+        }
         const type = getItemType ? (getItemType(itemData, index) ?? "") : "";
         const size = getFixedItemSize(index, itemData, type);
         if (size !== undefined && size === sizesKnown.get(itemKey)) {
@@ -181,6 +187,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
     if (!data) return 0;
 
     const index = indexByKey.get(itemKey)!;
+
     const prevSize = getItemSize(state, itemKey, index, data as any);
     const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
 
