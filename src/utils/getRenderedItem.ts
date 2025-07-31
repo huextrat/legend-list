@@ -2,6 +2,7 @@ import React from "react";
 
 import { peek$, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
+import { isFunction } from "@/utils/helpers";
 
 export function getRenderedItem(ctx: StateContext, state: InternalState, key: string) {
     if (!state) {
@@ -29,7 +30,7 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
             type: getItemType ? (getItemType(data[index], index) ?? "") : "",
         };
 
-        renderedItem = React.createElement(renderItem, itemProps);
+        renderedItem = isFunction(renderItem) ? renderItem(itemProps) : React.createElement(renderItem, itemProps);
     }
 
     return { index, item: data[index], renderedItem };
