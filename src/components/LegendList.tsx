@@ -454,10 +454,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 return state
                     ? {
                           contentLength: state.totalSize,
+                          data: state.props.data,
                           end: state.endNoBuffer,
                           endBuffered: state.endBuffered,
                           isAtEnd: state.isAtEnd,
                           isAtStart: state.isAtStart,
+                          positionAtIndex: (index: number) => state.positions.get(getId(state, index))!,
                           positions: state.positions,
                           scroll: state.scroll,
                           scrollLength: state.scrollLength,

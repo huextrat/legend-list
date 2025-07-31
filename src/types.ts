@@ -421,17 +421,19 @@ export interface LegendListRenderItemProps<
 
 export type ScrollState = {
     contentLength: number;
+    data: readonly any[];
     end: number;
     endBuffered: number;
     isAtEnd: boolean;
     isAtStart: boolean;
+    positionAtIndex: (index: number) => number;
     positions: Map<string, number>;
     scroll: number;
     scrollLength: number;
+    sizeAtIndex: (index: number) => number;
+    sizes: Map<string, number>;
     start: number;
     startBuffered: number;
-    sizes: Map<string, number>;
-    sizeAtIndex: (index: number) => number;
 };
 
 export type LegendListRef = {
