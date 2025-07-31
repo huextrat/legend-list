@@ -29,7 +29,11 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
         positions.clear();
     }
 
-    const useAverageSize = !getEstimatedItemSize;
+    // TODO: useAverageSize is temporarily disabled because of a bad bug:
+    // If data changes with the same item ids but with different content, then their sizes change
+    // and it triggers MVCP and causes content to jump around
+
+    const useAverageSize = false; // !getEstimatedItemSize;
     // Perf optimization to pre-calculate default average size
     const itemType = "";
     let averageSize = averageSizes[itemType]?.avg;
