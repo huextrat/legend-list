@@ -182,7 +182,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
         indexByKey,
         sizesKnown,
         averageSizes,
-        props: { data, horizontal, getEstimatedItemSize, getItemType },
+        props: { data, horizontal, getEstimatedItemSize, getItemType, getFixedItemSize },
     } = state;
     if (!data) return 0;
 
@@ -195,7 +195,7 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
 
     // Update averages per item type
     // If user has provided getEstimatedItemSize that has precedence over averages
-    if (!getEstimatedItemSize) {
+    if (!getEstimatedItemSize && !getFixedItemSize) {
         const itemType = getItemType ? (getItemType(data[index], index) ?? "") : "";
         let averages = averageSizes[itemType];
         if (!averages) {
