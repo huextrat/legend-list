@@ -53,7 +53,7 @@ export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged
 
         // If data changed then we need to find the first item fully in view
         // which was exists in the new data
-        if (targetId === undefined) {
+        if (dataChanged && targetId === undefined) {
             for (let i = 0; i < idsInViewWithPositions.length; i++) {
                 const { id, position } = idsInViewWithPositions[i];
                 const newPosition = positions.get(id);
