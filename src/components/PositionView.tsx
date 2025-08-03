@@ -105,7 +105,6 @@ const PositionViewSticky = typedMemo(function PositionViewSticky({
         }
     }, [position, horizontal, animatedScrollY, stickyOffset]);
 
-    console.log("index", index, position, transform);
     const viewStyle = React.useMemo(() => [style, { zIndex: index + 1000 }, { transform }], [style, transform]);
 
     return <Animated.View ref={refView} style={viewStyle} {...rest} />;
