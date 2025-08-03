@@ -16,9 +16,11 @@ import { getScrollVelocity } from "@/utils/getScrollVelocity";
 import { setDidLayout } from "@/utils/setDidLayout";
 
 function findCurrentStickyIndex(stickyArray: number[], scroll: number, state: InternalState): number {
+    const idCache = state.idCache;
+    const positions = state.positions;
     for (let i = stickyArray.length - 1; i >= 0; i--) {
-        const stickyId = state.idCache.get(stickyArray[i]) ?? getId(state, stickyArray[i]);
-        const stickyPos = stickyId ? state.positions.get(stickyId) : undefined;
+        const stickyId = idCache.get(stickyArray[i]) ?? getId(state, stickyArray[i]);
+        const stickyPos = stickyId ? positions.get(stickyId) : undefined;
         if (stickyPos !== undefined && scroll >= stickyPos) {
             return i;
         }
@@ -55,10 +57,13 @@ function handleStickyActivation(
 
         const stickyIndex = stickyArray[idx];
         const stickyId = state.idCache.get(stickyIndex) ?? getId(state, stickyIndex);
-        
+
         // Only add if it's not already in the regular buffered range and not already in containers
-        if (stickyId && !state.containerItemKeys.has(stickyId) && 
-            (stickyIndex < startBuffered || stickyIndex > endBuffered)) {
+        if (
+            stickyId &&
+            !state.containerItemKeys.has(stickyId) &&
+            (stickyIndex < startBuffered || stickyIndex > endBuffered)
+        ) {
             needNewContainers.push(stickyIndex);
         }
     }
@@ -116,17 +121,19 @@ export function calculateItemsInView(
 ) {
     unstable_batchedUpdates(() => {
         const {
-            scrollLength,
-            startBufferedId: startBufferedIdOrig,
-            positions,
             columns,
             containerItemKeys,
-            idCache,
-            sizes,
-            indexByKey,
-            scrollForNextCalculateItemsInView,
             enableScrollForNextCalculateItemsInView,
+            idCache,
+            indexByKey,
             minIndexSizeChanged,
+            positions,
+            scrollForNextCalculateItemsInView,
+            scrollLength,
+            sizes,
+            startBufferedId: startBufferedIdOrig,
+            viewabilityConfigCallbackPairs,
+            props: { getItemType, initialScroll, itemsAreEqual, keyExtractor, scrollBuffer },
         } = state;
         const { data, stickyIndicesArr, stickyIndicesSet } = state.props;
         const prevNumContainers = peek$(ctx, "numContainers");
@@ -163,7 +170,6 @@ export function calculateItemsInView(
         // If this is before the initial layout, and we have an initialScrollIndex,
         // then ignore the actual scroll which might be shifting due to scrollAdjustHandler
         // and use the calculated offset of the initialScrollIndex instead.
-        const initialScroll = state.props.initialScroll;
         if (!queuedInitialLayout && initialScroll) {
             const updatedOffset = calculateOffsetWithOffsetPosition(
                 state,
@@ -187,7 +193,6 @@ export function calculateItemsInView(
             set$(ctx, "debugComputedScroll", scroll);
         }
 
-        const scrollBuffer = state.props.scrollBuffer;
         let scrollBufferTop = scrollBuffer;
         let scrollBufferBottom = scrollBuffer;
 
@@ -332,7 +337,7 @@ export function calculateItemsInView(
         if (dataChanged) {
             for (let i = 0; i < numContainers; i++) {
                 const itemKey = peek$(ctx, `containerItemKey${i}`);
-                if (!state.props.keyExtractor || (itemKey && indexByKey.get(itemKey) === undefined)) {
+                if (!keyExtractor || (itemKey && indexByKey.get(itemKey) === undefined)) {
                     pendingRemoval.push(i);
                 }
             }
@@ -352,14 +357,23 @@ export function calculateItemsInView(
 
             // Handle sticky item activation
             if (stickyIndicesArr.length > 0) {
-                handleStickyActivation(ctx, state, stickyIndicesSet, stickyIndicesArr, scroll, needNewContainers, startBuffered, endBuffered);
+                handleStickyActivation(
+                    ctx,
+                    state,
+                    stickyIndicesSet,
+                    stickyIndicesArr,
+                    scroll,
+                    needNewContainers,
+                    startBuffered,
+                    endBuffered,
+                );
             }
 
             if (needNewContainers.length > 0) {
                 // Calculate required item types for type-safe container reuse
-                const requiredItemTypes = state.props.getItemType
+                const requiredItemTypes = getItemType
                     ? needNewContainers.map((i) => {
-                          const itemType = state.props.getItemType!(data[i], i);
+                          const itemType = getItemType!(data[i], i);
                           return itemType ? String(itemType) : "";
                       })
                     : undefined;
@@ -479,7 +493,10 @@ export function calculateItemsInView(
                             set$(ctx, `containerColumn${i}`, column);
                         }
 
-                        if (prevData !== item) {
+                        if (
+                            prevData !== item &&
+                            (itemsAreEqual ? !itemsAreEqual(prevData, item, itemIndex, data) : true)
+                        ) {
                             set$(ctx, `containerItemData${i}`, data[itemIndex]);
                         }
                     }
@@ -495,15 +512,8 @@ export function calculateItemsInView(
             }
         }
 
-        if (state.viewabilityConfigCallbackPairs) {
-            updateViewableItems(
-                state,
-                ctx,
-                state.viewabilityConfigCallbackPairs,
-                scrollLength,
-                startNoBuffer!,
-                endNoBuffer!,
-            );
+        if (viewabilityConfigCallbackPairs) {
+            updateViewableItems(state, ctx, viewabilityConfigCallbackPairs, scrollLength, startNoBuffer!, endNoBuffer!);
         }
     });
 }

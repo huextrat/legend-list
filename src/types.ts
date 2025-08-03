@@ -280,6 +280,8 @@ export type LegendListPropsBase<
     getItemType?: (item: ItemT, index: number) => TItemType;
 
     getFixedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
+
+    itemsAreEqual?: (itemPrevious: ItemT, item: ItemT, index: number, data: readonly ItemT[]) => boolean;
 };
 
 export interface MaintainScrollAtEndOptions {
@@ -398,6 +400,7 @@ export interface InternalState {
         snapToIndices: number[] | undefined;
         stickyIndicesSet: Set<number>;
         stickyIndicesArr: number[];
+        itemsAreEqual: LegendListProps["itemsAreEqual"];
     };
 }
 
