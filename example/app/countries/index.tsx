@@ -84,7 +84,7 @@ const App = () => {
                     estimatedItemSize={70}
                     extraData={selectedId}
                     getFixedItemSize={(index, item) => {
-                        return 200;
+                        return 52;
                     }}
                     keyExtractor={(item) => item.id}
                     onEndReached={({ distanceFromEnd }) => {
