@@ -23,17 +23,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
     const scrollVelocity = getScrollVelocity(state);
 
-    if (dataChanged) {
-        indexByKey.clear();
-        idCache.clear();
-        positions.clear();
-    }
-
-    // TODO: useAverageSize is temporarily disabled because of a bad bug:
-    // If data changes with the same item ids but with different content, then their sizes change
-    // and it triggers MVCP and causes content to jump around
-
-    const useAverageSize = false; // !getEstimatedItemSize;
+    const useAverageSize = !getEstimatedItemSize;
     // Perf optimization to pre-calculate default average size
     const itemType = "";
     let averageSize = averageSizes[itemType]?.avg;

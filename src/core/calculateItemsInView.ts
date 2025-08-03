@@ -153,6 +153,12 @@ export function calculateItemsInView(
             // Handle maintainVisibleContentPosition adjustment early
             const checkMVCP = doMVCP ? prepareMVCP(ctx, state, dataChanged) : undefined;
 
+            if (dataChanged) {
+                indexByKey.clear();
+                idCache.clear();
+                positions.clear();
+            }
+
             // Update all positions upfront so we can assume they're correct
             updateAllPositions(ctx, state, dataChanged);
 

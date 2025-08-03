@@ -58,6 +58,7 @@ import { getRenderedItem } from "@/utils/getRenderedItem";
 import { extractPadding, warnDevOnce } from "@/utils/helpers";
 import { requestAdjust } from "@/utils/requestAdjust";
 import { setPaddingTop } from "@/utils/setPaddingTop";
+import { updateAveragesOnDataChange } from "@/utils/updateAveragesOnDataChange";
 import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
 const DEFAULT_DRAW_DISTANCE = 250;
@@ -257,6 +258,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const checkResetContainers = (isFirst: boolean) => {
         const state = refState.current;
         if (state) {
+            // Preserve averages for items that are considered equal before updating data
+            if (!isFirst && state.props.data !== dataProp) {
+                updateAveragesOnDataChange(state, state.props.data, dataProp);
+            }
+
             state.props.data = dataProp;
 
             if (!isFirst) {
