@@ -191,7 +191,7 @@ export function calculateItemsInView(
         // Sometimes we may have scrolled past the visible area which can make items at the top of the
         // screen not render. So make sure we clamp scroll to the end.
         if (scroll + scrollLength > totalSize) {
-            scroll = totalSize - scrollLength;
+            scroll = Math.max(0, totalSize - scrollLength);
         }
 
         if (ENABLE_DEBUG_VIEW) {
@@ -211,7 +211,7 @@ export function calculateItemsInView(
         }
 
         const scrollTopBuffered = scroll - scrollBufferTop;
-        const scrollBottom = scroll + scrollLength;
+        const scrollBottom = scroll + scrollLength + (scroll < 0 ? -scroll : 0);
         const scrollBottomBuffered = scrollBottom + scrollBufferBottom;
 
         // Check precomputed scroll range to see if we can skip this check
