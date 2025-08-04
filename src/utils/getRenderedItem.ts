@@ -22,7 +22,7 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
 
     let renderedItem: React.ReactNode = null;
 
-    if (renderItem) {
+    if (renderItem && data[index]) {
         const itemProps = {
             extraData: peek$(ctx, "extraData"),
             index,

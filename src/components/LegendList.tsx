@@ -348,22 +348,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }
 
-    useLayoutEffect(() => {
-        if (IsNewArchitecture) {
-            let measured: LayoutRectangle;
-            (refScroller.current as unknown as View).measure((x, y, width, height) => {
-                measured = { height, width, x, y };
-            });
-            if (measured!) {
-                const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
-
-                if (size) {
-                    handleLayout(ctx, state, measured, setCanRender);
-                }
-            }
-        }
-    }, [dataProp]);
-
     const onLayoutHeader = useCallback((rect: LayoutRectangle, fromLayoutEffect: boolean) => {
         const size = rect[horizontal ? "width" : "height"];
         set$(ctx, "headerSize", size);
@@ -396,6 +380,22 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     useLayoutEffect(() => {
         set$(ctx, "extraData", extraData);
     }, [extraData]);
+
+    useLayoutEffect(() => {
+        if (IsNewArchitecture) {
+            let measured: LayoutRectangle;
+            (refScroller.current as unknown as View).measure((x, y, width, height) => {
+                measured = { height, width, x, y };
+            });
+            if (measured!) {
+                const size = Math.floor(measured[horizontal ? "width" : "height"] * 8) / 8;
+
+                if (size) {
+                    handleLayout(ctx, state, measured, setCanRender);
+                }
+            }
+        }
+    }, []);
 
     useLayoutEffect(initializeStateVars, [
         memoizedLastItemKeys.join(","),
