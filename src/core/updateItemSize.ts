@@ -4,6 +4,7 @@ import { peek$, type StateContext, set$ } from "@/state/state";
 import type { InternalState, MaintainScrollAtEndOptions } from "@/types";
 import { checkAllSizesKnown } from "@/utils/checkAllSizesKnown";
 import { getItemSize } from "@/utils/getItemSize";
+import { getScrollVelocity } from "@/utils/getScrollVelocity";
 import { requestAdjust } from "@/utils/requestAdjust";
 
 export function updateItemSizes(
@@ -157,7 +158,9 @@ export function updateItemSize(
 
     const containersDidLayout = peek$(ctx, "containersDidLayout");
 
-    if (!containersDidLayout || !queuedItemSizeUpdatesWaiting) {
+    const speed = getScrollVelocity(state);
+
+    if (!containersDidLayout || !queuedItemSizeUpdatesWaiting || Math.abs(speed) < 1) {
         // Update immediately if initial load or we're not already waiting
         updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
         if (containersDidLayout) {
