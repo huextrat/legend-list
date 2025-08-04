@@ -12,6 +12,7 @@ type KeysToOmit =
     | "animatedProps"
     | "renderItem"
     | "onItemSizeChanged"
+    | "itemsAreEqual"
     | "ItemSeparatorComponent";
 
 type PropsBase<ItemT> = LegendListPropsBase<ItemT, ComponentProps<typeof Animated.ScrollView>>;
