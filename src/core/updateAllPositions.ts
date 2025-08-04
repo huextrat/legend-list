@@ -23,7 +23,8 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
     const scrollVelocity = getScrollVelocity(state);
 
-    const useAverageSize = !getEstimatedItemSize;
+    // TODO: Average size still is not working well in cases where an item's content changes size
+    const useAverageSize = false; // !getEstimatedItemSize;
     // Perf optimization to pre-calculate default average size
     const itemType = "";
     let averageSize = averageSizes[itemType]?.avg;
