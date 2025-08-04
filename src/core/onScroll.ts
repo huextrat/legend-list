@@ -13,6 +13,10 @@ export function onScroll(
         nativeEvent: NativeScrollEvent;
     },
 ) {
+    if (!state.scrollProcessingEnabled) {
+        return;
+    }
+
     if (event.nativeEvent?.contentSize?.height === 0 && event.nativeEvent.contentSize?.width === 0) {
         return;
     }

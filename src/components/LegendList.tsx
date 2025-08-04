@@ -196,6 +196,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             scrollPending: 0,
             scrollPrev: 0,
             scrollPrevTime: 0,
+            scrollProcessingEnabled: true,
             scrollTime: 0,
             sizes: new Map(),
             sizesKnown: new Map(),
@@ -507,6 +508,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 }
             },
             scrollToOffset: (params) => scrollTo(state, params),
+            setScrollProcessingEnabled: (enabled: boolean) => {
+                refState.current!.scrollProcessingEnabled = enabled;
+            },
             setVisibleContentAnchorOffset: (value: number | ((value: number) => number)) => {
                 const val = typeof value === "function" ? value(peek$(ctx, "scrollAdjustUserOffset") || 0) : value;
                 set$(ctx, "scrollAdjustUserOffset", val);

@@ -369,6 +369,7 @@ export interface InternalState {
     activeStickyIndex: number | undefined;
     stickyContainers: Map<number, number>;
     stickyContainerPool: Set<number>;
+    scrollProcessingEnabled: boolean;
     props: {
         alignItemsAtEnd: boolean;
         data: readonly any[];
@@ -533,6 +534,12 @@ export type LegendListRef = {
      * @param animated - If true, uses Animated to animate the change.
      */
     setVisibleContentAnchorOffset(value: number | ((value: number) => number)): void;
+
+    /**
+     * Sets whether scroll processing is enabled.
+     * @param enabled - If true, scroll processing is enabled.
+     */
+    setScrollProcessingEnabled(enabled: boolean): void;
 };
 
 export interface ViewToken<ItemT = any> {
