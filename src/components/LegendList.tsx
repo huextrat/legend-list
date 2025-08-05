@@ -49,7 +49,7 @@ import type {
     ScrollIndexWithOffsetPosition,
     ScrollState,
 } from "@/types";
-import { typedForwardRef } from "@/types";
+import { typedForwardRef, typedMemo } from "@/types";
 import { checkAtBottom } from "@/utils/checkAtBottom";
 import { checkAtTop } from "@/utils/checkAtTop";
 import { createColumnWrapperStyle } from "@/utils/createColumnWrapperStyle";
@@ -64,16 +64,15 @@ import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 const DEFAULT_DRAW_DISTANCE = 250;
 const DEFAULT_ITEM_SIZE = 100;
 
-export const LegendList = typedForwardRef(function LegendList<T>(
-    props: LegendListProps<T>,
-    forwardedRef: ForwardedRef<LegendListRef>,
-) {
-    return (
-        <StateProvider>
-            <LegendListInner {...props} ref={forwardedRef} />
-        </StateProvider>
-    );
-});
+export const LegendList = typedMemo(
+    typedForwardRef(function LegendList<T>(props: LegendListProps<T>, forwardedRef: ForwardedRef<LegendListRef>) {
+        return (
+            <StateProvider>
+                <LegendListInner {...props} ref={forwardedRef} />
+            </StateProvider>
+        );
+    }),
+);
 
 const LegendListInner = typedForwardRef(function LegendListInner<T>(
     props: LegendListProps<T>,
@@ -568,11 +567,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             finishScrollTo(refState.current);
                         });
                     } else {
-                    // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
-                    // This should ideally wait until all layouts have settled.
-                    setTimeout(() => {
-                        finishScrollTo(refState.current);
-                    }, 1000);
+                        // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
+                        // This should ideally wait until all layouts have settled.
+                        setTimeout(() => {
+                            finishScrollTo(refState.current);
+                        }, 1000);
                     }
 
                     if (onMomentumScrollEnd) {
