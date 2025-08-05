@@ -20,6 +20,10 @@ type ListElement = {
 
 const data: ListElement[] = [
     {
+        title: "Reproduction MVCP + initialScrollIndex",
+        url: "/reproduction",
+    },
+    {
         title: "Bidirectional Infinite List",
         url: "/bidirectional-infinite-list",
     },

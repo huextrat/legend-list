@@ -170,7 +170,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             endReachedBlockedByTimer: false,
             firstFullyOnScreenIndex: -1,
             idCache: new Map(),
-            idsInView: [],
             indexByKey: new Map(),
             initialScroll,
             isAtEnd: false,
@@ -569,11 +568,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                             finishScrollTo(refState.current);
                         });
                     } else {
-                        // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
-                        // This should ideally wait until all layouts have settled.
-                        setTimeout(() => {
-                            finishScrollTo(refState.current);
-                        }, 1000);
+                    // TODO: This is a hack to fix an issue where items rendered while scrolling take a while to layout.
+                    // This should ideally wait until all layouts have settled.
+                    setTimeout(() => {
+                        finishScrollTo(refState.current);
+                    }, 1000);
                     }
 
                     if (onMomentumScrollEnd) {
