@@ -20,10 +20,6 @@ type ListElement = {
 
 const data: ListElement[] = [
     {
-        title: "Reproduction MVCP + initialScrollIndex",
-        url: "/reproduction",
-    },
-    {
         title: "Bidirectional Infinite List",
         url: "/bidirectional-infinite-list",
     },
@@ -58,6 +54,10 @@ const data: ListElement[] = [
     {
         title: "Lazy List",
         url: "/lazy-list",
+    },
+    {
+        title: "MVCP test",
+        url: "/mvcp-test",
     },
     {
         title: "Accurate scrollToIndex",
