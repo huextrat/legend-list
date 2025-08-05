@@ -7,6 +7,7 @@ export const getScrollVelocity = (state: InternalState) => {
         const newest = scrollHistory[scrollHistory.length - 1];
         let oldest: (typeof scrollHistory)[0] | undefined;
         let start = 0;
+        const now = Date.now();
 
         // If there's a change in direction, remove all entries before that point
         for (let i = 0; i < scrollHistory.length - 1; i++) {
@@ -30,13 +31,13 @@ export const getScrollVelocity = (state: InternalState) => {
         // Find oldest recent event
         for (let i = start; i < scrollHistory.length - 1; i++) {
             const entry = scrollHistory[i];
-            if (newest.time - entry.time <= 1000) {
+            if (now - entry.time <= 1000) {
                 oldest = entry;
                 break;
             }
         }
 
-        if (oldest) {
+        if (oldest && oldest !== newest) {
             const scrollDiff = newest.scroll - oldest.scroll;
             const timeDiff = newest.time - oldest.time;
             velocity = timeDiff > 0 ? scrollDiff / timeDiff : 0;
