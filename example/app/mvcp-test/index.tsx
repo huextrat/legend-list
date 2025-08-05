@@ -53,7 +53,7 @@ const ItemComponent = ({ index }: ItemComponentProps) => {
     );
 };
 
-export default function Reproduction() {
+export default function MVCPTest() {
     const listRef = useRef<LegendListRef>(null);
 
     const [data] = useState<Item[]>(
