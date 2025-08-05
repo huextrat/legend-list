@@ -4,7 +4,7 @@ import { ENABLE_DEBUG_VIEW, POSITION_OUT_OF_VIEW } from "@/constants";
 import { calculateOffsetForIndex } from "@/core/calculateOffsetForIndex";
 import { calculateOffsetWithOffsetPosition } from "@/core/calculateOffsetWithOffsetPosition";
 import { getEffectiveScroll } from "@/core/getEffectiveScroll";
-import { prepareMVCP } from "@/core/prepareMVCP";
+import { prepareMVCP } from "@/core/mvcp";
 import { updateAllPositions } from "@/core/updateAllPositions";
 import { updateViewableItems } from "@/core/viewability";
 import { peek$, type StateContext, set$ } from "@/state/state";

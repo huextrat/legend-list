@@ -46,14 +46,12 @@ export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged
 
         if (scrollTarget !== undefined) {
             // If we're currently scrolling to a target index, do MVCP for its position
-            console.log("scrollTarget", scrollTarget);
             targetId = getId(state, scrollTarget);
         } else if (peek$(ctx, "containersDidLayout")) {
             idsInViewWithPositions = getItemsInView(ctx, state);
             if (!dataChanged) {
                 // Do MVCP for the first item fully in view
                 targetId = idsInViewWithPositions.find(({ id }) => indexByKey.get(id) !== undefined)?.id;
-                console.log("targetId in view", targetId);
             }
         }
 
@@ -74,7 +72,6 @@ export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged
                 const newPosition = positions.get(id);
                 if (newPosition !== undefined) {
                     positionDiff = newPosition - position;
-                    console.log("positionDiff", positionDiff, id);
                     break;
                 }
             }
@@ -86,7 +83,6 @@ export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged
 
             if (newPosition !== undefined) {
                 positionDiff = newPosition - prevPosition;
-                console.log("positionDiff targetId", positionDiff, targetId);
             }
         }
 

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
-import { prepareMVCP } from "../../src/core/prepareMVCP";
+import { prepareMVCP } from "../../src/core/mvcp";
 import type { StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
 import * as requestAdjustModule from "../../src/utils/requestAdjust";
