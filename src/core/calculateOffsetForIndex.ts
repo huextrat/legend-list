@@ -7,16 +7,16 @@ export function calculateOffsetForIndex(ctx: StateContext, state: InternalState,
 
     if (index !== undefined) {
         position = state?.positions.get(getId(state, index)) || 0;
-    }
 
-    const paddingTop = peek$(ctx, "stylePaddingTop");
-    if (paddingTop) {
-        position += paddingTop;
-    }
+        const paddingTop = peek$(ctx, "stylePaddingTop");
+        if (paddingTop) {
+            position += paddingTop;
+        }
 
-    const headerSize = peek$(ctx, "headerSize");
-    if (headerSize) {
-        position += headerSize;
+        const headerSize = peek$(ctx, "headerSize");
+        if (headerSize) {
+            position += headerSize;
+        }
     }
 
     return position;
