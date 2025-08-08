@@ -87,6 +87,16 @@ export interface StateContext {
     mapViewabilityValues: Map<string, ViewToken>;
     mapViewabilityAmountCallbacks: Map<number, ViewabilityAmountCallback>;
     mapViewabilityAmountValues: Map<number, ViewAmountToken>;
+    mapViewabilityConfigStates: Map<
+        string,
+        {
+            viewableItems: ViewToken[];
+            start: number;
+            end: number;
+            previousStart: number;
+            previousEnd: number;
+        }
+    >;
     columnWrapperStyle: ColumnWrapperStyle | undefined;
     viewRefs: Map<number, React.RefObject<View>>;
     animatedScrollY: Animated.Value;
@@ -102,6 +112,7 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
         mapViewabilityAmountCallbacks: new Map<number, ViewabilityAmountCallback>(),
         mapViewabilityAmountValues: new Map<number, ViewAmountToken>(),
         mapViewabilityCallbacks: new Map<string, ViewabilityCallback>(),
+        mapViewabilityConfigStates: new Map(),
         mapViewabilityValues: new Map<string, ViewToken>(),
         values: new Map<ListenerType, any>([
             ["alignItemsPaddingTop", 0],

@@ -10,16 +10,25 @@ import type {
 } from "@/types";
 import { getId } from "@/utils/getId";
 
-const mapViewabilityConfigCallbackPairs = new Map<
-    string,
-    {
-        viewableItems: ViewToken[];
-        start: number;
-        end: number;
-        previousStart: number;
-        previousEnd: number;
+function ensureViewabilityState(
+    ctx: StateContext,
+    configId: string,
+): {
+    viewableItems: ViewToken[];
+    start: number;
+    end: number;
+    previousStart: number;
+    previousEnd: number;
+} {
+    // Lazily initialize the per-list map if absent (e.g., in tests with manual contexts)
+    const map = ctx.mapViewabilityConfigStates || (ctx.mapViewabilityConfigStates = new Map());
+    let state = map.get(configId);
+    if (!state) {
+        state = { end: -1, previousEnd: -1, previousStart: -1, start: -1, viewableItems: [] };
+        map.set(configId, state);
     }
->();
+    return state;
+}
 
 export function setupViewability(
     props: Pick<
@@ -43,18 +52,6 @@ export function setupViewability(
         ];
     }
 
-    if (viewabilityConfigCallbackPairs) {
-        for (const pair of viewabilityConfigCallbackPairs) {
-            mapViewabilityConfigCallbackPairs.set(pair.viewabilityConfig.id!, {
-                end: -1,
-                previousEnd: -1,
-                previousStart: -1,
-                start: -1,
-                viewableItems: [],
-            });
-        }
-    }
-
     return viewabilityConfigCallbackPairs;
 }
 
@@ -71,9 +68,7 @@ export function updateViewableItems(
         props: { data },
     } = state;
     for (const viewabilityConfigCallbackPair of viewabilityConfigCallbackPairs) {
-        const viewabilityState = mapViewabilityConfigCallbackPairs.get(
-            viewabilityConfigCallbackPair.viewabilityConfig.id!,
-        )!;
+        const viewabilityState = ensureViewabilityState(ctx, viewabilityConfigCallbackPair.viewabilityConfig.id!);
         viewabilityState.start = start;
         viewabilityState.end = end;
         if (viewabilityConfigCallbackPair.viewabilityConfig.minimumViewTime) {
@@ -97,7 +92,7 @@ function updateViewableItemsWithConfig(
 ) {
     const { viewabilityConfig, onViewableItemsChanged } = viewabilityConfigCallbackPair;
     const configId = viewabilityConfig.id!;
-    const viewabilityState = mapViewabilityConfigCallbackPairs.get(configId)!;
+    const viewabilityState = ensureViewabilityState(ctx, configId);
     const { viewableItems: previousViewableItems, start, end } = viewabilityState;
 
     const viewabilityTokens = new Map<number, ViewAmountToken>();
