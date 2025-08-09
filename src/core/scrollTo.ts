@@ -10,9 +10,10 @@ export function scrollTo(
         offset: number;
         viewOffset?: number;
         viewPosition?: number;
+        noScrollingTo?: boolean;
     } = {} as any,
 ) {
-    const { animated } = params;
+    const { animated, noScrollingTo } = params;
     const {
         refScroller,
         props: { horizontal },
@@ -22,7 +23,11 @@ export function scrollTo(
 
     // Disable scroll adjust while scrolling so that it doesn't do extra work affecting the target offset
     state.scrollHistory.length = 0;
-    state.scrollingTo = params;
+
+    // noScrollingTo is used for the workaround in mvcp to fake it with scroll
+    if (!noScrollingTo) {
+        state.scrollingTo = params;
+    }
     state.scrollPending = offset;
     // Do the scroll
     refScroller.current?.scrollTo({

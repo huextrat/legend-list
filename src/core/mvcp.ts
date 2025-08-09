@@ -74,13 +74,7 @@ export function prepareMVCP(ctx: StateContext, state: InternalState, dataChanged
         }
 
         if (positionDiff !== undefined && Math.abs(positionDiff) > 0.1) {
-            if (Platform.OS === "android" && !IsNewArchitecture && dataChanged && state.scroll <= positionDiff) {
-                scrollTo(state, {
-                    offset: state.scroll + positionDiff,
-                });
-            } else {
-                requestAdjust(ctx, state, positionDiff);
-            }
+            requestAdjust(ctx, state, positionDiff, dataChanged);
         }
     };
 }
