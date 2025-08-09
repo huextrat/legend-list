@@ -142,7 +142,10 @@ export function calculateItemsInView(
             return;
         }
 
+        const totalSize = peek$(ctx, "totalSize");
+        const topPad = peek$(ctx, "stylePaddingTop") + peek$(ctx, "headerSize");
         const numColumns = peek$(ctx, "numColumns");
+        const previousScrollAdjust = 0;
         const { dataChanged, doMVCP } = params;
         const speed = getScrollVelocity(state);
 
@@ -163,7 +166,7 @@ export function calculateItemsInView(
             checkMVCP?.();
         }
 
-        // const scrollExtra = 0;
+        const scrollExtra = 0;
         // Disabled this optimization for now because it was causing blanks to appear sometimes
         // We may need to control speed calculation better, or not have a 5 item history to avoid this issue
         // const scrollExtra = Math.max(-16, Math.min(16, speed)) * 24;
@@ -181,10 +184,16 @@ export function calculateItemsInView(
                 initialScroll,
             );
             scrollState = updatedOffset;
-            state.scroll = scrollState;
         }
 
-        const scroll = getEffectiveScroll(ctx, state);
+        const scrollAdjustPad = -previousScrollAdjust - topPad;
+        let scroll = scrollState + scrollExtra + scrollAdjustPad;
+
+        // Sometimes we may have scrolled past the visible area which can make items at the top of the
+        // screen not render. So make sure we clamp scroll to the end.
+        if (scroll + scrollLength > totalSize) {
+            scroll = Math.max(0, totalSize - scrollLength);
+        }
 
         if (ENABLE_DEBUG_VIEW) {
             set$(ctx, "debugRawScroll", scrollState);
@@ -301,10 +310,17 @@ export function calculateItemsInView(
             }
         }
 
+        const idsInView: string[] = [];
+        for (let i = firstFullyOnScreenIndex!; i <= endNoBuffer!; i++) {
+            const id = idCache.get(i) ?? getId(state, i)!;
+            idsInView.push(id);
+        }
+
         Object.assign(state, {
             endBuffered,
             endNoBuffer,
             firstFullyOnScreenIndex,
+            idsInView,
             startBuffered,
             startBufferedId,
             startNoBuffer,
