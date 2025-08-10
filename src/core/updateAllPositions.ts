@@ -23,8 +23,11 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     const indexByKeyForChecking = __DEV__ ? new Map() : undefined;
     const scrollVelocity = getScrollVelocity(state);
 
-    // TODO: Average size still is not working well in cases where an item's content changes size
-    const useAverageSize = false; // !getEstimatedItemSize;
+    // Only use average size if user did not provide a getEstimatedItemSize function
+    // Note that with estimatedItemSize, we use it for the first render and then
+    // we can use average size after that.
+    const useAverageSize = !getEstimatedItemSize;
+
     // Perf optimization to pre-calculate default average size
     const itemType = "";
     let averageSize = averageSizes[itemType]?.avg;
@@ -51,7 +54,17 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
             // Process items backwards from firstFullyOnScreenIndex - 1 to 0
             for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
                 const id = idCache.get(i) ?? getId(state, i)!;
-                const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
+                const size =
+                    sizesKnown.get(id) ??
+                    getItemSize(
+                        state,
+                        id,
+                        i,
+                        data[i],
+                        useAverageSize,
+                        averageSize,
+                        /*preferRenderedCache*/ !!dataChanged,
+                    );
                 const itemColumn = columns.get(id)!;
 
                 maxSizeInRow = Math.max(maxSizeInRow, size);
@@ -93,7 +106,9 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     for (let i = 0; i < dataLength; i++) {
         // Inline the map get calls to avoid the overhead of the function call
         const id = idCache.get(i) ?? getId(state, i)!;
-        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
+        const size =
+            sizesKnown.get(id) ??
+            getItemSize(state, id, i, data[i], useAverageSize, averageSize, /*preferRenderedCache*/ !!dataChanged);
 
         // Set index mapping for this item
         if (__DEV__ && needsIndexByKey) {
