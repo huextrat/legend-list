@@ -30,7 +30,11 @@ describe("findAvailableContainers", () => {
         ctx = createMockContext();
         mockState = {
             indexByKey: new Map(),
-        } as InternalState;
+            props: {
+                stickyIndicesSet: new Set(),
+            },
+            stickyContainerPool: new Set(),
+        } as unknown as InternalState;
     });
 
     describe("when there are unallocated containers", () => {
@@ -153,8 +157,8 @@ describe("findAvailableContainers", () => {
 
             const result = findAvailableContainers(ctx, mockState, 0, 0, 10, []);
 
-            // The real function doesn't have early return for numNeeded=0, so it finds unallocated containers
-            expect(result).toEqual([0]);
+            // The real function doesn't allocate when numNeeded=0
+            expect(result).toEqual([]);
         });
 
         it("should handle invalid buffered range (start > end)", () => {

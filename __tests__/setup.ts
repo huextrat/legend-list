@@ -1,5 +1,5 @@
 // Global test setup for Legend List tests
-import { afterEach, beforeEach } from "bun:test";
+import { afterEach, beforeEach, mock } from "bun:test";
 
 // Define React Native globals that the source code expects
 global.__DEV__ = false;
@@ -15,6 +15,10 @@ const originalSetTimeout = globalThis.setTimeout;
 const originalClearTimeout = globalThis.clearTimeout;
 const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
 
+// Mock react-native module for all tests to avoid loading the real RN package
+mock.module("react-native", () => import("./__mocks__/react-native.ts"));
+mock.module("react-native/index.js", () => import("./__mocks__/react-native.ts"));
+
 // Global cleanup between tests to prevent contamination
 afterEach(() => {
     // Restore any potentially mocked functions
@@ -24,16 +28,15 @@ afterEach(() => {
     if (globalThis.clearTimeout !== originalClearTimeout) {
         globalThis.clearTimeout = originalClearTimeout;
     }
-    if (globalThis.requestAnimationFrame !== originalRequestAnimationFrame) {
-        globalThis.requestAnimationFrame = originalRequestAnimationFrame;
-    }
-    
+    // Keep requestAnimationFrame fallback in place between tests
+
     // Clear any pending timers
     // This is a simple approach - in production you'd use jest.clearAllTimers() or similar
 });
 
 // Even stronger cleanup after each test file
 import { afterAll } from "bun:test";
+
 afterAll(() => {
     // Attempt to restore any global spies that might be lingering
     const possibleMocks = [globalThis.setTimeout, globalThis.clearTimeout, globalThis.requestAnimationFrame];
@@ -43,5 +46,8 @@ afterAll(() => {
     globalThis.requestAnimationFrame = originalRequestAnimationFrame;
 });
 
-// Export empty to make this a module
-export {};
+// Provide raf fallback for code paths that expect it
+if (typeof globalThis.requestAnimationFrame !== "function") {
+    // @ts-ignore
+    globalThis.requestAnimationFrame = (cb: Function) => setTimeout(cb, 0);
+}

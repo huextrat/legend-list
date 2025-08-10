@@ -55,7 +55,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(getContentSizeSpy).toHaveBeenCalledWith(mockCtx);
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 150, // Math.floor(400 - 250)
             });
         });
@@ -65,7 +65,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.max(0, Math.floor(400 - 500))
             });
         });
@@ -75,7 +75,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.floor(400 - 400)
             });
         });
@@ -85,7 +85,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 149, // Math.floor(400 - 250.7)
             });
         });
@@ -135,7 +135,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(getContentSizeSpy).not.toHaveBeenCalled();
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });
@@ -146,7 +146,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(getContentSizeSpy).not.toHaveBeenCalled();
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });
@@ -157,7 +157,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(getContentSizeSpy).not.toHaveBeenCalled();
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });
@@ -169,7 +169,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(getContentSizeSpy).toHaveBeenCalledWith(mockCtx);
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 320, // Math.floor(400 - 80)
             });
         });
@@ -181,7 +181,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.max(0, negative value)
             });
         });
@@ -194,7 +194,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.max(0, Math.floor(0 - 100))
             });
         });
@@ -205,7 +205,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.max(0, Math.floor(-100 - 50))
             });
         });
@@ -216,7 +216,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 9800, // Math.floor(10000 - 200)
             });
         });
@@ -227,7 +227,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 333, // Math.floor(456.789 - 123.456)
             });
         });
@@ -245,7 +245,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 400, // Full viewport height
             });
         });
@@ -255,7 +255,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 450, // Math.floor(400 - (-50))
             });
         });
@@ -275,7 +275,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: NaN, // Math.max(0, Math.floor(400 - NaN)) = Math.max(0, NaN) = NaN
             });
         });
@@ -285,7 +285,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // Math.max(0, Math.floor(400 - Infinity))
             });
         });
@@ -297,7 +297,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 250,
             });
             expect(setPaddingTopSpy).toHaveBeenCalledTimes(1);
@@ -318,7 +318,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });
@@ -404,7 +404,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 480, // 600 - 120
             });
         });
@@ -420,7 +420,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0, // No padding needed
             });
         });
@@ -435,7 +435,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 220, // 300 - 80
             });
         });
@@ -447,7 +447,7 @@ describe("updateAlignItemsPaddingTop", () => {
             // Small content scenario
             getContentSizeSpy.mockReturnValue(50);
             updateAlignItemsPaddingTop(mockCtx, mockState);
-            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 350,
             });
 
@@ -455,7 +455,7 @@ describe("updateAlignItemsPaddingTop", () => {
             setPaddingTopSpy.mockClear();
             getContentSizeSpy.mockReturnValue(800);
             updateAlignItemsPaddingTop(mockCtx, mockState);
-            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });
@@ -474,7 +474,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
                 updateAlignItemsPaddingTop(mockCtx, mockState);
 
-                expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+                expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                     alignItemsPaddingTop: expected,
                 });
             });
@@ -489,7 +489,7 @@ describe("updateAlignItemsPaddingTop", () => {
 
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 350,
             });
         });
@@ -503,7 +503,7 @@ describe("updateAlignItemsPaddingTop", () => {
             updateAlignItemsPaddingTop(mockCtx, mockState);
 
             expect(setPaddingTopSpy).toHaveBeenCalledTimes(3);
-            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 200,
             });
         });
@@ -512,7 +512,7 @@ describe("updateAlignItemsPaddingTop", () => {
             // Initial state with small data
             getContentSizeSpy.mockReturnValue(100);
             updateAlignItemsPaddingTop(mockCtx, mockState);
-            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 300,
             });
 
@@ -520,7 +520,7 @@ describe("updateAlignItemsPaddingTop", () => {
             setPaddingTopSpy.mockClear();
             getContentSizeSpy.mockReturnValue(450);
             updateAlignItemsPaddingTop(mockCtx, mockState);
-            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, {
+            expect(setPaddingTopSpy).toHaveBeenLastCalledWith(mockCtx, mockState, {
                 alignItemsPaddingTop: 0,
             });
         });

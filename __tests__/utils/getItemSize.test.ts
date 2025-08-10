@@ -50,8 +50,8 @@ describe("getItemSize", () => {
 
     describe("average size optimization (new architecture)", () => {
         it("should use average size when conditions are met", () => {
-            // All conditions for average size: NewArch, useAverageSize provided, no known size, no getEstimatedItemSize, not scrollingTo
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 80);
+            // All conditions for average size: useAverageSize=true, defaultAverage provided, no known size, no getEstimatedItemSize, not scrollingTo
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, true, 80);
 
             expect(result).toBe(80);
             expect(mockState.sizes.get("item_0")).toBe(80); // Should cache the result
@@ -60,7 +60,8 @@ describe("getItemSize", () => {
         it("should not use average size when getEstimatedItemSize is provided", () => {
             mockState.props.getEstimatedItemSize = (index: number) => index * 10 + 50;
 
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 80);
+            // When an estimation function is provided, callers should pass useAverageSize=false
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, false);
 
             expect(result).toBe(50); // Should use getEstimatedItemSize result
             expect(mockState.sizes.get("item_0")).toBe(50);
@@ -69,7 +70,7 @@ describe("getItemSize", () => {
         it("should not use average size when scrollingTo is true", () => {
             mockState.scrollingTo = { index: 0, offset: 0 };
 
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 80);
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, true, 80);
 
             expect(result).toBe(50); // Should fall back to estimatedItemSize
             expect(mockState.sizes.get("item_0")).toBe(50);
@@ -95,7 +96,7 @@ describe("getItemSize", () => {
         it("should prefer average size over cached size", () => {
             mockState.sizes.set("item_0", 65);
 
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 80);
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, true, 80);
 
             expect(result).toBe(80); // Should use average size
             expect(mockState.sizes.get("item_0")).toBe(80); // Should update cache
@@ -167,7 +168,7 @@ describe("getItemSize", () => {
         });
 
         it("should update cache when using average size", () => {
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 85);
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, true, 85);
 
             expect(result).toBe(85);
             expect(mockState.sizes.get("item_0")).toBe(85);
@@ -197,7 +198,7 @@ describe("getItemSize", () => {
         it("should prioritize average size over cached size", () => {
             mockState.sizes.set("item_0", 200);
 
-            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, 150);
+            const result = getItemSize(mockState, "item_0", 0, { id: 0 }, true, 150);
 
             expect(result).toBe(150); // Average size takes precedence over cached
         });

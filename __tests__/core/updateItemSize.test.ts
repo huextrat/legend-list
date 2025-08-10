@@ -77,6 +77,8 @@ describe("updateItemSize functions", () => {
                 maintainScrollAtEnd: false,
                 maintainVisibleContentPosition: undefined,
                 onItemSizeChanged: (event: any) => onItemSizeChangedCalls.push(event),
+                stickyIndicesArr: [],
+                stickyIndicesSet: new Set(),
                 suggestEstimatedItemSize: false,
             },
             queuedInitialLayout: true,
@@ -96,6 +98,7 @@ describe("updateItemSize functions", () => {
             sizesKnown: new Map(),
             startBuffered: 0,
             startReachedBlockedByTimer: false,
+            stickyContainerPool: new Set(),
             timeoutSizeMessage: undefined,
         } as InternalState;
     });
@@ -523,6 +526,9 @@ describe("updateItemSize functions", () => {
 
             const sizeObj = { height: 150, width: 400 };
             updateItemSize(mockCtx, mockState, "item_0", sizeObj);
+            // Allow queued RAF to flush queuedItemSizeUpdates
+            // @ts-ignore
+            globalThis.requestAnimationFrame((cb: any) => cb?.());
 
             // Should have measured and updated both items
             expect(mockState.sizesKnown.get("item_0")).toBe(150);

@@ -136,7 +136,9 @@ export function calculateItemsInView(
             viewabilityConfigCallbackPairs,
             props: { getItemType, initialScroll, itemsAreEqual, keyExtractor, scrollBuffer },
         } = state;
-        const { data, stickyIndicesArr, stickyIndicesSet } = state.props;
+        const { data } = state.props;
+        const stickyIndicesArr = state.props.stickyIndicesArr || [];
+        const stickyIndicesSet = state.props.stickyIndicesSet || new Set<number>();
         const prevNumContainers = peek$(ctx, "numContainers");
         if (!data || scrollLength === 0 || !prevNumContainers) {
             return;

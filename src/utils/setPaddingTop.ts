@@ -13,10 +13,10 @@ export function setPaddingTop(
             // scroll itself because the height reduced.
             // First add the padding to the total size so that the total height in the ScrollView
             // doesn't change
-            let prevTotalSize = peek$(ctx, "totalSize");
+            let prevTotalSize = peek$(ctx, "totalSize") || 0;
             set$(ctx, "totalSize", prevTotalSize + prevStylePaddingTop);
             state.timeoutSetPaddingTop = setTimeout(() => {
-                prevTotalSize = peek$(ctx, "totalSize");
+                prevTotalSize = peek$(ctx, "totalSize") || 0;
                 set$(ctx, "totalSize", prevTotalSize - prevStylePaddingTop);
             }, 16);
         }

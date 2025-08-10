@@ -13,7 +13,7 @@ export function onScroll(
         nativeEvent: NativeScrollEvent;
     },
 ) {
-    if (!state.scrollProcessingEnabled) {
+    if (state.scrollProcessingEnabled === false) {
         return;
     }
 

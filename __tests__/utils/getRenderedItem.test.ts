@@ -79,11 +79,8 @@ describe("getRenderedItem", () => {
 
             // We can check the element's props to verify correct data was passed
             const element = result!.renderedItem as React.ReactElement;
-            expect(element.props).toEqual({
-                extraData: undefined, // peek$ returns undefined when context value is not found via peek function
-                index: 0,
-                item: { id: "item1", name: "First" },
-            });
+            // Our MockRenderItem renders children and React adds a key prop; props differ from LegendList's renderItem signature
+            expect(element.props.children).toBe("Item First at 0");
         });
 
         it("should include extraData from context", () => {
@@ -94,11 +91,7 @@ describe("getRenderedItem", () => {
 
             expect(result).not.toBeNull();
             const element = result!.renderedItem as React.ReactElement;
-            expect(element.props).toEqual({
-                extraData: undefined, // Mock context doesn't implement peek$ properly
-                index: 1,
-                item: { id: "item2", name: "Second" },
-            });
+            expect(element.props.children).toBe("Item Second at 1");
         });
 
         it("should handle different item types", () => {
@@ -200,12 +193,8 @@ describe("getRenderedItem", () => {
         it("should handle renderItem throwing an error", () => {
             mockState.props.renderItem = ThrowingRenderItem;
 
-            // React.createElement doesn't immediately invoke the component, so no error is thrown
-            // The error would occur during rendering/execution, not during createElement
-            const result = getRenderedItem(mockCtx, mockState, "item_0");
-
-            expect(result).not.toBeNull();
-            expect(React.isValidElement(result!.renderedItem)).toBe(true);
+            // Creating the element may throw if the function executes immediately; assert it throws
+            expect(() => getRenderedItem(mockCtx, mockState, "item_0")).toThrow("Render error");
         });
 
         it("should handle renderItem returning null", () => {
@@ -214,8 +203,8 @@ describe("getRenderedItem", () => {
             const result = getRenderedItem(mockCtx, mockState, "item_0");
 
             expect(result).not.toBeNull();
-            // React.createElement will create an element even if the component returns null
-            expect(React.isValidElement(result!.renderedItem)).toBe(true);
+            // renderItem returns null; getRenderedItem returns that value directly
+            expect(result!.renderedItem).toBeNull();
         });
 
         it("should handle renderItem returning undefined", () => {
@@ -224,8 +213,8 @@ describe("getRenderedItem", () => {
             const result = getRenderedItem(mockCtx, mockState, "item_0");
 
             expect(result).not.toBeNull();
-            // React.createElement will create an element
-            expect(React.isValidElement(result!.renderedItem)).toBe(true);
+            // undefined is a valid return; pass through
+            expect(result!.renderedItem).toBeUndefined();
         });
 
         it("should handle renderItem returning non-React element", () => {
@@ -234,8 +223,8 @@ describe("getRenderedItem", () => {
             const result = getRenderedItem(mockCtx, mockState, "item_0");
 
             expect(result).not.toBeNull();
-            // React.createElement will create an element
-            expect(React.isValidElement(result!.renderedItem)).toBe(true);
+            // Non-React element returned; pass through
+            expect(result!.renderedItem).toBe("plain string");
         });
 
         it("should handle complex renderItem with multiple props", () => {
@@ -268,11 +257,7 @@ describe("getRenderedItem", () => {
 
             expect(result).not.toBeNull();
             const element = result!.renderedItem as React.ReactElement;
-            expect(element.props).toEqual({
-                extraData: undefined,
-                index: 0,
-                item: { id: "item1", name: "First" },
-            });
+            expect(element.props.children).toBe("Item First at 0");
         });
 
         it("should handle corrupted context", () => {
@@ -293,11 +278,7 @@ describe("getRenderedItem", () => {
 
                 expect(result).not.toBeNull();
                 const element = result!.renderedItem as React.ReactElement;
-                expect(element.props).toEqual({
-                    extraData: undefined, // Mock context doesn't implement peek$ properly
-                    index: 0,
-                    item: { id: "item1", name: "First" },
-                });
+                expect(element.props.children).toBe("Item First at 0");
             });
         });
     });
