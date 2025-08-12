@@ -142,7 +142,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
 
         it("should handle scrollingTo target prioritization", () => {
@@ -155,7 +155,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
     });
 
@@ -173,7 +173,7 @@ describe("prepareMVCP", () => {
             adjustFunction();
 
             // Should track the scroll target (item-2), not the first visible item
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50); // 300 - 250 = 50
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined); // 300 - 250 = 50
         });
 
         it("should fallback to first visible item when no scrollingTo", () => {
@@ -187,7 +187,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
 
         it("should handle visible items not in indexByKey", () => {
@@ -200,7 +200,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
 
         it("should handle no valid anchor items", () => {
@@ -260,7 +260,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, -50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, -50, undefined);
         });
 
         it("should handle zero position change", () => {
@@ -279,7 +279,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 900);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 900, undefined);
         });
     });
 
@@ -366,7 +366,7 @@ describe("prepareMVCP", () => {
 
             adjustFunction();
 
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, Infinity);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, Infinity, undefined);
         });
     });
 
@@ -387,7 +387,7 @@ describe("prepareMVCP", () => {
 
             // All should detect the same change
             expect(requestAdjustSpy).toHaveBeenCalledTimes(3);
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
 
         it("should handle switching between scroll targets", () => {
@@ -407,8 +407,8 @@ describe("prepareMVCP", () => {
             adjust2(); // Should track item-3
 
             expect(requestAdjustSpy).toHaveBeenCalledTimes(2);
-            expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50); // item-2: 300-250
-            expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50); // item-3: 500-450
+            expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50, undefined); // item-2: 300-250
+            expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50, undefined); // item-3: 500-450
         });
 
         it("should handle changing from scrollingTo to visible items", () => {
@@ -428,8 +428,8 @@ describe("prepareMVCP", () => {
             adjust2(); // Should track item-1
 
             expect(requestAdjustSpy).toHaveBeenCalledTimes(2);
-            expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50); // item-2
-            expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50); // item-1
+            expect(requestAdjustSpy).toHaveBeenNthCalledWith(1, mockCtx, mockState, 50, undefined); // item-2
+            expect(requestAdjustSpy).toHaveBeenNthCalledWith(2, mockCtx, mockState, 50, undefined); // item-1
         });
     });
 
@@ -461,7 +461,7 @@ describe("prepareMVCP", () => {
             const duration = performance.now() - start;
 
             expect(duration).toBeLessThan(5); // Should be very fast
-            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50);
+            expect(requestAdjustSpy).toHaveBeenCalledWith(mockCtx, mockState, 50, undefined);
         });
 
         it("should handle rapid MVCP execution", () => {

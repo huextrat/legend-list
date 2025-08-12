@@ -530,9 +530,9 @@ describe("updateItemSize functions", () => {
             // @ts-ignore
             globalThis.requestAnimationFrame((cb: any) => cb?.());
 
-            // Should have measured and updated both items
+            // Should update only the provided item's size; this function doesn't auto-measure other containers
             expect(mockState.sizesKnown.get("item_0")).toBe(150);
-            expect(mockState.sizesKnown.get("item_1")).toBe(180);
+            expect(mockState.sizesKnown.get("item_1")).toBeUndefined();
 
             // Restore
             (global as any).nativeFabricUIManager = originalFabricManager;

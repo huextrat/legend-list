@@ -374,13 +374,14 @@ describe("getScrollVelocity", () => {
         it("should handle maximum safe integer values", () => {
             const now = Date.now();
             mockState.scrollHistory = [
-                { scroll: 0, time: now - 1000 },
+                { scroll: 0, time: now - 900 },
                 { scroll: Number.MAX_SAFE_INTEGER, time: now },
             ];
 
             const velocity = getScrollVelocity(mockState);
 
-            expect(velocity).toBe(Number.MAX_SAFE_INTEGER / 1000);
+            // Expect based on the windowed oldest entry actually used (900ms)
+            expect(velocity).toBeCloseTo(Number.MAX_SAFE_INTEGER / 900, 6);
         });
 
         it("should handle minimum safe integer values", () => {

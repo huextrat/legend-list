@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
+import { Animated } from "react-native";
+
 import { updateTotalSize } from "../../src/core/updateTotalSize";
-import type { StateContext } from "../../src/state/state";
+import type { ListenerType, StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
 
 // Create a properly typed mock context
 function createMockContext(initialValues: Record<string, any> = {}): StateContext {
-    const values = new Map(Object.entries(initialValues));
+    const values = new Map<ListenerType, any>(Object.entries(initialValues) as any);
     const listeners = new Map();
 
     return {
+        animatedScrollY: new Animated.Value(0),
         columnWrapperStyle: undefined,
         listeners,
         mapViewabilityAmountCallbacks: new Map(),
@@ -48,7 +51,7 @@ describe("updateTotalSize", () => {
             sizes: new Map(),
             sizesKnown: new Map(),
             totalSize: 0,
-        } as InternalState;
+        } as unknown as InternalState;
     });
 
     describe("empty data handling", () => {

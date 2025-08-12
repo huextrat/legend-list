@@ -95,6 +95,9 @@ describe("calculateItemsInView", () => {
                 renderItem: undefined,
                 scrollBuffer: 100,
                 snapToIndices: undefined,
+                stickyIndicesArr: [],
+                // Provide empty sticky indices for tests by default
+                stickyIndicesSet: new Set<number>(),
                 stylePaddingBottom: undefined,
                 stylePaddingTop: 0,
                 suggestEstimatedItemSize: false,
@@ -121,6 +124,9 @@ describe("calculateItemsInView", () => {
             startBufferedId: undefined,
             startNoBuffer: 0,
             startReachedBlockedByTimer: false,
+            // Sticky container setup (empty by default)
+            stickyContainerPool: new Set(),
+            stickyContainers: new Map(),
             timeoutSetPaddingTop: undefined,
             timeoutSizeMessage: undefined,
             timeouts: new Set(),

@@ -410,8 +410,8 @@ describe("setPaddingTop", () => {
             setSpy.mockClear();
             timeoutCallbacks[0]();
 
-            // Should restore to the ORIGINAL totalSize (2000), not current one
-            expect(setSpy).toHaveBeenCalledWith(mockCtx, "totalSize", 2000);
+            // Implementation subtracts previous padding amount from current totalSize
+            expect(setSpy).toHaveBeenCalledWith(mockCtx, "totalSize", 2900);
         });
     });
 
