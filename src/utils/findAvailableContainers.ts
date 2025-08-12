@@ -14,21 +14,20 @@ export function findAvailableContainers(
 ): number[] {
     const numContainers = peek$(ctx, "numContainers");
 
-    const { stickyIndicesSet } = state.props;
+    const { stickyContainerPool, containerItemTypes } = state;
 
     const result: number[] = [];
     const availableContainers: Array<{ index: number; distance: number }> = [];
 
     // Separate sticky and non-sticky items
-    const stickySet = state.props.stickyIndicesSet || new Set<number>();
-    const stickyItemIndices = needNewContainers?.filter((index) => stickySet.has(index)) || [];
-    const nonStickyItemIndices = needNewContainers?.filter((index) => !stickySet.has(index)) || [];
+    const stickyIndicesSet = state.props.stickyIndicesSet;
+    const stickyItemIndices = needNewContainers?.filter((index) => stickyIndicesSet.has(index)) || [];
 
     // Helper function to check if a container can be reused for a given item type
     const canReuseContainer = (containerIndex: number, requiredType: string | undefined): boolean => {
         if (!requiredType) return true; // No type requirement, can reuse any container
 
-        const existingType = state.containerItemTypes.get(containerIndex);
+        const existingType = containerItemTypes.get(containerIndex);
         if (!existingType) return true; // Untyped container can be reused for any type
 
         return existingType === requiredType;
@@ -44,7 +43,7 @@ export function findAvailableContainers(
 
         // Try to find available sticky container
         let foundContainer = false;
-        for (const containerIndex of state.stickyContainerPool) {
+        for (const containerIndex of stickyContainerPool) {
             const key = peek$(ctx, `containerItemKey${containerIndex}`);
             const isPendingRemoval = pendingRemoval.includes(containerIndex);
 
@@ -64,7 +63,7 @@ export function findAvailableContainers(
         if (!foundContainer) {
             const newContainerIndex = numContainers + result.filter((index) => index >= numContainers).length;
             result.push(newContainerIndex);
-            state.stickyContainerPool.add(newContainerIndex);
+            stickyContainerPool.add(newContainerIndex);
             if (requiredItemTypes) typeIndex++;
         }
     }
@@ -73,7 +72,7 @@ export function findAvailableContainers(
     // First pass: collect unallocated non-sticky containers (most efficient to use)
     for (let u = 0; u < numContainers && result.length < numNeeded; u++) {
         // Skip if this is a sticky container
-        if (state.stickyContainerPool.has(u)) {
+        if (stickyContainerPool.has(u)) {
             continue;
         }
 
@@ -100,7 +99,7 @@ export function findAvailableContainers(
     // Second pass: collect non-sticky containers that are out of view
     for (let u = 0; u < numContainers && result.length < numNeeded; u++) {
         // Skip if this is a sticky container
-        if (state.stickyContainerPool.has(u)) {
+        if (stickyContainerPool.has(u)) {
             continue;
         }
 
