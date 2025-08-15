@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { LegendList, type LegendListRef } from "@legendapp/list";
+import { LegendList, type LegendListRef, useSyncLayout } from "@legendapp/list";
 import { observable } from "@legendapp/state";
 import { useSelector } from "@legendapp/state/react";
 import type { Item } from "~/app/cards-renderItem";
@@ -30,12 +30,16 @@ interface ItemComponentProps {
 const ItemComponent = ({ index }: ItemComponentProps) => {
     // Use .get() to observe the height - observer wrapper will handle reactivity
     const height = useSelector(store.map[index]) ?? 300;
+    const syncLayout = useSyncLayout();
 
     const randomBgColor = ["red", "green", "yellow", "purple", "blue", "orange", "lightgrey"][index % 7];
 
     return (
         <Pressable
-            onPress={() => store.updateAncestor(index)}
+            onPress={() => {
+                store.updateAncestor(index);
+                syncLayout();
+            }}
             style={{
                 alignItems: "center",
                 backgroundColor: randomBgColor,

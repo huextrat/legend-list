@@ -5,6 +5,7 @@ export {
     useListScrollSize,
     useRecyclingEffect,
     useRecyclingState,
+    useSyncLayout,
     useViewability,
     useViewabilityAmount,
 } from "@/state/ContextContainer";

@@ -9,6 +9,7 @@ import {
     useState,
 } from "react";
 
+import { IsNewArchitecture } from "@/constants";
 import { useInit } from "@/hooks/useInit";
 import { useArr$, useSelector$, useStateContext } from "@/state/state";
 import type { LegendListRecyclingState, ViewabilityAmountCallback, ViewabilityCallback } from "@/types";
@@ -143,4 +144,17 @@ export function useIsLastItem(): boolean {
 export function useListScrollSize(): { width: number; height: number } {
     const [scrollSize] = useArr$(["scrollSize"]);
     return scrollSize;
+}
+
+const noop = () => {};
+export function useSyncLayout() {
+    if (IsNewArchitecture) {
+        const { triggerLayout: syncLayout } = useContext(ContextContainer);
+
+        return syncLayout;
+    } else {
+        // Old architecture doesn't support sync layout so there's no point in triggering
+        // a state update for no reason
+        return noop;
+    }
 }
