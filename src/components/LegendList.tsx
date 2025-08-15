@@ -124,7 +124,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         ListHeaderComponent,
         maintainScrollAtEnd = false,
         maintainScrollAtEndThreshold = 0.1,
-        maintainVisibleContentPosition = false,
+        maintainVisibleContentPosition = true,
         numColumns: numColumnsProp = 1,
         onEndReached,
         onEndReachedThreshold = 0.5,
