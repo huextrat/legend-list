@@ -13,14 +13,8 @@ import type Reanimated from "react-native-reanimated";
 
 import type { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
 
-export type LegendListPropsBase<
-    ItemT,
-    TScrollView extends
-        | ComponentProps<typeof ScrollView>
-        | ComponentProps<typeof Animated.ScrollView>
-        | ComponentProps<typeof Reanimated.ScrollView>,
-    TItemType extends string | undefined = string | undefined,
-> = Omit<
+// Base ScrollView props with exclusions
+type BaseScrollViewProps<TScrollView> = Omit<
     TScrollView,
     | "contentOffset"
     | "contentInset"
@@ -28,7 +22,45 @@ export type LegendListPropsBase<
     | "stickyHeaderIndices"
     | "removeClippedSubviews"
     | "children"
-> & {
+>;
+
+// Core props for data mode
+interface DataModeProps<ItemT, TItemType extends string | undefined> {
+    /**
+     * Array of items to render in the list.
+     * @required when using data mode
+     */
+    data: ReadonlyArray<ItemT>;
+
+    /**
+     * Function or React component to render each item in the list.
+     * Can be either:
+     * - A function: (props: LegendListRenderItemProps<ItemT>) => ReactNode
+     * - A React component: React.ComponentType<LegendListRenderItemProps<ItemT>>
+     * @required when using data mode
+     */
+    renderItem:
+        | ((props: LegendListRenderItemProps<ItemT, TItemType>) => ReactNode)
+        | React.ComponentType<LegendListRenderItemProps<ItemT, TItemType>>;
+
+    children?: never;
+}
+
+// Core props for children mode
+interface ChildrenModeProps {
+    /**
+     * React children elements to render as list items.
+     * Each child will be treated as an individual list item.
+     * @required when using children mode
+     */
+    children: ReactNode;
+
+    data?: never;
+    renderItem?: never;
+}
+
+// Shared Legend List specific props
+interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
     /**
      * If true, aligns items at the end of the list.
      * @default false
@@ -39,12 +71,6 @@ export type LegendListPropsBase<
      * Style applied to each column's wrapper view.
      */
     columnWrapperStyle?: ColumnWrapperStyle;
-
-    /**
-     * Array of items to render in the list.
-     * @required
-     */
-    data: ReadonlyArray<ItemT>;
 
     /**
      * Distance in pixels to pre-render items ahead of the visible area.
@@ -226,17 +252,6 @@ export type LegendListPropsBase<
     refreshing?: boolean;
 
     /**
-     * Function or React component to render each item in the list.
-     * Can be either:
-     * - A function: (props: LegendListRenderItemProps<ItemT>) => ReactNode
-     * - A React component: React.ComponentType<LegendListRenderItemProps<ItemT>>
-     * @required
-     */
-    renderItem?:
-        | ((props: LegendListRenderItemProps<ItemT, TItemType>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<ItemT, TItemType>>;
-
-    /**
      * Render custom ScrollView component.
      * @default (props) => <ScrollView {...props} />
      */
@@ -282,7 +297,19 @@ export type LegendListPropsBase<
     getFixedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
 
     itemsAreEqual?: (itemPrevious: ItemT, item: ItemT, index: number, data: readonly ItemT[]) => boolean;
-};
+}
+
+// Clean final type composition
+export type LegendListPropsBase<
+    ItemT,
+    TScrollView extends
+        | ComponentProps<typeof ScrollView>
+        | ComponentProps<typeof Animated.ScrollView>
+        | ComponentProps<typeof Reanimated.ScrollView>,
+    TItemType extends string | undefined = string | undefined,
+> = BaseScrollViewProps<TScrollView> &
+    LegendListSpecificProps<ItemT, TItemType> &
+    (DataModeProps<ItemT, TItemType> | ChildrenModeProps);
 
 export interface MaintainScrollAtEndOptions {
     onLayout?: boolean;

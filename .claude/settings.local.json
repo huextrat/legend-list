@@ -13,6 +13,7 @@
       "Bash(node:*)",
       "Bash(rg:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

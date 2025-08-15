@@ -1,4 +1,3 @@
-export { LazyLegendList, type LazyLegendListProps } from "@/components/LazyLegendList";
 export { LegendList } from "@/components/LegendList";
 export {
     useIsLastItem,

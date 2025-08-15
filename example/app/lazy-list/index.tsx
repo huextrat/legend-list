@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 
-import { LazyLegendList, type LegendListRef } from "@legendapp/list";
+import { LegendList, type LegendListRef } from "@legendapp/list";
 import { countries, getEmojiFlag, type TCountryCode } from "countries-list";
 
 type Country = {
@@ -24,7 +24,7 @@ export default function LazyList() {
 
     return (
         <View style={styles.container}>
-            <LazyLegendList maintainVisibleContentPosition recycleItems ref={listRef}>
+            <LegendList maintainVisibleContentPosition recycleItems ref={listRef}>
                 <View style={styles.heading}>
                     <Text style={styles.headingText}>Countries lazy scrollview</Text>
                 </View>
@@ -49,7 +49,7 @@ export default function LazyList() {
                         </View>
                     </Pressable>
                 ))}
-            </LazyLegendList>
+            </LegendList>
         </View>
     );
 }

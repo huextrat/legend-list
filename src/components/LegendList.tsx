@@ -45,6 +45,7 @@ import type {
     InternalState,
     LegendListProps,
     LegendListRef,
+    LegendListRenderItemProps,
     MaintainScrollAtEndOptions,
     ScrollIndexWithOffsetPosition,
     ScrollState,
@@ -55,7 +56,7 @@ import { checkAtTop } from "@/utils/checkAtTop";
 import { createColumnWrapperStyle } from "@/utils/createColumnWrapperStyle";
 import { getId } from "@/utils/getId";
 import { getRenderedItem } from "@/utils/getRenderedItem";
-import { extractPadding, warnDevOnce } from "@/utils/helpers";
+import { extractPadding, isArray, warnDevOnce } from "@/utils/helpers";
 import { requestAdjust } from "@/utils/requestAdjust";
 import { setPaddingTop } from "@/utils/setPaddingTop";
 import { updateAveragesOnDataChange } from "@/utils/updateAveragesOnDataChange";
@@ -66,16 +67,39 @@ const DEFAULT_ITEM_SIZE = 100;
 
 export const LegendList = typedMemo(
     typedForwardRef(function LegendList<T>(props: LegendListProps<T>, forwardedRef: ForwardedRef<LegendListRef>) {
+        // Handle children mode - convert children to data array at the top level
+        const { children, data: dataProp, renderItem: renderItemProp, ...restProps } = props;
+        const isChildrenMode = children !== undefined && dataProp === undefined;
+
+        const processedProps = isChildrenMode
+            ? {
+                  ...restProps,
+                  data: (isArray(children) ? children : React.Children.toArray(children)).flat(1) as T[],
+                  renderItem: ({ item }: { item: T }) => item as React.ReactNode,
+              }
+            : {
+                  ...restProps,
+                  data: dataProp || [],
+                  renderItem: renderItemProp!,
+              };
+
         return (
             <StateProvider>
-                <LegendListInner {...props} ref={forwardedRef} />
+                <LegendListInner {...processedProps} ref={forwardedRef} />
             </StateProvider>
         );
     }),
 );
 
+type LegendListInnerProps<T> = Omit<LegendListProps<T>, "children"> & {
+    data: ReadonlyArray<T>;
+    renderItem:
+        | ((props: LegendListRenderItemProps<T, string | undefined>) => React.ReactNode)
+        | React.ComponentType<LegendListRenderItemProps<T, string | undefined>>;
+};
+
 const LegendListInner = typedForwardRef(function LegendListInner<T>(
-    props: LegendListProps<T>,
+    props: LegendListInnerProps<T>,
     forwardedRef: ForwardedRef<LegendListRef>,
 ) {
     const {
