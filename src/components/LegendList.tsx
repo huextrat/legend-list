@@ -274,7 +274,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         scrollBuffer,
         snapToIndices,
         stickyIndicesArr: stickyIndices ?? [],
-        stickyIndicesSet: useMemo(() => new Set(stickyIndices), [stickyIndices]),
+        stickyIndicesSet: useMemo(() => new Set(stickyIndices ?? []), [stickyIndices?.join(",")]),
         stylePaddingBottom: stylePaddingBottomState,
         stylePaddingTop: stylePaddingTopState,
         suggestEstimatedItemSize: !!suggestEstimatedItemSize,
