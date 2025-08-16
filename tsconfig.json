@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
-        "baseUrl": ".",
         "declaration": true,
         "declarationMap": false,
         "esModuleInterop": true,
@@ -20,40 +19,40 @@
         "outDir": "dist",
         "paths": {
             "@/*": [
-                "src/*"
+                "./src/*"
             ],
             "@/components/*": [
-                "src/components/*"
+                "./src/components/*"
             ],
             "@/core/*": [
-                "src/core/*"
+                "./src/core/*"
             ],
             "@/hooks/*": [
-                "src/hooks/*"
+                "./src/hooks/*"
             ],
             "@/integrations/*": [
-                "src/integrations/*"
+                "./src/integrations/*"
             ],
             "@/state/*": [
-                "src/state/*"
+                "./src/state/*"
             ],
             "@/utils/*": [
-                "src/utils/*"
+                "./src/utils/*"
             ],
             "@legendapp/list": [
-                "src/index"
+                "./src/index"
             ],
             "@legendapp/list/animated": [
-                "src/integrations/animated"
+                "./src/integrations/animated"
             ],
             "@legendapp/list/reanimated": [
-                "src/integrations/reanimated"
+                "./src/integrations/reanimated"
             ],
             "react": [
-                "node_modules/react"
+                "./node_modules/react"
             ],
             "react-native": [
-                "node_modules/react-native"
+                "./node_modules/react-native"
             ]
         },
         "resolveJsonModule": true,
