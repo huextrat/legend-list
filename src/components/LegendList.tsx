@@ -47,7 +47,7 @@ import type {
     LegendListRef,
     LegendListRenderItemProps,
     MaintainScrollAtEndOptions,
-    ScrollIndexWithOffsetPosition,
+    ScrollIndexWithOffset,
     ScrollState,
 } from "@/types";
 import { typedForwardRef, typedMemo } from "@/types";
@@ -117,7 +117,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         horizontal,
         initialContainerPoolRatio = 2,
         initialScrollIndex: initialScrollIndexProp,
-        initialScrollOffset,
+        initialScrollOffset: initialScrollOffsetProp,
         itemsAreEqual,
         keyExtractor: keyExtractorProp,
         ListEmptyComponent,
@@ -154,9 +154,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     } = props;
 
     const [renderNum, setRenderNum] = useState(0);
-    const initialScroll: ScrollIndexWithOffsetPosition | undefined =
-        typeof initialScrollIndexProp === "number" ? { index: initialScrollIndexProp } : initialScrollIndexProp;
-    const initialScrollIndex = initialScroll?.index;
+    const initialScroll: ScrollIndexWithOffset | undefined =
+        initialScrollIndexProp || initialScrollOffsetProp
+            ? typeof initialScrollIndexProp === "object"
+                ? { index: initialScrollIndexProp.index || 0, viewOffset: initialScrollIndexProp.viewOffset || 0 }
+                : { index: initialScrollIndexProp || 0, viewOffset: initialScrollOffsetProp || 0 }
+            : undefined;
 
     const [canRender, setCanRender] = React.useState(!IsNewArchitecture);
 
@@ -346,15 +349,22 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         updateAllPositions(ctx, state);
     }
     const initialContentOffset = useMemo(() => {
-        const initialContentOffset = initialScrollOffset || calculateOffsetForIndex(ctx, state, initialScrollIndex);
-        refState.current!.isStartReached =
-            initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
+        if (initialScroll) {
+            const { index, viewOffset } = initialScroll;
+            let initialContentOffset = viewOffset || 0;
+            if (index !== undefined) {
+                initialContentOffset += calculateOffsetForIndex(ctx, state, index);
+            }
+            refState.current!.isStartReached =
+                initialContentOffset < refState.current!.scrollLength * onStartReachedThreshold!;
 
-        if (initialContentOffset > 0) {
-            scrollTo(state, { animated: false, index: initialScrollIndex, offset: initialContentOffset });
+            if (initialContentOffset > 0) {
+                scrollTo(state, { animated: false, index, offset: initialContentOffset });
+            }
+
+            return initialContentOffset;
         }
-
-        return initialContentOffset;
+        return 0;
     }, [renderNum]);
 
     if (isFirst || didDataChange || numColumnsProp !== peek$(ctx, "numColumns")) {
@@ -375,7 +385,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const size = rect[horizontal ? "width" : "height"];
         set$(ctx, "headerSize", size);
 
-        if (initialScroll) {
+        if (initialScroll?.index !== undefined) {
             if (IsNewArchitecture && Platform.OS !== "android") {
                 if (fromLayoutEffect) {
                     setRenderNum((v) => v + 1);

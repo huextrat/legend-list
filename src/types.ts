@@ -123,7 +123,6 @@ interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
         | {
               index: number;
               viewOffset?: number | undefined;
-              viewPosition?: number | undefined;
           };
 
     /**
@@ -388,7 +387,7 @@ export interface InternalState {
     >;
     refScroller: React.RefObject<ScrollView>;
     loadStartTime: number;
-    initialScroll: ScrollIndexWithOffsetPosition | undefined;
+    initialScroll: ScrollIndexWithOffset | undefined;
     lastLayout: LayoutRectangle | undefined;
     queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
     queuedItemSizeUpdatesWaiting?: boolean;
@@ -420,7 +419,7 @@ export interface InternalState {
         suggestEstimatedItemSize: boolean;
         stylePaddingBottom: number | undefined;
         renderItem: LegendListProps["renderItem"];
-        initialScroll: { index: number; viewOffset?: number; viewPosition?: number } | undefined;
+        initialScroll: ScrollIndexWithOffset | undefined;
         scrollBuffer: number;
         numColumns: number;
         initialContainerPoolRatio: number;
@@ -657,11 +656,14 @@ export type TypedMemo = <T extends React.ComponentType<any>>(
 
 export const typedMemo = memo as TypedMemo;
 
-export type ScrollIndexWithOffsetPosition = {
+export interface ScrollIndexWithOffset {
     index: number;
-    viewOffset?: number;
-    viewPosition?: number;
-};
+    viewOffset: number;
+}
+
+export interface ScrollIndexWithOffsetPosition extends ScrollIndexWithOffset {
+    viewPosition: number;
+}
 
 export type GetRenderedItemResult<ItemT> = { index: number; item: ItemT; renderedItem: React.ReactNode };
 export type GetRenderedItem = (key: string) => GetRenderedItemResult<any> | null;

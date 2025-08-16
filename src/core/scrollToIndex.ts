@@ -3,10 +3,12 @@ import { scrollTo } from "@/core/scrollTo";
 import type { StateContext } from "@/state/state";
 import type { InternalState, LegendListRef } from "@/types";
 
+export type ScrollToIndexParams = Parameters<LegendListRef["scrollToIndex"]>[0];
+
 export function scrollToIndex(
     ctx: StateContext,
     state: InternalState,
-    { index, viewOffset = 0, animated = true, viewPosition }: Parameters<LegendListRef["scrollToIndex"]>[0],
+    { index, viewOffset = 0, animated = true, viewPosition }: ScrollToIndexParams,
 ) {
     if (index >= state.props.data.length) {
         index = state.props.data.length - 1;

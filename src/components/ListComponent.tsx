@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import {
     Animated,
     type LayoutChangeEvent,
