@@ -204,7 +204,8 @@ export function calculateItemsInView(
         let scrollBufferTop = scrollBuffer;
         let scrollBufferBottom = scrollBuffer;
 
-        if (speed > 0) {
+        // If we're scrolling fast, or we're at the top of the list and not scrolling
+        if (speed > 0 || (speed === 0 && scroll < Math.max(50, scrollBuffer))) {
             scrollBufferTop = scrollBuffer * 0.5;
             scrollBufferBottom = scrollBuffer * 1.5;
         } else {
