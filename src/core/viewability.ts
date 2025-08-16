@@ -21,7 +21,11 @@ function ensureViewabilityState(
     previousEnd: number;
 } {
     // Lazily initialize the per-list map if absent (e.g., in tests with manual contexts)
-    const map = ctx.mapViewabilityConfigStates || (ctx.mapViewabilityConfigStates = new Map());
+    let map = ctx.mapViewabilityConfigStates;
+    if (!map) {
+        map = new Map();
+        ctx.mapViewabilityConfigStates = map;
+    }
     let state = map.get(configId);
     if (!state) {
         state = { end: -1, previousEnd: -1, previousStart: -1, start: -1, viewableItems: [] };
@@ -182,6 +186,16 @@ function updateViewableItemsWithConfig(
     }
 }
 
+function shallowEqual<T extends object>(prev: T | undefined, next: T): boolean {
+    if (!prev) return false;
+    const keys = Object.keys(next) as Array<keyof T>;
+    for (let i = 0; i < keys.length; i++) {
+        const k = keys[i];
+        if ((prev as any)[k] !== (next as any)[k]) return false;
+    }
+    return true;
+}
+
 function computeViewability(
     state: InternalState,
     ctx: StateContext,
@@ -224,7 +238,8 @@ function computeViewability(
         sizeVisible,
     };
 
-    if (JSON.stringify(value) !== JSON.stringify(ctx.mapViewabilityAmountValues.get(containerId))) {
+    const prev = ctx.mapViewabilityAmountValues.get(containerId);
+    if (!shallowEqual(prev, value)) {
         ctx.mapViewabilityAmountValues.set(containerId, value);
         const cb = ctx.mapViewabilityAmountCallbacks.get(containerId);
         if (cb) {

@@ -579,7 +579,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             });
         }
         return fns.onScroll;
-    }, [stickyIndices, horizontal, onScroll]);
+    }, [stickyIndices?.length, horizontal, onScroll]);
 
     return (
         <>
