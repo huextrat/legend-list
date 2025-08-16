@@ -45,7 +45,7 @@ function updateScroll(ctx: StateContext, state: InternalState, newScroll: number
 
     state.hasScrolled = true;
     state.lastBatchingAction = Date.now();
-    const currentTime = performance.now();
+    const currentTime = Date.now();
 
     // Don't add to the history if it's initial scroll event otherwise invalid velocity will be calculated
     // Don't add to the history if we are scrolling to an offset
