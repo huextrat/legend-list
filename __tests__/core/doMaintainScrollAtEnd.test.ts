@@ -9,7 +9,7 @@ describe("doMaintainScrollAtEnd", () => {
     let mockCtx: StateContext;
     let mockState: InternalState;
     let mockScrollToEnd: ReturnType<typeof mock>;
-    let rafCallback: (() => void) | null = null;
+    let rafCallback: ((time: number) => void) | null = null;
     let timeoutCallback: (() => void) | null = null;
 
     // Mock requestAnimationFrame and setTimeout
@@ -21,7 +21,7 @@ describe("doMaintainScrollAtEnd", () => {
         timeoutCallback = null;
 
         // Mock requestAnimationFrame
-        globalThis.requestAnimationFrame = mock((callback: () => void) => {
+        globalThis.requestAnimationFrame = mock((callback: (time: number) => void) => {
             rafCallback = callback;
             return 1; // Mock return value
         });

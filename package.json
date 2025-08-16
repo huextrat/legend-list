@@ -27,7 +27,8 @@
         "lint:fix": "bunx biome lint --write ./src && bunx biome format --write ./src && bunx biome check --write ./src && bun run lint:fix:example",
         "lint:fix:example": "bunx biome lint --write ./example/app && bunx biome format --write ./example/app && bunx biome check --write ./example/app",
         "test:visualize": "bun run visualize-tests.js && open test-visualization.html",
-        "tsc:go": "tsgo --noEmit"
+        "tsc": "tsc --noEmit --project tsconfig.src.json",
+        "tsc:go": "tsgo --noEmit --project tsconfig.src.json"
     },
     "peerDependencies": {
         "react": "*",

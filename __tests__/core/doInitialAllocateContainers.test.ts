@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import "../setup"; // Import global test setup
 
+import { Animated } from "react-native";
 import * as calculateItemsInViewModule from "../../src/core/calculateItemsInView";
 import { doInitialAllocateContainers } from "../../src/core/doInitialAllocateContainers";
 import type { StateContext } from "../../src/state/state";
@@ -12,6 +13,7 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
+        animatedScrollY: new Animated.Value(0),
         columnWrapperStyle: undefined,
         listeners,
         mapViewabilityAmountCallbacks: new Map(),
@@ -72,7 +74,7 @@ describe("doInitialAllocateContainers", () => {
     let mockState: InternalState;
     let calculateItemsInViewSpy: any;
     let originalRAF: any;
-    let rafCallbacks: (() => void)[];
+    let rafCallbacks: ((time: number) => void)[];
     beforeEach(() => {
         mockCtx = createMockContext();
         mockState = createMockState();
@@ -83,7 +85,7 @@ describe("doInitialAllocateContainers", () => {
         // Mock requestAnimationFrame
         originalRAF = globalThis.requestAnimationFrame;
         rafCallbacks = [];
-        globalThis.requestAnimationFrame = (callback: () => void) => {
+        globalThis.requestAnimationFrame = (callback: (time: number) => void) => {
             rafCallbacks.push(callback);
             return rafCallbacks.length;
         };
@@ -263,7 +265,7 @@ describe("doInitialAllocateContainers", () => {
             mockCtx.values.delete("numContainers");
 
             // Test with initialScroll set
-            mockState.props.initialScroll = 100;
+            mockState.props.initialScroll = { index: 10, viewOffset: 100 };
             doInitialAllocateContainers(mockCtx, mockState);
             expect(mockCtx.values.get("numContainers")).toBeGreaterThan(0);
 
@@ -272,7 +274,7 @@ describe("doInitialAllocateContainers", () => {
         });
 
         it("should handle initialScroll = 0 as falsy", () => {
-            mockState.props.initialScroll = 0;
+            mockState.props.initialScroll = { index: 0, viewOffset: 0 };
 
             doInitialAllocateContainers(mockCtx, mockState);
 
@@ -415,7 +417,7 @@ describe("doInitialAllocateContainers", () => {
         });
 
         it("should handle RAF scheduling for initialScroll", () => {
-            mockState.props.initialScroll = 500;
+            mockState.props.initialScroll = { index: 50, viewOffset: 500 };
 
             doInitialAllocateContainers(mockCtx, mockState);
 

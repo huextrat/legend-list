@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
+import { Animated } from "react-native";
 import { calculateOffsetForIndex } from "../../src/core/calculateOffsetForIndex";
-import type { StateContext } from "../../src/state/state";
+import type { ListenerType, StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
 
 describe("calculateOffsetForIndex", () => {
@@ -12,17 +13,19 @@ describe("calculateOffsetForIndex", () => {
     beforeEach(() => {
         // Create mock context
         mockCtx = {
-            get: (key: string) => mockCtx.values.get(key),
-            isSettingValue: false,
+            animatedScrollY: new Animated.Value(0),
+            columnWrapperStyle: undefined,
             listeners: new Map(),
-            onListenerAdded: () => {},
-            peek: (key: string) => mockCtx.values.get(key),
-            set: () => {},
+            mapViewabilityAmountCallbacks: new Map(),
+            mapViewabilityAmountValues: new Map(),
+            mapViewabilityCallbacks: new Map(),
+            mapViewabilityValues: new Map(),
             values: new Map([
                 ["stylePaddingTop", 0],
                 ["headerSize", 0],
-            ]),
-        } as any;
+            ] as [ListenerType, any][]),
+            viewRefs: new Map(),
+        };
 
         // Create mock state with basic setup
         mockState = {
@@ -216,11 +219,11 @@ describe("calculateOffsetForIndex", () => {
         });
 
         it("should handle keyExtractor returning different types", () => {
-            mockState.props.keyExtractor = (item: any, index: number) => index; // Returns number
+            mockState.props.keyExtractor = (item: any, index: number) => index.toString(); // Returns string
             mockState.positions = new Map([
-                [0, 0],
-                [1, 120],
-                [2, 280],
+                ["0", 0],
+                ["1", 120],
+                ["2", 280],
             ]);
 
             const result = calculateOffsetForIndex(mockCtx, mockState, 1);
@@ -297,7 +300,7 @@ describe("calculateOffsetForIndex", () => {
         it("should work when positions map has mixed key types", () => {
             mockState.positions = new Map([
                 ["item_0", 0],
-                [1, 100], // Number key
+                ["1", 100], // String key
                 ["item_2", 250],
                 ["custom", 400],
             ]);

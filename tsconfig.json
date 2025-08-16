@@ -70,7 +70,8 @@
         "node_modules",
         "dist",
         "types.d.ts",
-        "src/types"
+        "src/types",
+        "example"
     ],
     "include": [
         "**/*.ts",

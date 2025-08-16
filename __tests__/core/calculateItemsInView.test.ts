@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
+import { Animated } from "react-native";
 import { calculateItemsInView } from "../../src/core/calculateItemsInView";
 import type { ListenerType, StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
@@ -11,6 +12,7 @@ function createMockContext(initialValues: Record<string, any> = {}): StateContex
     const listeners = new Map();
 
     return {
+        animatedScrollY: new Animated.Value(0),
         columnWrapperStyle: undefined,
         listeners,
         mapViewabilityAmountCallbacks: new Map(),
@@ -79,6 +81,7 @@ describe("calculateItemsInView", () => {
                 horizontal: false,
                 initialContainerPoolRatio: 2,
                 initialScroll: undefined,
+                itemsAreEqual: undefined,
                 keyExtractor: (item: any, index: number) => `item_${index}`,
                 maintainScrollAtEnd: false,
                 maintainScrollAtEndThreshold: 0.1,

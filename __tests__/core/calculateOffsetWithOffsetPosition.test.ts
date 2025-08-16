@@ -426,7 +426,8 @@ describe("calculateOffsetWithOffsetPosition", () => {
         });
 
         it("should handle getItemSize with different data types", () => {
-            mockState.props.data[1] = { size: 150 }; // Different structure
+            mockState.props = { ...mockState.props, data: [...mockState.props.data] };
+            (mockState.props.data as any)[1] = { size: 150 }; // Different structure
 
             const params = {
                 index: 1,
