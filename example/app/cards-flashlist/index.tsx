@@ -1,41 +1,18 @@
 import { Fragment, useRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
-import { FlashList, type ListRenderItemInfo } from "@shopify/flash-list";
-import renderItem from "~/app/cards-renderItem";
-import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH, RECYCLE_ITEMS } from "~/constants/constants";
-import { useScrollTest } from "~/constants/useScrollTest";
+import { FlashList, type FlashListRef, type ListRenderItemInfo } from "@shopify/flash-list";
+import renderItem, { type Item } from "~/app/cards-renderItem";
+import { DRAW_DISTANCE, RECYCLE_ITEMS } from "~/constants/constants";
 
 export default function HomeScreen() {
     const data = Array.from({ length: 1000 }, (_, i) => ({ id: i.toString() }));
 
-    const scrollRef = useRef<FlashList<any>>(null);
-
-    //   useEffect(() => {
-    //     let amtPerInterval = 4;
-    //     let index = amtPerInterval;
-    //     const interval = setInterval(() => {
-    //       scrollRef.current?.scrollToIndex({
-    //         index,
-    //       });
-    //       index += amtPerInterval;
-    //     }, 100);
-
-    //     return () => clearInterval(interval);
-    //   });
+    const scrollRef = useRef<FlashListRef<Item>>(null);
 
     const renderItemFn = (info: ListRenderItemInfo<any>) => {
         return RECYCLE_ITEMS ? renderItem(info) : <Fragment key={info.item.id}>{renderItem(info)}</Fragment>;
     };
-
-    if (DO_SCROLL_TEST) {
-        useScrollTest((offset) => {
-            scrollRef.current?.scrollToOffset({
-                animated: true,
-                offset,
-            });
-        });
-    }
 
     return (
         <View key="flashlist" style={[StyleSheet.absoluteFill, styles.outerContainer]}>
@@ -43,7 +20,6 @@ export default function HomeScreen() {
                 contentContainerStyle={styles.listContainer}
                 data={data}
                 drawDistance={DRAW_DISTANCE}
-                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 keyExtractor={(item) => item.id}
                 ListHeaderComponent={<View />}
                 ListHeaderComponentStyle={styles.listHeader}
@@ -55,39 +31,17 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-    footerText: {
-        color: "#888888",
-        fontSize: 14,
-    },
-    itemBody: {
-        color: "#666666",
-        flex: 1,
-        fontSize: 14,
-        lineHeight: 20,
-    },
-    itemContainer: {
-        // padding: 4,
-        // borderBottomWidth: 1,
-        // borderBottomColor: "#ccc",
-    },
-    itemFooter: {
-        borderTopColor: "#f0f0f0",
-        borderTopWidth: 1,
-        flexDirection: "row",
-        gap: 16,
-        justifyContent: "flex-start",
-        marginTop: 12,
-        paddingTop: 12,
-    },
-    itemTitle: {
-        color: "#1a1a1a",
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 8,
-    },
     listContainer: {
-        //paddingHorizontal: 16,
-        //paddingTop: 48,
+        marginHorizontal: "auto",
+        maxWidth: "100%",
+        width: 400,
+    },
+    listEmpty: {
+        alignItems: "center",
+        backgroundColor: "#6789AB",
+        flex: 1,
+        justifyContent: "center",
+        paddingVertical: 16,
     },
     listHeader: {
         alignSelf: "center",
@@ -95,29 +49,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         height: 100,
         marginHorizontal: 8,
-        marginTop: 8,
+        marginVertical: 8,
         width: 100,
     },
     outerContainer: {
         backgroundColor: "#456",
-    },
-    reactLogo: {
-        bottom: 0,
-        height: 178,
-        left: 0,
-        position: "absolute",
-        width: 290,
-    },
-    scrollContainer: {
-        // paddingHorizontal: 8,
-    },
-    stepContainer: {
-        gap: 8,
-        marginBottom: 8,
-    },
-    titleContainer: {
-        alignItems: "center",
-        flexDirection: "row",
-        gap: 8,
+        bottom: Platform.OS === "ios" ? 82 : 0,
     },
 });

@@ -3,8 +3,7 @@ import { LogBox, Platform, StyleSheet, View } from "react-native";
 
 import { LegendList, type LegendListRef } from "@legendapp/list";
 import { type Item, ItemCard } from "~/app/cards-renderItem";
-import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
-import { useScrollTest } from "~/constants/useScrollTest";
+import { DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH } from "~/constants/constants";
 
 LogBox.ignoreLogs(["Open debugger"]);
 
@@ -22,15 +21,6 @@ export default function Cards({ numColumns = 1 }: CardsProps) {
             })) as any[],
     );
 
-    if (DO_SCROLL_TEST) {
-        useScrollTest((offset) => {
-            listRef.current?.scrollToOffset({
-                animated: true,
-                offset: offset,
-            });
-        });
-    }
-
     // Note that if benchmarking against other cards implementations
     // it should use the same props
     return (
@@ -46,7 +36,7 @@ export default function Cards({ numColumns = 1 }: CardsProps) {
                 numColumns={numColumns}
                 recycleItems={true}
                 ref={listRef}
-                renderItem={ItemCard}
+                renderItem={ItemCard as any}
             />
         </View>
     );
@@ -78,5 +68,4 @@ const styles = StyleSheet.create({
         backgroundColor: "#456",
         bottom: Platform.OS === "ios" ? 82 : 0,
     },
-    scrollContainer: {},
 });
