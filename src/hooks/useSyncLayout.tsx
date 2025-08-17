@@ -2,41 +2,36 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { LayoutChangeEvent, LayoutRectangle, View } from "react-native";
 
 import { IsNewArchitecture } from "@/constants";
+import { useThrottleDebounce } from "./useThrottleDebounce";
 
 export function useSyncLayoutState<T extends View = View>({
     getValue,
-    debounce,
+    debounce: debounceMs,
     onChange: onChangeProp,
 }: {
     getValue: (rectangle: LayoutRectangle) => number;
     debounce?: number | undefined;
     onChange: (rectangle: LayoutRectangle, fromLayoutEffect: boolean) => void;
 }) {
-    const debounceTimeoutRef = useRef<any>(null);
+    const debounce = useThrottleDebounce("debounce");
     const [value, setValue] = useState(0);
 
     const onChange = useCallback(
         (rectangle: LayoutRectangle, fromLayoutEffect: boolean) => {
             const height = getValue(rectangle);
 
-            if (debounce === undefined) {
+            if (debounceMs === undefined) {
                 setValue(height);
             } else {
-                // Clear previous timeout if it exists
-                if (debounceTimeoutRef.current) {
-                    clearTimeout(debounceTimeoutRef.current);
-                }
-
                 // Debounce the setViewHeight call
-                debounceTimeoutRef.current = setTimeout(() => {
-                    debounceTimeoutRef.current = null;
+                debounce(() => {
                     setValue(height);
-                }, debounce);
+                }, debounceMs);
             }
 
             onChangeProp?.(rectangle, fromLayoutEffect);
         },
-        [getValue, debounce],
+        [getValue, debounceMs, debounce],
     );
 
     const { onLayout, ref } = useSyncLayout<T>({ onChange });
