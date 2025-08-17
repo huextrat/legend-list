@@ -191,7 +191,7 @@ const ListElements = () => {
                 ListHeaderComponent={
                     <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
                         <ThemedText style={{ fontWeight: "bold" }}>
-                            {IsNewArchitecture ? "New" : "Old"} Architecture, {__DEV__ ? "DEV" : "PROD"}
+                            {IsNewArchitecture ? "New" : "Old"} Architecture, {__DEV__ ? "DEV" : "PROD"}, 2.0
                         </ThemedText>
                     </View>
                 }
