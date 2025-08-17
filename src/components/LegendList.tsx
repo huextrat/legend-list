@@ -59,6 +59,7 @@ import { getRenderedItem } from "@/utils/getRenderedItem";
 import { extractPadding, isArray, warnDevOnce } from "@/utils/helpers";
 import { requestAdjust } from "@/utils/requestAdjust";
 import { setPaddingTop } from "@/utils/setPaddingTop";
+import { throttledOnScroll } from "@/utils/throttledOnScroll";
 import { updateAveragesOnDataChange } from "@/utils/updateAveragesOnDataChange";
 import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
@@ -143,6 +144,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         refreshing,
         refScrollView,
         renderItem,
+        scrollEventThrottle,
         snapToIndices,
         stickyIndices,
         style: styleProp,
@@ -571,15 +573,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     // Create dual scroll handlers - one for native animations, one for JS logic
     const animatedScrollHandler = useMemo<typeof fns.onScroll>(() => {
+        const onScrollFn =
+            scrollEventThrottle && scrollEventThrottle > 0
+                ? throttledOnScroll(fns.onScroll, scrollEventThrottle)
+                : fns.onScroll;
+
         if (stickyIndices?.length) {
             const { animatedScrollY } = ctx;
             return Animated.event([{ nativeEvent: { contentOffset: { [horizontal ? "x" : "y"]: animatedScrollY } } }], {
-                listener: fns.onScroll,
+                listener: onScrollFn,
                 useNativeDriver: true,
             });
         }
-        return fns.onScroll;
-    }, [stickyIndices?.length, horizontal, onScroll]);
+        return onScrollFn;
+    }, [stickyIndices?.length, horizontal, scrollEventThrottle]);
 
     return (
         <>

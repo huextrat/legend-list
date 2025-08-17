@@ -13,7 +13,11 @@ export function onScroll(
         nativeEvent: NativeScrollEvent;
     },
 ) {
-    if (state.scrollProcessingEnabled === false) {
+    const {
+        scrollProcessingEnabled,
+        props: { onScroll: onScrollProp },
+    } = state;
+    if (scrollProcessingEnabled === false) {
         return;
     }
 
@@ -37,7 +41,7 @@ export function onScroll(
 
     updateScroll(ctx, state, newScroll);
 
-    state.props.onScroll?.(event as NativeSyntheticEvent<NativeScrollEvent>);
+    onScrollProp?.(event as NativeSyntheticEvent<NativeScrollEvent>);
 }
 
 function updateScroll(ctx: StateContext, state: InternalState, newScroll: number) {

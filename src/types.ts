@@ -322,10 +322,7 @@ export interface ColumnWrapperStyle {
     columnGap?: number;
 }
 
-export type LegendListProps<ItemT = any> = LegendListPropsBase<
-    ItemT,
-    Omit<ComponentProps<typeof ScrollView>, "scrollEventThrottle">
->;
+export type LegendListProps<ItemT = any> = LegendListPropsBase<ItemT, ComponentProps<typeof ScrollView>>;
 
 export interface InternalState {
     positions: Map<string, number>;
