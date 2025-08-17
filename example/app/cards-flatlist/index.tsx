@@ -10,17 +10,17 @@ export default function CardsFlatList() {
             <FlatList
                 contentContainerStyle={styles.listContainer}
                 data={data}
-                initialNumToRender={8}
                 keyExtractor={(item) => item.id}
                 ListHeaderComponent={<View />}
                 ListHeaderComponentStyle={styles.listHeader}
-                maxToRenderPerBatch={5}
-                // Performance optimizations
-                removeClippedSubviews={true} // Reduced window size for better performance
                 renderItem={renderItem as any} // Reduced batch size for smoother scrolling
-                style={[StyleSheet.absoluteFill, styles.scrollContainer]} // Initial render amount
-                updateCellsBatchingPeriod={50} // Detach views outside of the viewport
-                windowSize={3} // Batching period for updates
+                // Performance optimizations
+                // maxToRenderPerBatch={5}
+                // initialNumToRender={8}
+                // removeClippedSubviews={true} // Reduced window size for better performance
+                // style={[StyleSheet.absoluteFill, styles.scrollContainer]} // Initial render amount
+                // updateCellsBatchingPeriod={50} // Detach views outside of the viewport
+                // windowSize={3} // Batching period for updates
             />
         </View>
     );
