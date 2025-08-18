@@ -1,19 +1,20 @@
-import { type ComponentProps, type ReactNode, forwardRef, memo } from "react";
+import { type ComponentProps, forwardRef, memo, type ReactNode } from "react";
 import type {
-    NativeScrollEvent,
-    NativeSyntheticEvent,
+    Animated,
+    LayoutRectangle,
     ScrollResponderMixin,
+    ScrollView,
     ScrollViewComponent,
     ScrollViewProps,
+    StyleProp,
+    ViewStyle,
 } from "react-native";
-import type { ScrollView, StyleProp, ViewStyle } from "react-native";
-import type Animated from "react-native-reanimated";
-import type { ScrollAdjustHandler } from "./ScrollAdjustHandler";
+import type Reanimated from "react-native-reanimated";
 
-export type LegendListPropsBase<
-    ItemT,
-    TScrollView extends ComponentProps<typeof ScrollView> | ComponentProps<typeof Animated.ScrollView>,
-> = Omit<
+import type { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
+
+// Base ScrollView props with exclusions
+type BaseScrollViewProps<TScrollView> = Omit<
     TScrollView,
     | "contentOffset"
     | "contentInset"
@@ -21,7 +22,45 @@ export type LegendListPropsBase<
     | "stickyHeaderIndices"
     | "removeClippedSubviews"
     | "children"
-> & {
+>;
+
+// Core props for data mode
+interface DataModeProps<ItemT, TItemType extends string | undefined> {
+    /**
+     * Array of items to render in the list.
+     * @required when using data mode
+     */
+    data: ReadonlyArray<ItemT>;
+
+    /**
+     * Function or React component to render each item in the list.
+     * Can be either:
+     * - A function: (props: LegendListRenderItemProps<ItemT>) => ReactNode
+     * - A React component: React.ComponentType<LegendListRenderItemProps<ItemT>>
+     * @required when using data mode
+     */
+    renderItem:
+        | ((props: LegendListRenderItemProps<ItemT, TItemType>) => ReactNode)
+        | React.ComponentType<LegendListRenderItemProps<ItemT, TItemType>>;
+
+    children?: never;
+}
+
+// Core props for children mode
+interface ChildrenModeProps {
+    /**
+     * React children elements to render as list items.
+     * Each child will be treated as an individual list item.
+     * @required when using children mode
+     */
+    children: ReactNode;
+
+    data?: never;
+    renderItem?: never;
+}
+
+// Shared Legend List specific props
+interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
     /**
      * If true, aligns items at the end of the list.
      * @default false
@@ -32,12 +71,6 @@ export type LegendListPropsBase<
      * Style applied to each column's wrapper view.
      */
     columnWrapperStyle?: ColumnWrapperStyle;
-
-    /**
-     * Array of items to render in the list.
-     * @required
-     */
-    data: ReadonlyArray<ItemT>;
 
     /**
      * Distance in pixels to pre-render items ahead of the visible area.
@@ -67,7 +100,7 @@ export type LegendListPropsBase<
      * In case you have distinct item sizes, you can provide a function to get the size of an item.
      * Use instead of FlatList's getItemLayout or FlashList overrideItemLayout if you want to have accurate initialScrollOffset, you should provide this function
      */
-    getEstimatedItemSize?: (index: number, item: ItemT) => number;
+    getEstimatedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
 
     /**
      * Ratio of initial container pool size to data length (e.g., 0.5 for half).
@@ -90,7 +123,6 @@ export type LegendListPropsBase<
         | {
               index: number;
               viewOffset?: number | undefined;
-              viewPosition?: number | undefined;
           };
 
     /**
@@ -132,7 +164,7 @@ export type LegendListPropsBase<
      * If true, auto-scrolls to end when new items are added.
      * @default false
      */
-    maintainScrollAtEnd?: boolean;
+    maintainScrollAtEnd?: boolean | MaintainScrollAtEndOptions;
 
     /**
      * Distance threshold in percentage of screen size to trigger maintainScrollAtEnd.
@@ -219,17 +251,6 @@ export type LegendListPropsBase<
     refreshing?: boolean;
 
     /**
-     * Function or React component to render each item in the list.
-     * Can be either:
-     * - A function: (props: LegendListRenderItemProps<ItemT>) => ReactNode
-     * - A React component: React.ComponentType<LegendListRenderItemProps<ItemT>>
-     * @required
-     */
-    renderItem?:
-        | ((props: LegendListRenderItemProps<ItemT>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<ItemT>>;
-
-    /**
      * Render custom ScrollView component.
      * @default (props) => <ScrollView {...props} />
      */
@@ -259,7 +280,41 @@ export type LegendListPropsBase<
     waitForInitialLayout?: boolean;
 
     onLoad?: (info: { elapsedTimeInMs: number }) => void;
-};
+
+    snapToIndices?: number[];
+
+    /**
+     * Array of child indices determining which children get docked to the top of the screen when scrolling.
+     * For example, passing stickyIndices={[0]} will cause the first child to be fixed to the top of the scroll view.
+     * Not supported in conjunction with horizontal={true}.
+     * @default undefined
+     */
+    stickyIndices?: number[];
+
+    getItemType?: (item: ItemT, index: number) => TItemType;
+
+    getFixedItemSize?: (index: number, item: ItemT, type: TItemType) => number;
+
+    itemsAreEqual?: (itemPrevious: ItemT, item: ItemT, index: number, data: readonly ItemT[]) => boolean;
+}
+
+// Clean final type composition
+export type LegendListPropsBase<
+    ItemT,
+    TScrollView extends
+        | ComponentProps<typeof ScrollView>
+        | ComponentProps<typeof Animated.ScrollView>
+        | ComponentProps<typeof Reanimated.ScrollView>,
+    TItemType extends string | undefined = string | undefined,
+> = BaseScrollViewProps<TScrollView> &
+    LegendListSpecificProps<ItemT, TItemType> &
+    (DataModeProps<ItemT, TItemType> | ChildrenModeProps);
+
+export interface MaintainScrollAtEndOptions {
+    onLayout?: boolean;
+    onItemLayout?: boolean;
+    onDataChange?: boolean;
+}
 
 export interface ColumnWrapperStyle {
     rowGap?: number;
@@ -267,34 +322,20 @@ export interface ColumnWrapperStyle {
     columnGap?: number;
 }
 
-export type AnchoredPosition = {
-    type: "top" | "bottom";
-    relativeCoordinate: number; // used for display
-    top: number; // used for calculating the position of the container
-};
-
-export type LegendListProps<ItemT> = LegendListPropsBase<
-    ItemT,
-    Omit<ComponentProps<typeof ScrollView>, "scrollEventThrottle">
->;
+export type LegendListProps<ItemT = any> = LegendListPropsBase<ItemT, ComponentProps<typeof ScrollView>>;
 
 export interface InternalState {
-    anchorElement?: {
-        id: string;
-        coordinate: number;
-    };
-    belowAnchorElementPositions?: Map<string, number>;
-    rowHeights: Map<number, number>;
     positions: Map<string, number>;
     columns: Map<string, number>;
     sizes: Map<string, number>;
     sizesKnown: Map<string, number>;
+    containerItemKeys: Set<string>;
+    containerItemTypes: Map<number, string>;
     pendingAdjust: number;
     isStartReached: boolean;
     isEndReached: boolean;
     isAtEnd: boolean;
     isAtStart: boolean;
-    data: readonly any[];
     hasScrolled?: boolean;
     scrollLength: number;
     startBuffered: number;
@@ -302,27 +343,24 @@ export interface InternalState {
     startNoBuffer: number;
     endBuffered: number;
     endNoBuffer: number;
+    firstFullyOnScreenIndex: number;
+    idsInView: string[];
     scrollPending: number;
     scroll: number;
     scrollTime: number;
     scrollPrev: number;
     scrollPrevTime: number;
-    scrollVelocity: number;
     scrollAdjustHandler: ScrollAdjustHandler;
     maintainingScrollAtEnd?: boolean;
     totalSize: number;
-    totalSizeBelowAnchor: number;
     otherAxisSize?: number;
     timeouts: Set<number>;
     timeoutSizeMessage: any;
     nativeMarginTop: number;
     indexByKey: Map<string, number>;
+    idCache: Map<number, string>;
     viewabilityConfigCallbackPairs: ViewabilityConfigCallbackPairs<any> | undefined;
-    renderItem:
-        | ((props: LegendListRenderItemProps<any>) => ReactNode)
-        | React.ComponentType<LegendListRenderItemProps<any>>;
     scrollHistory: Array<{ scroll: number; time: number }>;
-    scrollTimer: Timer | undefined;
     startReachedBlockedByTimer: boolean;
     endReachedBlockedByTimer: boolean;
     scrollForNextCalculateItemsInView: { top: number; bottom: number } | undefined;
@@ -331,12 +369,11 @@ export interface InternalState {
     queuedInitialLayout?: boolean | undefined;
     queuedCalculateItemsInView: number | undefined;
     lastBatchingAction: number;
-    ignoreScrollFromCalcTotal?: boolean;
-    disableScrollJumpsFrom?: number;
+    ignoreScrollFromMVCP?: { lt?: number; gt?: number };
+    ignoreScrollFromMVCPTimeout?: any;
     scrollingTo?:
         | { offset: number; index?: number; viewOffset?: number; viewPosition?: number; animated?: boolean }
         | undefined;
-    previousTotalSize?: number;
     needsOtherAxisSize?: boolean;
     averageSizes: Record<
         string,
@@ -345,8 +382,50 @@ export interface InternalState {
             avg: number;
         }
     >;
-    onScroll: ((event: NativeSyntheticEvent<NativeScrollEvent>) => void) | undefined;
-    stylePaddingBottom?: number;
+    refScroller: React.RefObject<ScrollView>;
+    loadStartTime: number;
+    initialScroll: ScrollIndexWithOffset | undefined;
+    lastLayout: LayoutRectangle | undefined;
+    queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
+    queuedItemSizeUpdatesWaiting?: boolean;
+    timeoutSetPaddingTop?: any;
+    activeStickyIndex: number | undefined;
+    stickyContainers: Map<number, number>;
+    stickyContainerPool: Set<number>;
+    scrollProcessingEnabled: boolean;
+    props: {
+        alignItemsAtEnd: boolean;
+        data: readonly any[];
+        estimatedItemSize: number | undefined;
+        getEstimatedItemSize: LegendListProps["getEstimatedItemSize"];
+        getFixedItemSize: LegendListProps["getFixedItemSize"];
+        getItemType: LegendListProps["getItemType"];
+        horizontal: boolean;
+        keyExtractor: LegendListProps["keyExtractor"];
+        maintainScrollAtEnd: boolean | MaintainScrollAtEndOptions;
+        maintainScrollAtEndThreshold: number | undefined;
+        maintainVisibleContentPosition: boolean;
+        onEndReached: LegendListProps["onEndReached"];
+        onEndReachedThreshold: number | null | undefined;
+        onItemSizeChanged: LegendListProps["onItemSizeChanged"];
+        onLoad: LegendListProps["onLoad"];
+        onScroll: LegendListProps["onScroll"];
+        onStartReached: LegendListProps["onStartReached"];
+        onStartReachedThreshold: number | null | undefined;
+        recycleItems: boolean;
+        suggestEstimatedItemSize: boolean;
+        stylePaddingBottom: number | undefined;
+        renderItem: LegendListProps["renderItem"];
+        initialScroll: ScrollIndexWithOffset | undefined;
+        scrollBuffer: number;
+        numColumns: number;
+        initialContainerPoolRatio: number;
+        stylePaddingTop: number | undefined;
+        snapToIndices: number[] | undefined;
+        stickyIndicesSet: Set<number>;
+        stickyIndicesArr: number[];
+        itemsAreEqual: LegendListProps["itemsAreEqual"];
+    };
 }
 
 export interface ViewableRange<T> {
@@ -357,24 +436,31 @@ export interface ViewableRange<T> {
     items: T[];
 }
 
-export interface LegendListRenderItemProps<ItemT> {
+export interface LegendListRenderItemProps<
+    ItemT,
+    TItemType extends string | number | undefined = string | number | undefined,
+> {
     item: ItemT;
+    type: TItemType;
     index: number;
     extraData: any;
 }
 
 export type ScrollState = {
     contentLength: number;
+    data: readonly any[];
     end: number;
     endBuffered: number;
     isAtEnd: boolean;
     isAtStart: boolean;
+    positionAtIndex: (index: number) => number;
+    positions: Map<string, number>;
     scroll: number;
     scrollLength: number;
+    sizeAtIndex: (index: number) => number;
+    sizes: Map<string, number>;
     start: number;
     startBuffered: number;
-    sizes: Map<string, number>;
-    sizeAtIndex: (index: number) => number;
 };
 
 export type LegendListRef = {
@@ -409,10 +495,7 @@ export type LegendListRef = {
      * @param params.animated - If true, animates the scroll. Default: true.
      * @param params.index - The index to scroll to.
      */
-    scrollIndexIntoView(params: {
-        animated?: boolean | undefined;
-        index: number;
-    }): void;
+    scrollIndexIntoView(params: { animated?: boolean | undefined; index: number }): void;
 
     /**
      * Scrolls a specific index into view.
@@ -420,17 +503,15 @@ export type LegendListRef = {
      * @param params.animated - If true, animates the scroll. Default: true.
      * @param params.item - The item to scroll to.
      */
-    scrollItemIntoView(params: {
-        animated?: boolean | undefined;
-        item: any;
-    }): void;
+    scrollItemIntoView(params: { animated?: boolean | undefined; item: any }): void;
 
     /**
      * Scrolls to the end of the list.
      * @param options - Options for scrolling.
      * @param options.animated - If true, animates the scroll. Default: true.
+     * @param options.viewOffset - Offset from the target position.
      */
-    scrollToEnd(options?: { animated?: boolean | undefined }): void;
+    scrollToEnd(options?: { animated?: boolean | undefined; viewOffset?: number | undefined }): void;
 
     /**
      * Scrolls to a specific index in the list.
@@ -469,6 +550,19 @@ export type LegendListRef = {
      * @param params.animated - If true, animates the scroll. Default: true.
      */
     scrollToOffset(params: { offset: number; animated?: boolean | undefined }): void;
+
+    /**
+     * Sets or adds to the offset of the visible content anchor.
+     * @param value - The offset to set or add.
+     * @param animated - If true, uses Animated to animate the change.
+     */
+    setVisibleContentAnchorOffset(value: number | ((value: number) => number)): void;
+
+    /**
+     * Sets whether scroll processing is enabled.
+     * @param enabled - If true, scroll processing is enabled.
+     */
+    setScrollProcessingEnabled(enabled: boolean): void;
 };
 
 export interface ViewToken<ItemT> {
@@ -551,13 +645,22 @@ export const typedForwardRef = forwardRef as TypedForwardRef;
 
 export type TypedMemo = <T extends React.ComponentType<any>>(
     Component: T,
-    propsAreEqual?: (prevProps: Readonly<ComponentProps<T>>, nextProps: Readonly<ComponentProps<T>>) => boolean,
+    propsAreEqual?: (
+        prevProps: Readonly<React.JSXElementConstructor<T>>,
+        nextProps: Readonly<React.JSXElementConstructor<T>>,
+    ) => boolean,
 ) => T & { displayName?: string };
 
 export const typedMemo = memo as TypedMemo;
 
-export type ScrollIndexWithOffsetPosition = {
+export interface ScrollIndexWithOffset {
     index: number;
-    viewOffset?: number;
-    viewPosition?: number;
-};
+    viewOffset: number;
+}
+
+export interface ScrollIndexWithOffsetPosition extends ScrollIndexWithOffset {
+    viewPosition: number;
+}
+
+export type GetRenderedItemResult<ItemT> = { index: number; item: ItemT; renderedItem: React.ReactNode };
+export type GetRenderedItem = (key: string) => GetRenderedItemResult<any> | null;

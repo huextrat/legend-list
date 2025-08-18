@@ -1,6 +1,7 @@
-import { LegendList } from "@legendapp/list";
 import { useState } from "react";
 import { Button, SafeAreaView, StyleSheet, Text, View } from "react-native";
+
+import { LegendList } from "@legendapp/list";
 
 const ListComponent = () => {
     const [items, setItems] = useState<{ id: string; title: string }[]>([]);
@@ -31,15 +32,15 @@ const ListComponent = () => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-                <Button title="Add 60 Items" onPress={addSixtyItems} color="#4285F4" />
+                <Button color="#4285F4" onPress={addSixtyItems} title="Add 60 Items" />
 
                 <LegendList
-                    data={items}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    style={styles.list}
                     contentContainerStyle={styles.listContent}
+                    data={items}
+                    keyExtractor={(item) => item.id}
                     maintainScrollAtEnd
+                    renderItem={renderItem}
+                    style={styles.list}
                 />
             </View>
         </SafeAreaView>
@@ -47,14 +48,24 @@ const ListComponent = () => {
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#f5f5f5",
-    },
     container: {
+        backgroundColor: "#f5f5f5",
         flex: 1,
         padding: 16,
-        backgroundColor: "#f5f5f5",
+    },
+    itemContainer: {
+        backgroundColor: "white",
+        borderRadius: 8,
+        elevation: 2,
+        marginVertical: 8,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOffset: { height: 1, width: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+    },
+    itemText: {
+        fontSize: 16,
     },
     list: {
         flex: 1,
@@ -63,19 +74,9 @@ const styles = StyleSheet.create({
     listContent: {
         paddingBottom: 16,
     },
-    itemContainer: {
-        backgroundColor: "white",
-        padding: 16,
-        marginVertical: 8,
-        borderRadius: 8,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1,
-        elevation: 2,
-    },
-    itemText: {
-        fontSize: 16,
+    safeArea: {
+        backgroundColor: "#f5f5f5",
+        flex: 1,
     },
 });
 

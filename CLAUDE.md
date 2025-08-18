@@ -18,11 +18,19 @@ The repository includes a React Native example app in the `example/` directory:
 ### Build Process
 - Uses tsup for TypeScript compilation with multiple entry points:
   - `src/index.ts` (main export)
-  - `src/animated.tsx` (animated variant)
-  - `src/reanimated.tsx` (reanimated variant)
-  - `src/keyboard-controller.tsx` (keyboard integration)
+  - `src/integrations/animated.tsx` (animated variant)
+  - `src/integrations/reanimated.tsx` (reanimated variant)
+  - `src/integrations/keyboard-controller.tsx` (keyboard integration)
 - Post-build script (`posttsup.ts`) copies LICENSE, CHANGELOG.md, README.md to dist and modifies package.json for publishing
 - Builds to both CommonJS and ESM formats with TypeScript declarations
+
+### File Structure
+- `src/components/` - React components (LegendList, Container, ListComponent, etc.)
+- `src/state/` - State management system (state.tsx, ContextContainer.ts)
+- `src/core/` - Core logic functions (scroll handling, positioning, viewability)
+- `src/utils/` - Utility functions (helpers, calculations, checks)
+- `src/hooks/` - Custom React hooks
+- `src/integrations/` - Optional integrations (animated, reanimated, keyboard-controller)
 
 ## Architecture Overview
 
@@ -30,22 +38,23 @@ Legend List is a high-performance React Native list component designed as a drop
 
 ### Core Components
 
-**LegendList** (`src/LegendList.tsx`): Main component that wraps functionality in a StateProvider
+**LegendList** (`src/components/LegendList.tsx`): Main component that wraps functionality in a StateProvider
 - Handles virtualization logic, scroll management, and item positioning
 - Manages anchor elements for `maintainVisibleContentPosition`
 - Implements advanced scroll adjustment and jump prevention
 - Uses container recycling for optimal performance
 
-**State Management** (`src/state.tsx`): Global state management using observable patterns
+**State Management** (`src/state/state.tsx`): Global state management using observable patterns
 - Manages container positions, item data, and scroll state
 - Provides reactive updates to child components
+- Custom state system inspired by Legend State with optimized listeners
 
-**Container System** (`src/Container.tsx`, `src/Containers.tsx`): Manages item rendering containers
+**Container System** (`src/components/Container.tsx`, `src/components/Containers.tsx`): Manages item rendering containers
 - Implements container recycling when `recycleItems` is enabled
 - Handles absolute positioning of list items
 - Manages container allocation and deallocation
 
-**Scroll Adjustment** (`src/ScrollAdjustHandler.ts`): Handles complex scroll position adjustments
+**Scroll Adjustment** (`src/core/ScrollAdjustHandler.ts`): Handles complex scroll position adjustments
 - Prevents scroll jumps when items are added/removed
 - Manages scroll position during layout changes
 
