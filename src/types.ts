@@ -443,6 +443,7 @@ export interface LegendListRenderItemProps<
     item: ItemT;
     type: TItemType;
     index: number;
+    data: readonly ItemT[];
     extraData: any;
 }
 

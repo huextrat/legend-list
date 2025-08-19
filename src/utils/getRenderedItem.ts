@@ -24,6 +24,7 @@ export function getRenderedItem(ctx: StateContext, state: InternalState, key: st
 
     if (renderItem && data[index]) {
         const itemProps = {
+            data,
             extraData: peek$(ctx, "extraData"),
             index,
             item: data[index],
