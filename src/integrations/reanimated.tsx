@@ -71,7 +71,7 @@ const AnimatedLegendList = typedMemo(
 
         const combinedRef = useCombinedRef(refLegendList, ref);
 
-        return <AnimatedLegendListComponent ref={refScrollView} refLegendList={combinedRef} {...rest} />;
+        return <AnimatedLegendListComponent ref={refScrollView} refLegendList={combinedRef} {...(rest as any)} />;
     }),
 ) as AnimatedLegendListDefinition;
 

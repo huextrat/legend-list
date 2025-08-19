@@ -25,7 +25,7 @@ export interface ContextContainerType {
 
 export const ContextContainer = createContext<ContextContainerType>(null as any);
 
-export function useViewability(callback: ViewabilityCallback, configId?: string) {
+export function useViewability<ItemT = any>(callback: ViewabilityCallback<ItemT>, configId?: string) {
     const ctx = useStateContext();
     const { containerId } = useContext(ContextContainer);
 
@@ -48,7 +48,7 @@ export function useViewability(callback: ViewabilityCallback, configId?: string)
     );
 }
 
-export function useViewabilityAmount(callback: ViewabilityAmountCallback) {
+export function useViewabilityAmount<ItemT = any>(callback: ViewabilityAmountCallback<ItemT>) {
     const ctx = useStateContext();
     const { containerId } = useContext(ContextContainer);
 

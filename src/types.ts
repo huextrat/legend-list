@@ -566,7 +566,7 @@ export type LegendListRef = {
     setScrollProcessingEnabled(enabled: boolean): void;
 };
 
-export interface ViewToken<ItemT> {
+export interface ViewToken<ItemT = any> {
     item: ItemT;
     key: string;
     index: number;
@@ -574,7 +574,7 @@ export interface ViewToken<ItemT> {
     containerId: number;
 }
 
-export interface ViewAmountToken<ItemT> extends ViewToken<ItemT> {
+export interface ViewAmountToken<ItemT = any> extends ViewToken<ItemT> {
     sizeVisible: number;
     size: number;
     percentVisible: number;
@@ -627,8 +627,8 @@ export interface ViewabilityConfig {
     waitForInteraction?: boolean | undefined;
 }
 
-export type ViewabilityCallback<ItemT> = (viewToken: ViewToken<ItemT>) => void;
-export type ViewabilityAmountCallback<ItemT> = (viewToken: ViewAmountToken<ItemT>) => void;
+export type ViewabilityCallback<ItemT = any> = (viewToken: ViewToken<ItemT>) => void;
+export type ViewabilityAmountCallback<ItemT = any> = (viewToken: ViewAmountToken<ItemT>) => void;
 
 export interface LegendListRecyclingState<T> {
     item: T;
