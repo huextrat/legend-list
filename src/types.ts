@@ -2,6 +2,7 @@ import { type ComponentProps, forwardRef, memo, type ReactNode } from "react";
 import type {
     Animated,
     LayoutRectangle,
+    NativeScrollEvent,
     ScrollResponderMixin,
     ScrollView,
     ScrollViewComponent,
@@ -22,6 +23,7 @@ type BaseScrollViewProps<TScrollView> = Omit<
     | "stickyHeaderIndices"
     | "removeClippedSubviews"
     | "children"
+    | "onScroll"
 >;
 
 // Core props for data mode
@@ -216,6 +218,8 @@ interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
      * Function to call when the user pulls to refresh.
      */
     onRefresh?: () => void;
+
+    onScroll?: (event: { nativeEvent: NativeScrollEvent }) => void;
 
     /**
      * Called when scrolling reaches the start within onStartReachedThreshold.

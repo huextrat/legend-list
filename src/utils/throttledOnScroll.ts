@@ -1,4 +1,4 @@
-import type { NativeScrollEvent } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 
 import { useThrottleDebounce } from "@/hooks/useThrottleDebounce";
 
@@ -11,13 +11,12 @@ import { useThrottleDebounce } from "@/hooks/useThrottleDebounce";
  * The implementation uses trailing edge throttling to ensure the last scroll event
  * is always fired, which is important for accurate final scroll position tracking.
  */
-export function throttledOnScroll(
-    originalHandler: (event: { nativeEvent: NativeScrollEvent }) => void,
+export function useThrottledOnScroll(
+    originalHandler: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
     scrollEventThrottle: number,
-): (event: { nativeEvent: NativeScrollEvent }) => void {
+): (event: NativeSyntheticEvent<NativeScrollEvent>) => void {
     const throttle = useThrottleDebounce("throttle");
 
-    return (event: { nativeEvent: NativeScrollEvent }) => {
-        throttle(originalHandler, scrollEventThrottle, event);
-    };
+    return (event: NativeSyntheticEvent<NativeScrollEvent>) =>
+        throttle(originalHandler, scrollEventThrottle, { nativeEvent: event.nativeEvent });
 }

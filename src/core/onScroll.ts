@@ -6,13 +6,7 @@ import type { InternalState } from "@/types";
 import { checkAtBottom } from "@/utils/checkAtBottom";
 import { checkAtTop } from "@/utils/checkAtTop";
 
-export function onScroll(
-    ctx: StateContext,
-    state: InternalState,
-    event: {
-        nativeEvent: NativeScrollEvent;
-    },
-) {
+export function onScroll(ctx: StateContext, state: InternalState, event: NativeSyntheticEvent<NativeScrollEvent>) {
     const {
         scrollProcessingEnabled,
         props: { onScroll: onScrollProp },

@@ -59,7 +59,7 @@ import { getRenderedItem } from "@/utils/getRenderedItem";
 import { extractPadding, isArray, warnDevOnce } from "@/utils/helpers";
 import { requestAdjust } from "@/utils/requestAdjust";
 import { setPaddingTop } from "@/utils/setPaddingTop";
-import { throttledOnScroll } from "@/utils/throttledOnScroll";
+import { useThrottledOnScroll } from "@/utils/throttledOnScroll";
 import { updateAveragesOnDataChange } from "@/utils/updateAveragesOnDataChange";
 import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
@@ -249,6 +249,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const isFirst = !state.props.renderItem;
 
     const didDataChange = state.props.data !== dataProp;
+    const throttleScrollFn =
+        scrollEventThrottle && onScrollProp ? useThrottledOnScroll(onScrollProp, scrollEventThrottle) : onScrollProp;
+
     state.props = {
         alignItemsAtEnd,
         data: dataProp,
@@ -270,7 +273,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         onEndReachedThreshold,
         onItemSizeChanged,
         onLoad,
-        onScroll: onScrollProp,
+        onScroll: throttleScrollFn,
         onStartReached,
         onStartReachedThreshold,
         recycleItems: !!recycleItems,
@@ -566,7 +569,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     const fns = useMemo(
         () => ({
             getRenderedItem: (key: string) => getRenderedItem(ctx, state, key),
-            onScroll: (event: { nativeEvent: NativeScrollEvent }) => onScroll(ctx, state, event),
+            onScroll: (event: NativeSyntheticEvent<NativeScrollEvent>) => onScroll(ctx, state, event),
             updateItemSize: (itemKey: string, sizeObj: { width: number; height: number }) =>
                 updateItemSize(ctx, state, itemKey, sizeObj),
         }),
@@ -574,11 +577,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     );
 
     // Create dual scroll handlers - one for native animations, one for JS logic
-    const animatedScrollHandler = useMemo<typeof fns.onScroll>(() => {
-        const onScrollFn =
-            scrollEventThrottle && scrollEventThrottle > 0
-                ? throttledOnScroll(fns.onScroll, scrollEventThrottle)
-                : fns.onScroll;
+    const onScrollHandler = useMemo<typeof fns.onScroll>(() => {
+        const onScrollFn = fns.onScroll;
 
         if (stickyIndices?.length) {
             const { animatedScrollY } = ctx;
@@ -622,7 +622,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                         onMomentumScrollEnd(event);
                     }
                 }}
-                onScroll={animatedScrollHandler}
+                onScroll={onScrollHandler}
                 recycleItems={recycleItems}
                 refreshControl={
                     refreshControl
