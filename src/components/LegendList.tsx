@@ -109,6 +109,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         contentContainerStyle: contentContainerStyleProp,
         data: dataProp = [],
         drawDistance = 250,
+        enableAverages = true,
         estimatedItemSize: estimatedItemSizeProp,
         estimatedListSize,
         extraData,
@@ -251,6 +252,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
     state.props = {
         alignItemsAtEnd,
         data: dataProp,
+        enableAverages,
         estimatedItemSize,
         getEstimatedItemSize,
         getFixedItemSize,

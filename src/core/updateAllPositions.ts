@@ -16,7 +16,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
         firstFullyOnScreenIndex,
         idCache,
         sizesKnown,
-        props: { getEstimatedItemSize, snapToIndices },
+        props: { getEstimatedItemSize, snapToIndices, enableAverages },
     } = state;
     const data = state.props.data;
     const numColumns = peek$(ctx, "numColumns");
@@ -24,9 +24,9 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     const scrollVelocity = getScrollVelocity(state);
 
     // Only use average size if user did not provide a getEstimatedItemSize function
-    // Note that with estimatedItemSize, we use it for the first render and then
+    // and enableAverages is true. Note that with estimatedItemSize, we use it for the first render and then
     // we can use average size after that.
-    const useAverageSize = !getEstimatedItemSize;
+    const useAverageSize = enableAverages && !getEstimatedItemSize;
 
     // Perf optimization to pre-calculate default average size
     const itemType = "";

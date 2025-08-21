@@ -68,6 +68,12 @@ interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
     alignItemsAtEnd?: boolean;
 
     /**
+     * If true, enables using average sizes for performance optimization.
+     * @default true
+     */
+    enableAverages?: boolean;
+
+    /**
      * Style applied to each column's wrapper view.
      */
     columnWrapperStyle?: ColumnWrapperStyle;
@@ -425,6 +431,7 @@ export interface InternalState {
         stickyIndicesSet: Set<number>;
         stickyIndicesArr: number[];
         itemsAreEqual: LegendListProps["itemsAreEqual"];
+        enableAverages: boolean;
     };
 }
 
