@@ -15,6 +15,7 @@ import {
     type LayoutChangeEvent,
     type LayoutRectangle,
     type NativeScrollEvent,
+    type NativeSyntheticEvent,
     Platform,
     RefreshControl,
     type ScrollView,

@@ -3,6 +3,7 @@ import type {
     Animated,
     LayoutRectangle,
     NativeScrollEvent,
+    NativeSyntheticEvent,
     ScrollResponderMixin,
     ScrollView,
     ScrollViewComponent,
@@ -219,7 +220,7 @@ interface LegendListSpecificProps<ItemT, TItemType extends string | undefined> {
      */
     onRefresh?: () => void;
 
-    onScroll?: (event: { nativeEvent: NativeScrollEvent }) => void;
+    onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 
     /**
      * Called when scrolling reaches the start within onStartReachedThreshold.
