@@ -162,7 +162,14 @@ export function calculateItemsInView(
             }
 
             // Update all positions upfront so we can assume they're correct
-            updateAllPositions(ctx, state, dataChanged);
+            // Use minIndexSizeChanged to avoid recalculating from index 0 when only later items changed
+            const startIndex = dataChanged ? 0 : (minIndexSizeChanged ?? 0);
+            updateAllPositions(ctx, state, dataChanged, startIndex);
+
+            // Clear minIndexSizeChanged after using it for position updates
+            if (minIndexSizeChanged !== undefined) {
+                state.minIndexSizeChanged = undefined;
+            }
 
             checkMVCP?.();
         }
@@ -232,11 +239,6 @@ export function calculateItemsInView(
         let endBuffered: number | null = null;
 
         let loopStart: number = startBufferedIdOrig ? indexByKey.get(startBufferedIdOrig) || 0 : 0;
-
-        if (minIndexSizeChanged !== undefined) {
-            loopStart = Math.min(minIndexSizeChanged, loopStart);
-            state.minIndexSizeChanged = undefined;
-        }
 
         // Go backwards from the last start position to find the first item that is in view
         // This is an optimization to avoid looping through all items, which could slow down

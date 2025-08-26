@@ -6,7 +6,7 @@ import { getItemSize } from "@/utils/getItemSize";
 import { roundSize } from "@/utils/helpers";
 import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
-export function updateAllPositions(ctx: StateContext, state: InternalState, dataChanged?: boolean) {
+export function updateAllPositions(ctx: StateContext, state: InternalState, dataChanged?: boolean, startIndex = 0) {
     const {
         averageSizes,
         columns,
@@ -37,11 +37,28 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     let maxSizeInRow = 0;
 
     const hasColumns = numColumns > 1;
+
+    // If starting from a non-zero index, continue from previous item's state
+    if (startIndex > 0) {
+        const prevIndex = startIndex - 1;
+        const prevId = idCache.get(prevIndex) ?? getId(state, prevIndex)!;
+        const prevPosition = positions.get(prevId) ?? 0;
+        
+        if (hasColumns) {
+            const prevColumn = columns.get(prevId) ?? 1;
+            currentRowTop = prevPosition;
+            column = (prevColumn % numColumns) + 1;
+        } else {
+            const prevSize = sizesKnown.get(prevId) ?? getItemSize(state, prevId, prevIndex, data[prevIndex], useAverageSize, averageSize);
+            currentRowTop = prevPosition + prevSize;
+        }
+    }
+
     const needsIndexByKey = dataChanged || indexByKey.size === 0;
 
     // Note that this loop is micro-optimized because it's a hot path
     const dataLength = data!.length;
-    for (let i = 0; i < dataLength; i++) {
+    for (let i = startIndex; i < dataLength; i++) {
         // Inline the map get calls to avoid the overhead of the function call
         const id = idCache.get(i) ?? getId(state, i)!;
         const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
