@@ -396,8 +396,6 @@ export interface InternalState {
     loadStartTime: number;
     initialScroll: ScrollIndexWithOffset | undefined;
     lastLayout: LayoutRectangle | undefined;
-    queuedItemSizeUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[];
-    queuedItemSizeUpdatesWaiting?: boolean;
     timeoutSetPaddingTop?: any;
     activeStickyIndex: number | undefined;
     stickyContainers: Map<number, number>;

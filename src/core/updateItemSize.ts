@@ -4,16 +4,19 @@ import { peek$, type StateContext, set$ } from "@/state/state";
 import type { InternalState, MaintainScrollAtEndOptions } from "@/types";
 import { checkAllSizesKnown } from "@/utils/checkAllSizesKnown";
 import { getItemSize } from "@/utils/getItemSize";
-import { getScrollVelocity } from "@/utils/getScrollVelocity";
 import { requestAdjust } from "@/utils/requestAdjust";
 
-export function updateItemSizes(
+export function updateItemSize(
     ctx: StateContext,
     state: InternalState,
-    itemUpdates: { itemKey: string; sizeObj: { width: number; height: number } }[],
+    itemKey: string,
+    sizeObj: { width: number; height: number },
 ) {
     const {
+        sizesKnown,
         props: {
+            getFixedItemSize,
+            getItemType,
             horizontal,
             maintainVisibleContentPosition,
             suggestEstimatedItemSize,
@@ -22,9 +25,25 @@ export function updateItemSizes(
             maintainScrollAtEnd,
         },
     } = state;
-
     if (!data) return;
 
+    if (getFixedItemSize) {
+        const index = state.indexByKey.get(itemKey);
+        if (index === undefined) {
+            return;
+        }
+        const itemData = state.props.data[index];
+        if (itemData === undefined) {
+            return;
+        }
+        const type = getItemType ? (getItemType(itemData, index) ?? "") : "";
+        const size = getFixedItemSize(index, itemData, type);
+        if (size !== undefined && size === sizesKnown.get(itemKey)) {
+            return;
+        }
+    }
+
+    // Actually update the item size
     const containersDidLayout = peek$(ctx, "containersDidLayout");
     // Need to calculate if haven't all laid out yet
     let needsRecalculate = !containersDidLayout;
@@ -32,59 +51,57 @@ export function updateItemSizes(
     let minIndexSizeChanged: number | undefined;
     let maxOtherAxisSize = peek$(ctx, "otherAxisSize") || 0;
 
-    for (const { itemKey, sizeObj } of itemUpdates) {
-        const index = state.indexByKey.get(itemKey)!;
-        const prevSizeKnown = state.sizesKnown.get(itemKey);
+    const index = state.indexByKey.get(itemKey)!;
+    const prevSizeKnown = state.sizesKnown.get(itemKey);
 
-        const diff = updateOneItemSize(state, itemKey, sizeObj);
-        const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
+    const diff = updateOneItemSize(state, itemKey, sizeObj);
+    const size = Math.floor((horizontal ? sizeObj.width : sizeObj.height) * 8) / 8;
 
-        if (diff !== 0) {
-            minIndexSizeChanged = minIndexSizeChanged !== undefined ? Math.min(minIndexSizeChanged, index) : index;
+    if (diff !== 0) {
+        minIndexSizeChanged = minIndexSizeChanged !== undefined ? Math.min(minIndexSizeChanged, index) : index;
 
-            // Handle scrolling adjustments
-            if (
-                state.scrollingTo?.viewPosition &&
-                maintainVisibleContentPosition &&
-                index === state.scrollingTo.index &&
-                diff > 0
-            ) {
-                requestAdjust(ctx, state, diff * state.scrollingTo.viewPosition);
-            }
+        // Handle scrolling adjustments
+        if (
+            state.scrollingTo?.viewPosition &&
+            maintainVisibleContentPosition &&
+            index === state.scrollingTo.index &&
+            diff > 0
+        ) {
+            requestAdjust(ctx, state, diff * state.scrollingTo.viewPosition);
+        }
 
-            // Check if item is in view
-            const { startBuffered, endBuffered } = state;
-            needsRecalculate ||= index >= startBuffered && index <= endBuffered;
-            if (!needsRecalculate) {
-                const numContainers = ctx.values.get("numContainers") as number;
-                for (let i = 0; i < numContainers; i++) {
-                    if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
-                        needsRecalculate = true;
-                        break;
-                    }
+        // Check if item is in view
+        const { startBuffered, endBuffered } = state;
+        needsRecalculate ||= index >= startBuffered && index <= endBuffered;
+        if (!needsRecalculate) {
+            const numContainers = ctx.values.get("numContainers") as number;
+            for (let i = 0; i < numContainers; i++) {
+                if (peek$(ctx, `containerItemKey${i}`) === itemKey) {
+                    needsRecalculate = true;
+                    break;
                 }
             }
-
-            // Handle other axis size
-            if (state.needsOtherAxisSize) {
-                const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
-                maxOtherAxisSize = Math.max(maxOtherAxisSize, otherAxisSize);
-            }
-
-            // Check if we should maintain scroll at end
-            if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
-                shouldMaintainScrollAtEnd = true;
-            }
-
-            // Call onItemSizeChanged callback
-            onItemSizeChanged?.({
-                index,
-                itemData: state.props.data[index],
-                itemKey,
-                previous: size - diff,
-                size,
-            });
         }
+
+        // Handle other axis size
+        if (state.needsOtherAxisSize) {
+            const otherAxisSize = horizontal ? sizeObj.height : sizeObj.width;
+            maxOtherAxisSize = Math.max(maxOtherAxisSize, otherAxisSize);
+        }
+
+        // Check if we should maintain scroll at end
+        if (prevSizeKnown !== undefined && Math.abs(prevSizeKnown - size) > 5) {
+            shouldMaintainScrollAtEnd = true;
+        }
+
+        // Call onItemSizeChanged callback
+        onItemSizeChanged?.({
+            index,
+            itemData: state.props.data[index],
+            itemKey,
+            previous: size - diff,
+            size,
+        });
     }
 
     // Update state with minimum changed index
@@ -125,38 +142,6 @@ export function updateItemSizes(
             }
         }
     }
-}
-
-export function updateItemSize(
-    ctx: StateContext,
-    state: InternalState,
-    itemKey: string,
-    sizeObj: { width: number; height: number },
-) {
-    const {
-        queuedItemSizeUpdates,
-        queuedItemSizeUpdatesWaiting,
-        sizesKnown,
-        props: { getFixedItemSize, getItemType },
-    } = state;
-
-    if (getFixedItemSize) {
-        const index = state.indexByKey.get(itemKey);
-        if (index === undefined) {
-            return;
-        }
-        const itemData = state.props.data[index];
-        if (itemData === undefined) {
-            return;
-        }
-        const type = getItemType ? (getItemType(itemData, index) ?? "") : "";
-        const size = getFixedItemSize(index, itemData, type);
-        if (size !== undefined && size === sizesKnown.get(itemKey)) {
-            return;
-        }
-    }
-
-    updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
 }
 
 export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj: { width: number; height: number }) {
