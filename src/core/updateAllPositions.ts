@@ -54,17 +54,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
             // Process items backwards from firstFullyOnScreenIndex - 1 to 0
             for (let i = firstFullyOnScreenIndex - 1; i >= 0; i--) {
                 const id = idCache.get(i) ?? getId(state, i)!;
-                const size =
-                    sizesKnown.get(id) ??
-                    getItemSize(
-                        state,
-                        id,
-                        i,
-                        data[i],
-                        useAverageSize,
-                        averageSize,
-                        /*preferRenderedCache*/ !!dataChanged,
-                    );
+                const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
                 const itemColumn = columns.get(id)!;
 
                 maxSizeInRow = Math.max(maxSizeInRow, size);
@@ -106,9 +96,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     for (let i = 0; i < dataLength; i++) {
         // Inline the map get calls to avoid the overhead of the function call
         const id = idCache.get(i) ?? getId(state, i)!;
-        const size =
-            sizesKnown.get(id) ??
-            getItemSize(state, id, i, data[i], useAverageSize, averageSize, /*preferRenderedCache*/ !!dataChanged);
+        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
 
         // Set index mapping for this item
         if (__DEV__ && needsIndexByKey) {

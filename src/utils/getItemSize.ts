@@ -8,7 +8,6 @@ export function getItemSize(
     data: any,
     useAverageSize?: boolean,
     defaultAverageSize?: number | undefined,
-    preferRenderedCache?: boolean,
 ) {
     const {
         sizesKnown,
@@ -33,18 +32,8 @@ export function getItemSize(
         }
     }
 
-    // Fetch rendered size once to avoid duplicate Map lookups
-    const renderedSize = sizes.get(key);
-
-    // Determine ordering between rendered cache and averages
-    // Default behavior: averages before rendered cache
-    // preferRenderedCache=true: rendered cache (sizes) before averages
-    if (size === undefined && preferRenderedCache && renderedSize !== undefined) {
-        return renderedSize;
-    }
-
     // useAverageSize will be false if getEstimatedItemSize is defined
-    if (size === undefined && useAverageSize && !scrollingTo) {
+    if (size === undefined && useAverageSize && sizeKnown === undefined && !scrollingTo) {
         // Use item type specific average if available
         if (itemType === "") {
             size = defaultAverageSize;
@@ -56,8 +45,12 @@ export function getItemSize(
         }
     }
 
-    if (size === undefined && renderedSize !== undefined) {
-        return renderedSize;
+    if (size === undefined) {
+        size = sizes.get(key)!;
+
+        if (size !== undefined) {
+            return size;
+        }
     }
 
     if (size === undefined) {
