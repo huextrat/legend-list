@@ -23,4 +23,7 @@ export class ScrollAdjustHandler {
     setMounted() {
         this.mounted = true;
     }
+    getAdjust() {
+        return this.appliedAdjust;
+    }
 }

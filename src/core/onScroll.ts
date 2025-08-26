@@ -49,7 +49,8 @@ function updateScroll(ctx: StateContext, state: InternalState, newScroll: number
     // Don't add to the history if we are scrolling to an offset
     if (scrollingTo === undefined && !(state.scrollHistory.length === 0 && newScroll === state.scroll)) {
         // Update scroll history
-        state.scrollHistory.push({ scroll: newScroll, time: currentTime });
+        const adjust = state.scrollAdjustHandler.getAdjust();
+        state.scrollHistory.push({ scroll: newScroll - adjust, time: currentTime });
     }
 
     // Keep only last 5 entries
