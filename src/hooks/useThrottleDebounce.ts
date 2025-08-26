@@ -14,34 +14,37 @@ export function useThrottleDebounce(mode: Mode) {
         }
     };
 
-    const execute = useCallback((callback: (...args: any[]) => void, delay: number, ...args: any[]) => {
-        if (mode === "debounce") {
-            clearTimeoutRef();
-            timeoutRef.current = setTimeout(() => callback(...args), delay);
-        } else {
-            const now = Date.now();
-            lastArgsRef.current = args;
-
-            if (now - lastCallTimeRef.current >= delay) {
-                lastCallTimeRef.current = now;
-                callback(...args);
+    const execute = useCallback(
+        (callback: (...args: any[]) => void, delay: number, ...args: any[]) => {
+            if (mode === "debounce") {
                 clearTimeoutRef();
+                timeoutRef.current = setTimeout(() => callback(...args), delay);
             } else {
-                clearTimeoutRef();
-                timeoutRef.current = setTimeout(
-                    () => {
-                        if (lastArgsRef.current) {
-                            lastCallTimeRef.current = Date.now();
-                            callback(...lastArgsRef.current);
-                            timeoutRef.current = null;
-                            lastArgsRef.current = null;
-                        }
-                    },
-                    delay - (now - lastCallTimeRef.current),
-                );
+                const now = Date.now();
+                lastArgsRef.current = args;
+
+                if (now - lastCallTimeRef.current >= delay) {
+                    lastCallTimeRef.current = now;
+                    callback(...args);
+                    clearTimeoutRef();
+                } else {
+                    clearTimeoutRef();
+                    timeoutRef.current = setTimeout(
+                        () => {
+                            if (lastArgsRef.current) {
+                                lastCallTimeRef.current = Date.now();
+                                callback(...lastArgsRef.current);
+                                timeoutRef.current = null;
+                                lastArgsRef.current = null;
+                            }
+                        },
+                        delay - (now - lastCallTimeRef.current),
+                    );
+                }
             }
-        }
-    }, [mode]);
+        },
+        [mode],
+    );
 
     return execute;
 }
