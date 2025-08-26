@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
 import { Animated } from "react-native";
+
 import { calculateItemsInView } from "../../src/core/calculateItemsInView";
 import type { ListenerType, StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
@@ -69,7 +70,6 @@ describe("calculateItemsInView", () => {
             nativeMarginTop: 0,
             needsOtherAxisSize: false,
             otherAxisSize: undefined,
-            pendingAdjust: 0,
             positions: new Map(),
             props: {
                 alignItemsAtEnd: false,

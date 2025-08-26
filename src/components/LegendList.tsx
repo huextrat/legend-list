@@ -212,7 +212,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             loadStartTime: Date.now(),
             minIndexSizeChanged: 0,
             nativeMarginTop: 0,
-            pendingAdjust: 0,
             positions: new Map(),
             props: {} as any,
             queuedCalculateItemsInView: 0,
