@@ -156,27 +156,7 @@ export function updateItemSize(
         }
     }
 
-    const containersDidLayout = peek$(ctx, "containersDidLayout");
-
-    const speed = getScrollVelocity(state);
-
-    if (!containersDidLayout || !queuedItemSizeUpdatesWaiting || Math.abs(speed) < 1) {
-        // Update immediately if initial load or we're not already waiting
-        updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
-        if (containersDidLayout) {
-            state.queuedItemSizeUpdatesWaiting = true;
-            requestAnimationFrame(() => {
-                state.queuedItemSizeUpdatesWaiting = false;
-
-                // Run all the queued updates
-                updateItemSizes(ctx, state, queuedItemSizeUpdates);
-                queuedItemSizeUpdates.length = 0;
-            });
-        }
-    } else {
-        // If already waiting, queue the update so we don't queue too many renders
-        queuedItemSizeUpdates.push({ itemKey, sizeObj });
-    }
+    updateItemSizes(ctx, state, [{ itemKey, sizeObj }]);
 }
 
 export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj: { width: number; height: number }) {
