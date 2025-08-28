@@ -163,7 +163,9 @@ export function updateOneItemSize(state: InternalState, itemKey: string, sizeObj
 
     // Update averages per item type
     // If user has provided getEstimatedItemSize that has precedence over averages
-    if (!getEstimatedItemSize && !getFixedItemSize) {
+    // Don't update averages if size is 0, because it likely is rendering conditionally
+    // and that shouldn't affect averages.
+    if (!getEstimatedItemSize && !getFixedItemSize && size > 0) {
         const itemType = getItemType ? (getItemType(data[index], index) ?? "") : "";
         let averages = averageSizes[itemType];
         if (!averages) {
