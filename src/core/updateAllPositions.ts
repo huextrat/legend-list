@@ -25,13 +25,6 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     // we can use average size after that.
     const useAverageSize = enableAverages && !getEstimatedItemSize;
 
-    // Perf optimization to pre-calculate default average size
-    const itemType = "";
-    let averageSize = averageSizes[itemType]?.avg;
-    if (averageSize !== undefined) {
-        averageSize = roundSize(averageSize);
-    }
-
     let currentRowTop = 0;
     let column = 1;
     let maxSizeInRow = 0;
@@ -43,13 +36,14 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
         const prevIndex = startIndex - 1;
         const prevId = idCache.get(prevIndex) ?? getId(state, prevIndex)!;
         const prevPosition = positions.get(prevId) ?? 0;
-        
+
         if (hasColumns) {
             const prevColumn = columns.get(prevId) ?? 1;
             currentRowTop = prevPosition;
             column = (prevColumn % numColumns) + 1;
         } else {
-            const prevSize = sizesKnown.get(prevId) ?? getItemSize(state, prevId, prevIndex, data[prevIndex], useAverageSize, averageSize);
+            const prevSize =
+                sizesKnown.get(prevId) ?? getItemSize(state, prevId, prevIndex, data[prevIndex], useAverageSize);
             currentRowTop = prevPosition + prevSize;
         }
     }
@@ -61,7 +55,7 @@ export function updateAllPositions(ctx: StateContext, state: InternalState, data
     for (let i = startIndex; i < dataLength; i++) {
         // Inline the map get calls to avoid the overhead of the function call
         const id = idCache.get(i) ?? getId(state, i)!;
-        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize, averageSize);
+        const size = sizesKnown.get(id) ?? getItemSize(state, id, i, data[i], useAverageSize);
 
         // Set index mapping for this item
         if (__DEV__ && needsIndexByKey) {

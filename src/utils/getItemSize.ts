@@ -1,14 +1,7 @@
 import type { InternalState } from "@/types";
 import { roundSize } from "@/utils/helpers";
 
-export function getItemSize(
-    state: InternalState,
-    key: string,
-    index: number,
-    data: any,
-    useAverageSize?: boolean,
-    defaultAverageSize?: number | undefined,
-) {
+export function getItemSize(state: InternalState, key: string, index: number, data: any, useAverageSize?: boolean) {
     const {
         sizesKnown,
         sizes,
@@ -35,13 +28,9 @@ export function getItemSize(
     // useAverageSize will be false if getEstimatedItemSize is defined
     if (size === undefined && useAverageSize && sizeKnown === undefined && !scrollingTo) {
         // Use item type specific average if available
-        if (itemType === "") {
-            size = defaultAverageSize;
-        } else {
-            const averageSizeForType = averageSizes[itemType]?.avg;
-            if (averageSizeForType !== undefined) {
-                size = roundSize(averageSizeForType);
-            }
+        const averageSizeForType = averageSizes[itemType]?.avg;
+        if (averageSizeForType !== undefined) {
+            size = roundSize(averageSizeForType);
         }
     }
 
