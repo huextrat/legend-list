@@ -7,15 +7,32 @@ export function doInitialAllocateContainers(ctx: StateContext, state: InternalSt
     // Allocate containers
     const {
         scrollLength,
-        props: { data, getEstimatedItemSize, getItemType, scrollBuffer, numColumns, estimatedItemSize },
+        props: {
+            data,
+            getEstimatedItemSize,
+            getFixedItemSize,
+            getItemType,
+            scrollBuffer,
+            numColumns,
+            estimatedItemSize,
+        },
     } = state;
 
     const hasContainers = peek$(ctx, "numContainers");
 
     if (scrollLength > 0 && data.length > 0 && !hasContainers) {
-        const averageItemSize = getEstimatedItemSize
-            ? getEstimatedItemSize(0, data[0], getItemType ? (getItemType(data[0], 0) ?? "") : "")
-            : estimatedItemSize;
+        let averageItemSize: number;
+        const fn = getFixedItemSize || getEstimatedItemSize;
+        if (fn) {
+            let totalSize = 0;
+            const num = Math.min(20, data.length);
+            for (let i = 0; i < num; i++) {
+                totalSize += fn(0, data[0], getItemType ? (getItemType(data[0], 0) ?? "") : "");
+            }
+            averageItemSize = totalSize / num;
+        } else {
+            averageItemSize = estimatedItemSize!;
+        }
         const numContainers = Math.ceil(((scrollLength + scrollBuffer * 2) / averageItemSize!) * numColumns);
 
         for (let i = 0; i < numContainers; i++) {
