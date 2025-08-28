@@ -39,18 +39,10 @@ const AIChat = () => {
                     timeStamp: Date.now(),
                 },
             ]);
-        }, 1000);
+        }, 500);
 
-        // After 3 seconds total (2 seconds after the first), replace placeholder with long message
-        const timer2 = setTimeout(() => {
-            setMessages((prevMessages) =>
-                prevMessages.map((msg) =>
-                    msg.isPlaceholder
-                        ? {
-                              id: String(idCounter++),
-                              isPlaceholder: false,
-                              sender: "system",
-                              text: `React Native virtualization is a performance optimization technique that's crucial for handling large lists efficiently. Here's how it works:
+        // After 3 seconds total (2 seconds after the first), start streaming the message
+        const fullText = `React Native virtualization is a performance optimization technique that's crucial for handling large lists efficiently. Here's how it works:
 
 1. **Rendering Only Visible Items**: Instead of rendering all items in a list at once, virtualization only renders the items that are currently visible on screen, plus a small buffer of items just outside the visible area.
 
@@ -68,13 +60,44 @@ The key benefits are:
 - Better handling of dynamic content
 - Reduced time to interactive
 
-This makes it possible to scroll through thousands of items without performance degradation, which is essential for modern mobile apps dealing with large datasets like social media feeds, chat histories, or product catalogs.`,
+This makes it possible to scroll through thousands of items without performance degradation, which is essential for modern mobile apps dealing with large datasets like social media feeds, chat histories, or product catalogs.`;
+
+        const words = fullText.split(" ");
+        let currentWordIndex = 0;
+
+        const timer2 = setTimeout(() => {
+            // Replace placeholder with empty system message
+            setMessages((prevMessages) =>
+                prevMessages.map((msg) =>
+                    msg.isPlaceholder
+                        ? {
+                              id: String(idCounter++),
+                              isPlaceholder: false,
+                              sender: "system",
+                              text: "",
                               timeStamp: Date.now(),
                           }
                         : msg,
                 ),
             );
-        }, 3000);
+
+            // Start streaming words
+            const streamInterval = setInterval(() => {
+                if (currentWordIndex < words.length) {
+                    const currentText = words.slice(0, currentWordIndex + 1).join(" ");
+                    setMessages((prevMessages) =>
+                        prevMessages.map((msg) =>
+                            msg.sender === "system" && !msg.isPlaceholder && msg.text !== fullText
+                                ? { ...msg, text: currentText }
+                                : msg,
+                        ),
+                    );
+                    currentWordIndex++;
+                } else {
+                    clearInterval(streamInterval);
+                }
+            }, 50); // Stream one word every 16ms
+        }, 1500);
 
         return () => {
             clearTimeout(timer1);
@@ -91,12 +114,12 @@ This makes it possible to scroll through thousands of items without performance 
                 style={styles.container}
             >
                 <LegendList
-                    alignItemsAtEnd
+                    // alignItemsAtEnd
                     contentContainerStyle={styles.contentContainer}
                     data={messages}
                     estimatedItemSize={60}
                     keyExtractor={(item) => item.id}
-                    maintainScrollAtEnd
+                    // maintainScrollAtEnd
                     maintainVisibleContentPosition
                     renderItem={({ item }) => (
                         <>
