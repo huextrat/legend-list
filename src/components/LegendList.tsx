@@ -352,7 +352,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     if (isFirst) {
         initializeStateVars();
-        updateAllPositions(ctx, state);
     }
     const initialContentOffset = useMemo(() => {
         if (initialScroll) {
@@ -410,7 +409,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     }, [snapToIndices]);
     useLayoutEffect(() => {
-        const didAllocateContainers = doInitialAllocateContainersCallback();
+        const didAllocateContainers = dataProp.length > 0 && doInitialAllocateContainersCallback();
         if (!didAllocateContainers) {
             checkResetContainers(/*isFirst*/ isFirst);
         }

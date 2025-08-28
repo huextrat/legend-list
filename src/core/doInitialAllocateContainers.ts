@@ -9,7 +9,10 @@ export function doInitialAllocateContainers(ctx: StateContext, state: InternalSt
         scrollLength,
         props: { data, getEstimatedItemSize, getItemType, scrollBuffer, numColumns, estimatedItemSize },
     } = state;
-    if (scrollLength > 0 && data.length > 0 && !peek$(ctx, "numContainers")) {
+
+    const hasContainers = peek$(ctx, "numContainers");
+
+    if (scrollLength > 0 && data.length > 0 && !hasContainers) {
         const averageItemSize = getEstimatedItemSize
             ? getEstimatedItemSize(0, data[0], getItemType ? (getItemType(data[0], 0) ?? "") : "")
             : estimatedItemSize;
@@ -23,14 +26,14 @@ export function doInitialAllocateContainers(ctx: StateContext, state: InternalSt
         set$(ctx, "numContainers", numContainers);
         set$(ctx, "numContainersPooled", numContainers * state.props.initialContainerPoolRatio);
 
-        if (!IsNewArchitecture) {
+        if (!IsNewArchitecture || state.lastLayout) {
             if (state.props.initialScroll) {
                 requestAnimationFrame(() => {
                     // immediate render causes issues with initial index position
-                    calculateItemsInView(ctx, state);
+                    calculateItemsInView(ctx, state, { dataChanged: true });
                 });
             } else {
-                calculateItemsInView(ctx, state);
+                calculateItemsInView(ctx, state, { dataChanged: true });
             }
         }
 

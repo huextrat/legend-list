@@ -3,12 +3,10 @@ import { peek$, type StateContext } from "@/state/state";
 import type { InternalState } from "@/types";
 import { getId } from "@/utils/getId";
 import { getItemSize } from "@/utils/getItemSize";
-import { roundSize } from "@/utils/helpers";
 import { updateSnapToOffsets } from "@/utils/updateSnapToOffsets";
 
 export function updateAllPositions(ctx: StateContext, state: InternalState, dataChanged?: boolean, startIndex = 0) {
     const {
-        averageSizes,
         columns,
         indexByKey,
         positions,
