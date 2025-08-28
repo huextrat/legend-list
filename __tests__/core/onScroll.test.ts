@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import "../setup"; // Import global test setup
 
+import { ScrollAdjustHandler } from "@/core/ScrollAdjustHandler";
 import { onScroll } from "../../src/core/onScroll";
 import type { StateContext } from "../../src/state/state";
 import type { InternalState } from "../../src/types";
@@ -66,6 +67,7 @@ describe("onScroll", () => {
             },
             queuedInitialLayout: true,
             scroll: 0,
+            scrollAdjustHandler: new ScrollAdjustHandler(mockCtx),
             scrollHistory: [],
             scrollingTo: undefined,
             scrollLength: 500,
