@@ -29,43 +29,46 @@ export function handleLayout(
 
     state.lastLayout = layout;
 
-    const didChange = scrollLength !== state.scrollLength;
     const prevOtherAxisSize = state.otherAxisSize;
-    state.scrollLength = scrollLength;
-    state.otherAxisSize = otherAxisSize;
-    state.lastBatchingAction = Date.now();
-    state.scrollForNextCalculateItemsInView = undefined;
+    const didChange = scrollLength !== state.scrollLength || otherAxisSize !== prevOtherAxisSize;
 
-    doInitialAllocateContainers(ctx, state);
+    if (didChange) {
+        state.scrollLength = scrollLength;
+        state.otherAxisSize = otherAxisSize;
+        state.lastBatchingAction = Date.now();
+        state.scrollForNextCalculateItemsInView = undefined;
 
-    if (needsCalculate) {
-        calculateItemsInView(ctx, state, { doMVCP: true });
+        doInitialAllocateContainers(ctx, state);
+
+        if (needsCalculate) {
+            calculateItemsInView(ctx, state, { doMVCP: true });
+        }
+        if (didChange || otherAxisSize !== prevOtherAxisSize) {
+            set$(ctx, "scrollSize", { height: layout.height, width: layout.width });
+        }
+
+        if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onLayout) {
+            doMaintainScrollAtEnd(ctx, state, false);
+        }
+        updateAlignItemsPaddingTop(ctx, state);
+        checkAtBottom(ctx, state);
+        checkAtTop(state);
+
+        if (state) {
+            // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis
+            // from the item height. 10 is just a magic number to account for border/outline or rounding errors.
+            state.needsOtherAxisSize = otherAxisSize - (state.props.stylePaddingTop || 0) < 10;
+        }
+
+        if (__DEV__ && scrollLength === 0) {
+            warnDevOnce(
+                "height0",
+                `List ${
+                    state.props.horizontal ? "width" : "height"
+                } is 0. You may need to set a style or \`flex: \` for the list, because children are absolutely positioned.`,
+            );
+        }
+
+        setCanRender(true);
     }
-    if (didChange || otherAxisSize !== prevOtherAxisSize) {
-        set$(ctx, "scrollSize", { height: layout.height, width: layout.width });
-    }
-
-    if (maintainScrollAtEnd === true || (maintainScrollAtEnd as MaintainScrollAtEndOptions).onLayout) {
-        doMaintainScrollAtEnd(ctx, state, false);
-    }
-    updateAlignItemsPaddingTop(ctx, state);
-    checkAtBottom(ctx, state);
-    checkAtTop(state);
-
-    if (state) {
-        // If otherAxisSize minus padding is less than 10, we need to set the size of the other axis
-        // from the item height. 10 is just a magic number to account for border/outline or rounding errors.
-        state.needsOtherAxisSize = otherAxisSize - (state.props.stylePaddingTop || 0) < 10;
-    }
-
-    if (__DEV__ && scrollLength === 0) {
-        warnDevOnce(
-            "height0",
-            `List ${
-                state.props.horizontal ? "width" : "height"
-            } is 0. You may need to set a style or \`flex: \` for the list, because children are absolutely positioned.`,
-        );
-    }
-
-    setCanRender(true);
 }
