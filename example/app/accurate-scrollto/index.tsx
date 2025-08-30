@@ -57,7 +57,7 @@ export default function AccurateScrollTo({ numColumns = 1 }: CardsProps) {
                 contentContainerStyle={styles.listContainer}
                 data={data}
                 drawDistance={DRAW_DISTANCE}
-                estimatedItemSize={ESTIMATED_ITEM_LENGTH + 120}
+                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 keyExtractor={(item) => `id${item.id}`}
                 ListEmptyComponent={
                     <View style={styles.listEmpty}>

@@ -352,6 +352,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
     if (isFirst) {
         initializeStateVars();
+        updateAllPositions(ctx, state);
     }
     const initialContentOffset = useMemo(() => {
         if (initialScroll) {
