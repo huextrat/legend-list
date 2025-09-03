@@ -431,6 +431,7 @@ export function calculateItemsInView(
                         // Add container to sticky pool
                         state.stickyContainerPool.add(containerIndex);
                     } else {
+                        set$(ctx, `containerSticky${containerIndex}`, false);
                         // Ensure container is not in sticky pool if item is not sticky
                         state.stickyContainerPool.delete(containerIndex);
                     }
