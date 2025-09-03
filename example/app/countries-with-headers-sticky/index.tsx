@@ -222,6 +222,7 @@ const App = () => {
                     extraData={selectedId}
                     getItemType={getItemType}
                     keyExtractor={keyExtractor}
+                    ListHeaderComponent={<View style={{ backgroundColor: "#bbb", height: 80, width: "100%" }} />}
                     onEndReached={({ distanceFromEnd }) => {
                         console.log("onEndReached", distanceFromEnd);
                     }}

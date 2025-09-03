@@ -90,20 +90,20 @@ const PositionViewSticky = typedMemo(function PositionViewSticky({
     index: number;
     children: React.ReactNode;
 }) {
-    const [position = POSITION_OUT_OF_VIEW] = useArr$([`containerPosition${id}`]);
+    const [position = POSITION_OUT_OF_VIEW, headerSize] = useArr$([`containerPosition${id}`, "headerSize"]);
 
     // Calculate transform based on sticky state
     const transform = React.useMemo(() => {
         if (animatedScrollY && stickyOffset) {
             const stickyPosition = animatedScrollY.interpolate({
                 extrapolate: "clamp",
-                inputRange: [position, position + 5000],
+                inputRange: [position + headerSize, position + 5000 + headerSize],
                 outputRange: [position, position + 5000],
             });
 
             return horizontal ? [{ translateX: stickyPosition }] : [{ translateY: stickyPosition }];
         }
-    }, [position, horizontal, animatedScrollY, stickyOffset]);
+    }, [animatedScrollY, headerSize, horizontal, stickyOffset, position]);
 
     const viewStyle = React.useMemo(() => [style, { zIndex: index + 1000 }, { transform }], [style, transform]);
 
